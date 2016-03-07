@@ -2,11 +2,12 @@ package consultool
 
 import (
 	"fmt"
+	"net"
+	"time"
+
 	"github.com/coffeehc/logger"
 	"github.com/coffeehc/microserviceboot/common"
 	"github.com/hashicorp/consul/api"
-	"net"
-	"time"
 )
 
 type ConsulServiceRegister struct {
@@ -48,21 +49,13 @@ func (this *ConsulServiceRegister) RegService(serverAddr string, serviceInfo com
 		Check: &api.AgentServiceCheck{
 			TTL: "10s",
 		},
-		//Check:api.AgentServiceChecks{
-		//	&api.AgentServiceCheck{
-		//		HTTP:fmt.Sprintf("http://%s:%d/check/hralth", ip.String(), addr.Port),
-		//		Interval:"10s",
-		//	},
-		//},
 	}
 	err := this.client.Agent().ServiceRegister(registration)
 	if err != nil {
 		logger.Error("注册服务失败:%s", err)
 		return err
 	}
-	this.client
 	go func() {
-		this.client.Agent().CheckRegister()
 		timeout := 5 * time.Second
 		timer := time.NewTimer(timeout)
 		for {

@@ -1,8 +1,9 @@
 package common
 
 import (
-	"github.com/coffeehc/logger"
 	"net"
+
+	"github.com/coffeehc/logger"
 )
 
 var (
