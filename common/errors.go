@@ -2,8 +2,9 @@ package common
 
 import (
 	"fmt"
-	"github.com/coffeehc/web"
 	"net/http"
+
+	"github.com/coffeehc/web"
 )
 
 type Error struct {

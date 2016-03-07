@@ -4,7 +4,7 @@ import "github.com/coffeehc/web"
 
 type EndPoint struct {
 	Path        string
-	Method      string
+	Method      web.HttpMethod
 	Description string
 	HandlerFunc web.RequestHandler
 }
