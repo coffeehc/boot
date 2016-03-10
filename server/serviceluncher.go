@@ -1,4 +1,4 @@
-package microserviceboot
+package server
 
 import (
 	"os"

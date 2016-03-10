@@ -1,4 +1,4 @@
-package microserviceboot
+package server
 
 import (
 	"errors"
@@ -19,20 +19,27 @@ type MicorService struct {
 }
 
 func newMicorService(config *MicorServiceCofig, serviceDiscoveryRegedit ServiceDiscoveryRegister) (*MicorService, error) {
-	if config.WebConfig == nil {
-		config.WebConfig = new(web.ServerConfig)
-	}
-	config.WebConfig.DefaultTransport = web.Transport_Json
 	serviceInfo := config.Service.GetServiceInfo()
 	if serviceInfo == nil {
 		return nil, errors.New("没有指定 ServiceInfo")
+	}
+	webConfig := new(web.ServerConfig)
+	webConfig.ServerAddr = fmt.Sprintf("%s:%d", common.GetLocalIp(), serviceInfo.GetServerPort())
+	webConfig.DefaultTransport = web.Transport_Json
+	switch serviceInfo.GetScheme() {
+	//case common.RpcScheme_Http:
+	case common.RpcScheme_https:
+		webConfig.OpenTLS = true
+		webConfig.CertFile, webConfig.KeyFile = serviceInfo.GetTLSCert()
+	default:
+		// nothing
 	}
 	logger.Info("ServiceName: %s", serviceInfo.GetServiceName())
 	logger.Info("Version: %s", serviceInfo.GetVersion())
 	logger.Info("Descriptor: %s", serviceInfo.GetDescriptor())
 	return &MicorService{
 		config:                  config,
-		server:                  web.NewServer(config.WebConfig),
+		server:                  web.NewServer(webConfig),
 		service:                 config.Service,
 		serviceDiscoveryRegedit: serviceDiscoveryRegedit,
 	}, nil
@@ -58,7 +65,7 @@ func (this *MicorService) Start() error {
 		return err
 	}
 	if this.serviceDiscoveryRegedit != nil {
-		err = this.serviceDiscoveryRegedit.RegService(this.config.WebConfig.ServerAddr, serviceInfo, this.service.GetEndPoints())
+		err = this.serviceDiscoveryRegedit.RegService(serviceInfo, this.service.GetEndPoints())
 		if err != nil {
 			return err
 		}
