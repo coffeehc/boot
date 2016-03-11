@@ -1,26 +1,31 @@
-package microserviceboot
+package server
 
 import (
 	"os"
 	"os/signal"
 	"syscall"
 
+	"flag"
 	"github.com/coffeehc/logger"
 	"github.com/coffeehc/microserviceboot/common"
+)
+
+var (
+	port = flag.Int("port", 8888, "服务端口")
 )
 
 /**
  *	Service 启动
  */
-func ServiceLauncher(config *MicorServiceCofig, serviceDiscoveryRegedit ServiceDiscoveryRegister) {
+func ServiceLauncher(service common.Service, serviceDiscoveryRegedit ServiceDiscoveryRegister) {
 	logger.InitLogger()
 	defer logger.WaitToClose()
-	if config == nil {
+	if service == nil {
 		logger.Error("service is nil")
 		return
 	}
-	startService(config.Service)
-	micorService, err := newMicorService(config, serviceDiscoveryRegedit)
+	startService(service)
+	micorService, err := newMicorService(service, serviceDiscoveryRegedit)
 	if err != nil {
 
 	}
@@ -56,10 +61,6 @@ func startService(service common.Service) {
 	}
 	logger.Info("服务已正常启动")
 }
-
-//func stop()  {
-//
-//}
 
 /*
 	wait,一般是可执行函数的最后用于阻止程序退出

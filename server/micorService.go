@@ -1,4 +1,4 @@
-package microserviceboot
+package server
 
 import (
 	"errors"
@@ -12,28 +12,25 @@ import (
 )
 
 type MicorService struct {
-	config                  *MicorServiceCofig
 	server                  *web.Server
 	service                 common.Service
 	serviceDiscoveryRegedit ServiceDiscoveryRegister
 }
 
-func newMicorService(config *MicorServiceCofig, serviceDiscoveryRegedit ServiceDiscoveryRegister) (*MicorService, error) {
-	if config.WebConfig == nil {
-		config.WebConfig = new(web.ServerConfig)
-	}
-	config.WebConfig.DefaultTransport = web.Transport_Json
-	serviceInfo := config.Service.GetServiceInfo()
+func newMicorService(service common.Service, serviceDiscoveryRegedit ServiceDiscoveryRegister) (*MicorService, error) {
+	serviceInfo := service.GetServiceInfo()
 	if serviceInfo == nil {
 		return nil, errors.New("没有指定 ServiceInfo")
 	}
+	webConfig := new(web.ServerConfig)
+	webConfig.ServerAddr = fmt.Sprintf("%s:%d", common.GetLocalIp(), *port)
+	webConfig.DefaultTransport = web.Transport_Json
 	logger.Info("ServiceName: %s", serviceInfo.GetServiceName())
 	logger.Info("Version: %s", serviceInfo.GetVersion())
 	logger.Info("Descriptor: %s", serviceInfo.GetDescriptor())
 	return &MicorService{
-		config:                  config,
-		server:                  web.NewServer(config.WebConfig),
-		service:                 config.Service,
+		server:                  web.NewServer(webConfig),
+		service:                 service,
 		serviceDiscoveryRegedit: serviceDiscoveryRegedit,
 	}, nil
 }
@@ -45,7 +42,7 @@ func (this *MicorService) Start() error {
 	if err != nil {
 		return err
 	}
-	if this.config.DevModule {
+	if common.IsDevModule() {
 		logger.Debug("open dev module")
 		apiDefineRquestHandler := buildApiDefineRquestHandler(serviceInfo)
 		if apiDefineRquestHandler != nil {
@@ -58,7 +55,7 @@ func (this *MicorService) Start() error {
 		return err
 	}
 	if this.serviceDiscoveryRegedit != nil {
-		err = this.serviceDiscoveryRegedit.RegService(this.config.WebConfig.ServerAddr, serviceInfo, this.service.GetEndPoints())
+		err = this.serviceDiscoveryRegedit.RegService(serviceInfo, this.service.GetEndPoints(), *port)
 		if err != nil {
 			return err
 		}
@@ -73,7 +70,6 @@ func buildApiDefineRquestHandler(serviceInfo common.ServiceInfo) web.RequestHand
 }
 
 func (this *MicorService) regeditEndpoint(endPoint common.EndPoint) error {
-	//TODO
 	return this.server.Regedit(endPoint.Path, endPoint.Method, endPoint.HandlerFunc)
 }
 
