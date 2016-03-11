@@ -7,23 +7,23 @@ import (
 	"net/http"
 
 	"github.com/coffeehc/logger"
-	"github.com/coffeehc/microserviceboot/common"
+	"github.com/coffeehc/microserviceboot/base"
 	"github.com/coffeehc/web"
 )
 
 type MicorService struct {
 	server                  *web.Server
-	service                 common.Service
+	service                 base.Service
 	serviceDiscoveryRegedit ServiceDiscoveryRegister
 }
 
-func newMicorService(service common.Service, serviceDiscoveryRegedit ServiceDiscoveryRegister) (*MicorService, error) {
+func newMicorService(service base.Service, serviceDiscoveryRegedit ServiceDiscoveryRegister) (*MicorService, error) {
 	serviceInfo := service.GetServiceInfo()
 	if serviceInfo == nil {
 		return nil, errors.New("没有指定 ServiceInfo")
 	}
 	webConfig := new(web.ServerConfig)
-	webConfig.ServerAddr = fmt.Sprintf("%s:%d", common.GetLocalIp(), *port)
+	webConfig.ServerAddr = fmt.Sprintf("%s:%d", base.GetLocalIp(), *port)
 	webConfig.DefaultTransport = web.Transport_Json
 	logger.Info("ServiceName: %s", serviceInfo.GetServiceName())
 	logger.Info("Version: %s", serviceInfo.GetVersion())
@@ -42,7 +42,7 @@ func (this *MicorService) Start() error {
 	if err != nil {
 		return err
 	}
-	if common.IsDevModule() {
+	if base.IsDevModule() {
 		logger.Debug("open dev module")
 		apiDefineRquestHandler := buildApiDefineRquestHandler(serviceInfo)
 		if apiDefineRquestHandler != nil {
@@ -63,13 +63,13 @@ func (this *MicorService) Start() error {
 	return nil
 }
 
-func buildApiDefineRquestHandler(serviceInfo common.ServiceInfo) web.RequestHandler {
+func buildApiDefineRquestHandler(serviceInfo base.ServiceInfo) web.RequestHandler {
 	return func(request *http.Request, pathFragments map[string]string, reply web.Reply) {
 		reply.With(serviceInfo.GetApiDefine()).As(web.Transport_Text)
 	}
 }
 
-func (this *MicorService) regeditEndpoint(endPoint common.EndPoint) error {
+func (this *MicorService) regeditEndpoint(endPoint base.EndPoint) error {
 	return this.server.Regedit(endPoint.Path, endPoint.Method, endPoint.HandlerFunc)
 }
 

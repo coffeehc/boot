@@ -3,18 +3,18 @@ package client
 import (
 	"fmt"
 	"github.com/benschw/dns-clb-go/clb"
-	"github.com/coffeehc/microserviceboot/common"
+	"github.com/coffeehc/microserviceboot/base"
 	"gopkg.in/yaml.v2"
 	"io/ioutil"
 	"net"
 )
 
 type ServiceClientConfig struct {
-	Info            common.ServiceInfo `yaml:"serviceInfo"`
-	DataCenter      string             `yaml:"dataCenter"`
-	Domain          string             `yaml:"domain"`
-	DNSAddress      string             `yaml:"nameServer"`
-	LoadBalanceType LoadBalanceType    `yaml:"loadBalanceType"`
+	Info            base.ServiceInfo `yaml:"serviceInfo"`
+	DataCenter      string           `yaml:"dataCenter"`
+	Domain          string           `yaml:"domain"`
+	DNSAddress      string           `yaml:"nameServer"`
+	LoadBalanceType LoadBalanceType  `yaml:"loadBalanceType"`
 }
 
 func LoadServiceClientConfig(configFile string) (*ServiceClientConfig, error) {

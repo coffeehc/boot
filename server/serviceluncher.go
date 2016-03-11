@@ -7,7 +7,7 @@ import (
 
 	"flag"
 	"github.com/coffeehc/logger"
-	"github.com/coffeehc/microserviceboot/common"
+	"github.com/coffeehc/microserviceboot/base"
 )
 
 var (
@@ -17,7 +17,7 @@ var (
 /**
  *	Service 启动
  */
-func ServiceLauncher(service common.Service, serviceDiscoveryRegedit ServiceDiscoveryRegister) {
+func ServiceLauncher(service base.Service, serviceDiscoveryRegedit ServiceDiscoveryRegister) {
 	logger.InitLogger()
 	defer logger.WaitToClose()
 	if service == nil {
@@ -37,7 +37,7 @@ func ServiceLauncher(service common.Service, serviceDiscoveryRegedit ServiceDisc
 	waitStop()
 }
 
-func startService(service common.Service) {
+func startService(service base.Service) {
 	defer func() {
 		if err := recover(); err != nil {
 			logger.Error("service crash,cause is %s", err)

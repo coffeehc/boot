@@ -5,7 +5,7 @@ import (
 	"encoding/xml"
 	"fmt"
 	"github.com/afex/hystrix-go/hystrix"
-	"github.com/coffeehc/microserviceboot/common"
+	"github.com/coffeehc/microserviceboot/base"
 	"github.com/coffeehc/resty"
 	"github.com/miekg/dns"
 	"github.com/syndtr/goleveldb/leveldb/errors"
@@ -14,7 +14,7 @@ import (
 
 type ServiceClient struct {
 	client      *resty.Client
-	serviceInfo common.ServiceInfo
+	serviceInfo base.ServiceInfo
 	apiCallers  map[string]*ApiCaller
 	config      *ServiceClientConfig
 	dnsClient   *dns.Client
@@ -27,6 +27,7 @@ func NewServiceClient(config *ServiceClientConfig, clietnSetting func(client *re
 	client := resty.New()
 	loadbalancer := config.GetLoadBalancer()
 	client.SetTransport(loadbalancer.getTransport())
+	//client.SetHeader("Agent","")
 	serviceClient := &ServiceClient{
 		config:      config,
 		client:      client,
@@ -34,7 +35,7 @@ func NewServiceClient(config *ServiceClientConfig, clietnSetting func(client *re
 		apiCallers:  make(map[string]*ApiCaller, 0),
 	}
 	client.SetHostURL(serviceClient.GetBaseUrl())
-	client.SetDebug(common.IsDevModule())
+	client.SetDebug(base.IsDevModule())
 	if clietnSetting != nil {
 		clietnSetting(client)
 	}
@@ -47,7 +48,7 @@ func (this *ServiceClient) GetServiceName() string {
 
 func (this *ServiceClient) GetBaseUrl() string {
 	tag := "pro"
-	if common.IsDevModule() {
+	if base.IsDevModule() {
 		tag = "dev"
 	}
 	return fmt.Sprintf("http://%s.%s.service.%s.%s", tag, this.serviceInfo.GetServiceName(), this.config.DataCenter, this.config.Domain)

@@ -1,4 +1,4 @@
-package common
+package base
 
 type Loadbalance interface {
 	//获取 balance信息
