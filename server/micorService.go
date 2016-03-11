@@ -12,14 +12,13 @@ import (
 )
 
 type MicorService struct {
-	config                  *MicorServiceCofig
 	server                  *web.Server
 	service                 common.Service
 	serviceDiscoveryRegedit ServiceDiscoveryRegister
 }
 
-func newMicorService(config *MicorServiceCofig, serviceDiscoveryRegedit ServiceDiscoveryRegister) (*MicorService, error) {
-	serviceInfo := config.Service.GetServiceInfo()
+func newMicorService(service common.Service, serviceDiscoveryRegedit ServiceDiscoveryRegister) (*MicorService, error) {
+	serviceInfo := service.GetServiceInfo()
 	if serviceInfo == nil {
 		return nil, errors.New("没有指定 ServiceInfo")
 	}
@@ -38,9 +37,8 @@ func newMicorService(config *MicorServiceCofig, serviceDiscoveryRegedit ServiceD
 	logger.Info("Version: %s", serviceInfo.GetVersion())
 	logger.Info("Descriptor: %s", serviceInfo.GetDescriptor())
 	return &MicorService{
-		config:                  config,
 		server:                  web.NewServer(webConfig),
-		service:                 config.Service,
+		service:                 service,
 		serviceDiscoveryRegedit: serviceDiscoveryRegedit,
 	}, nil
 }
@@ -52,7 +50,7 @@ func (this *MicorService) Start() error {
 	if err != nil {
 		return err
 	}
-	if this.config.DevModule {
+	if this.service.GetServiceInfo().GetDevModule() {
 		logger.Debug("open dev module")
 		apiDefineRquestHandler := buildApiDefineRquestHandler(serviceInfo)
 		if apiDefineRquestHandler != nil {
@@ -80,7 +78,6 @@ func buildApiDefineRquestHandler(serviceInfo common.ServiceInfo) web.RequestHand
 }
 
 func (this *MicorService) regeditEndpoint(endPoint common.EndPoint) error {
-	//TODO
 	return this.server.Regedit(endPoint.Path, endPoint.Method, endPoint.HandlerFunc)
 }
 

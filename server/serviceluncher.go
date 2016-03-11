@@ -12,15 +12,15 @@ import (
 /**
  *	Service 启动
  */
-func ServiceLauncher(config *MicorServiceCofig, serviceDiscoveryRegedit ServiceDiscoveryRegister) {
+func ServiceLauncher(service common.Service, serviceDiscoveryRegedit ServiceDiscoveryRegister) {
 	logger.InitLogger()
 	defer logger.WaitToClose()
-	if config == nil {
+	if service == nil {
 		logger.Error("service is nil")
 		return
 	}
-	startService(config.Service)
-	micorService, err := newMicorService(config, serviceDiscoveryRegedit)
+	startService(service)
+	micorService, err := newMicorService(service, serviceDiscoveryRegedit)
 	if err != nil {
 
 	}

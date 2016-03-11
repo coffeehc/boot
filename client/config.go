@@ -1,18 +1,33 @@
 package client
 
 import (
+	"fmt"
 	"github.com/benschw/dns-clb-go/clb"
 	"github.com/coffeehc/microserviceboot/common"
+	"gopkg.in/yaml.v2"
+	"io/ioutil"
 	"net"
 )
 
 type ServiceClientConfig struct {
-	DevModule       bool
-	Info            common.ServiceInfo
-	DataCenter      string
-	Domean          string
-	DNSAddress      string
-	LoadBalanceType LoadBalanceType
+	Info            common.ServiceInfo `yaml:"serviceInfo"`
+	DataCenter      string             `yaml:"dataCenter"`
+	Domain          string             `yaml:"domain"`
+	DNSAddress      string             `yaml:"nameServer"`
+	LoadBalanceType LoadBalanceType    `yaml:"loadBalanceType"`
+}
+
+func LoadServiceClientConfig(configFile string) (*ServiceClientConfig, error) {
+	data, err := ioutil.ReadFile(configFile)
+	if err != nil {
+		return nil, fmt.Errorf("加载配置文件错误:%s", err)
+	}
+	config := new(ServiceClientConfig)
+	err = yaml.Unmarshal(data, config)
+	if err != nil {
+		return nil, fmt.Errorf("解析配置文件错误:%s", err)
+	}
+	return config, nil
 }
 
 type LoadBalanceType string

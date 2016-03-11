@@ -15,7 +15,6 @@ import (
 type ServiceClient struct {
 	client      *resty.Client
 	serviceInfo common.ServiceInfo
-	devModule   bool
 	apiCallers  map[string]*ApiCaller
 	config      *ServiceClientConfig
 	dnsClient   *dns.Client
@@ -32,11 +31,10 @@ func NewServiceClient(config *ServiceClientConfig, clietnSetting func(client *re
 		config:      config,
 		client:      client,
 		serviceInfo: config.Info,
-		devModule:   config.DevModule,
 		apiCallers:  make(map[string]*ApiCaller, 0),
 	}
 	client.SetHostURL(serviceClient.GetBaseUrl())
-	client.SetDebug(config.DevModule)
+	client.SetDebug(config.Info.GetDevModule())
 	if clietnSetting != nil {
 		clietnSetting(client)
 	}
@@ -48,7 +46,7 @@ func (this *ServiceClient) GetServiceName() string {
 }
 
 func (this *ServiceClient) GetBaseUrl() string {
-	return fmt.Sprintf("%s://%s.service.%s.%s:%d", this.serviceInfo.GetScheme(), this.serviceInfo.GetServiceName(), this.config.DataCenter, this.config.Domean, this.serviceInfo.GetServerPort())
+	return fmt.Sprintf("%s://%s.service.%s.%s:%d", this.serviceInfo.GetScheme(), this.serviceInfo.GetServiceName(), this.config.DataCenter, this.config.Domain, this.serviceInfo.GetServerPort())
 }
 
 func (this *ServiceClient) ApiRegiter(command string, apiRequest ApiRequest) error {
