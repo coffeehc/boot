@@ -40,7 +40,7 @@ func _newLoadBalancer(loadBalancer clb.LoadBalancer) *LoadBalancer {
 }
 
 func (this *LoadBalancer) Dial(network, address string) (conn net.Conn, err error) {
-	host, port, err := net.SplitHostPort(address)
+	host, _, err := net.SplitHostPort(address)
 	if err != nil {
 		return nil, err
 	}
@@ -49,7 +49,7 @@ func (this *LoadBalancer) Dial(network, address string) (conn net.Conn, err erro
 		fmt.Printf("%s\n", err)
 		return nil, err
 	}
-	return this.dialer.Dial(network, net.JoinHostPort(addr.Address, port))
+	return this.dialer.Dial(network, addr.String())
 }
 
 func (this *LoadBalancer) getTransport() *http.Transport {

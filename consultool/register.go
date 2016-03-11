@@ -29,15 +29,15 @@ func NewConsulServiceRegister(consulConfig *api.Config) (*ConsulServiceRegister,
 
 }
 
-func (this *ConsulServiceRegister) RegService(serviceInfo common.ServiceInfo, endpints []common.EndPoint) error {
+func (this *ConsulServiceRegister) RegService(serviceInfo common.ServiceInfo, endpints []common.EndPoint, servicePort int) error {
 	ip := common.GetLocalIp()
 	this.serviceId = fmt.Sprintf("%s-%s", serviceInfo.GetServiceName(), ip)
 	this.checkId = fmt.Sprintf("service:%s", this.serviceId)
 	registration := &api.AgentServiceRegistration{
 		ID:                this.serviceId,
 		Name:              serviceInfo.GetServiceName(),
-		Tags:              serviceInfo.GetServiceTags(),
-		Port:              serviceInfo.GetServerPort(),
+		Tags:              common.WarpTags(serviceInfo.GetServiceTags()),
+		Port:              servicePort,
 		Address:           ip.String(),
 		EnableTagOverride: false,
 		Check: &api.AgentServiceCheck{

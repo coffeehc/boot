@@ -4,7 +4,6 @@ import (
 	"github.com/coffeehc/logger"
 	"gopkg.in/yaml.v2"
 	"io/ioutil"
-	"strings"
 )
 
 type Service interface {
@@ -13,13 +12,6 @@ type Service interface {
 	GetServiceInfo() ServiceInfo
 	GetEndPoints() []EndPoint
 }
-
-type RpcScheme string
-
-var (
-	RpcScheme_Http  = RpcScheme("http")
-	RpcScheme_https = RpcScheme("https")
-)
 
 type ServiceInfo interface {
 	//获取 Api 定义的内容
@@ -32,14 +24,6 @@ type ServiceInfo interface {
 	GetDescriptor() string
 	//获取 Service tags
 	GetServiceTags() []string
-	//获取指定的服务器端口
-	GetServerPort() int
-	//获取 RPC 协议方式()
-	GetScheme() RpcScheme
-	//如果是 Https则实现该接口
-	GetTLSCert() (cartFile, keyFiler string)
-	//是否开发模式
-	GetDevModule() bool
 }
 
 type LoadingServiceInfo struct {
@@ -99,27 +83,4 @@ func (this *LoadingServiceInfo) GetDescriptor() string {
 
 func (this *LoadingServiceInfo) GetServiceTags() []string {
 	return this.Tags
-}
-
-func (this *LoadingServiceInfo) GetServerPort() int {
-	return this.ServerPort
-}
-
-func (this *LoadingServiceInfo) GetScheme() RpcScheme {
-	switch strings.ToUpper(this.Scheme) {
-	case "HTTP":
-		return RpcScheme_Http
-	case "HTTPS":
-		return RpcScheme_https
-	default:
-		return RpcScheme_Http
-	}
-}
-
-func (this *LoadingServiceInfo) GetTLSCert() (cartFile, keyFiler string) {
-	return this.CartFile, this.KeyFile
-}
-
-func (this *LoadingServiceInfo) GetDevModule() bool {
-	return this.DevModule
 }

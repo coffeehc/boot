@@ -34,7 +34,7 @@ func NewServiceClient(config *ServiceClientConfig, clietnSetting func(client *re
 		apiCallers:  make(map[string]*ApiCaller, 0),
 	}
 	client.SetHostURL(serviceClient.GetBaseUrl())
-	client.SetDebug(config.Info.GetDevModule())
+	client.SetDebug(common.IsDevModule())
 	if clietnSetting != nil {
 		clietnSetting(client)
 	}
@@ -46,7 +46,11 @@ func (this *ServiceClient) GetServiceName() string {
 }
 
 func (this *ServiceClient) GetBaseUrl() string {
-	return fmt.Sprintf("%s://%s.service.%s.%s:%d", this.serviceInfo.GetScheme(), this.serviceInfo.GetServiceName(), this.config.DataCenter, this.config.Domain, this.serviceInfo.GetServerPort())
+	tag := "pro"
+	if common.IsDevModule() {
+		tag = "dev"
+	}
+	return fmt.Sprintf("http://%s.%s.service.%s.%s", tag, this.serviceInfo.GetServiceName(), this.config.DataCenter, this.config.Domain)
 }
 
 func (this *ServiceClient) ApiRegiter(command string, apiRequest ApiRequest) error {

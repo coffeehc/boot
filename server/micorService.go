@@ -23,16 +23,8 @@ func newMicorService(service common.Service, serviceDiscoveryRegedit ServiceDisc
 		return nil, errors.New("没有指定 ServiceInfo")
 	}
 	webConfig := new(web.ServerConfig)
-	webConfig.ServerAddr = fmt.Sprintf("%s:%d", common.GetLocalIp(), serviceInfo.GetServerPort())
+	webConfig.ServerAddr = fmt.Sprintf("%s:%d", common.GetLocalIp(), *port)
 	webConfig.DefaultTransport = web.Transport_Json
-	switch serviceInfo.GetScheme() {
-	//case common.RpcScheme_Http:
-	case common.RpcScheme_https:
-		webConfig.OpenTLS = true
-		webConfig.CertFile, webConfig.KeyFile = serviceInfo.GetTLSCert()
-	default:
-		// nothing
-	}
 	logger.Info("ServiceName: %s", serviceInfo.GetServiceName())
 	logger.Info("Version: %s", serviceInfo.GetVersion())
 	logger.Info("Descriptor: %s", serviceInfo.GetDescriptor())
@@ -50,7 +42,7 @@ func (this *MicorService) Start() error {
 	if err != nil {
 		return err
 	}
-	if this.service.GetServiceInfo().GetDevModule() {
+	if common.IsDevModule() {
 		logger.Debug("open dev module")
 		apiDefineRquestHandler := buildApiDefineRquestHandler(serviceInfo)
 		if apiDefineRquestHandler != nil {
@@ -63,7 +55,7 @@ func (this *MicorService) Start() error {
 		return err
 	}
 	if this.serviceDiscoveryRegedit != nil {
-		err = this.serviceDiscoveryRegedit.RegService(serviceInfo, this.service.GetEndPoints())
+		err = this.serviceDiscoveryRegedit.RegService(serviceInfo, this.service.GetEndPoints(), *port)
 		if err != nil {
 			return err
 		}

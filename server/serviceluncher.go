@@ -5,8 +5,13 @@ import (
 	"os/signal"
 	"syscall"
 
+	"flag"
 	"github.com/coffeehc/logger"
 	"github.com/coffeehc/microserviceboot/common"
+)
+
+var (
+	port = flag.Int("port", 8888, "服务端口")
 )
 
 /**
@@ -56,10 +61,6 @@ func startService(service common.Service) {
 	}
 	logger.Info("服务已正常启动")
 }
-
-//func stop()  {
-//
-//}
 
 /*
 	wait,一般是可执行函数的最后用于阻止程序退出
