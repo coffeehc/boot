@@ -2,11 +2,10 @@ package consultool
 
 import (
 	"fmt"
-	"net"
 	"time"
 
 	"github.com/coffeehc/logger"
-	"github.com/coffeehc/microserviceboot/common"
+	"github.com/coffeehc/microserviceboot/base"
 	"github.com/hashicorp/consul/api"
 )
 
@@ -30,20 +29,15 @@ func NewConsulServiceRegister(consulConfig *api.Config) (*ConsulServiceRegister,
 
 }
 
-func (this *ConsulServiceRegister) RegService(serverAddr string, serviceInfo common.ServiceInfo, endpints []common.EndPoint) error {
-	addr, _ := net.ResolveTCPAddr("tcp", serverAddr)
-	ip := addr.IP
-	if ip == nil {
-		ip = common.GetLocalIp()
-	}
-	logger.Debug("addr is %t")
-	this.serviceId = fmt.Sprintf("%s-%s", serviceInfo.GetServiceName(), ip.String())
+func (this *ConsulServiceRegister) RegService(serviceInfo base.ServiceInfo, endpints []base.EndPoint, servicePort int) error {
+	ip := base.GetLocalIp()
+	this.serviceId = fmt.Sprintf("%s-%s", serviceInfo.GetServiceName(), ip)
 	this.checkId = fmt.Sprintf("service:%s", this.serviceId)
 	registration := &api.AgentServiceRegistration{
 		ID:                this.serviceId,
 		Name:              serviceInfo.GetServiceName(),
-		Tags:              serviceInfo.GetServiceTags(),
-		Port:              addr.Port,
+		Tags:              base.WarpTags(serviceInfo.GetServiceTags()),
+		Port:              servicePort,
 		Address:           ip.String(),
 		EnableTagOverride: false,
 		Check: &api.AgentServiceCheck{
