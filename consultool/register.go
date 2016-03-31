@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/coffeehc/logger"
-	"github.com/coffeehc/microserviceboot/common"
+	"github.com/coffeehc/microserviceboot/base"
 	"github.com/hashicorp/consul/api"
 )
 
@@ -29,14 +29,14 @@ func NewConsulServiceRegister(consulConfig *api.Config) (*ConsulServiceRegister,
 
 }
 
-func (this *ConsulServiceRegister) RegService(serviceInfo common.ServiceInfo, endpints []common.EndPoint, servicePort int) error {
-	ip := common.GetLocalIp()
+func (this *ConsulServiceRegister) RegService(serviceInfo base.ServiceInfo, endpints []base.EndPoint, servicePort int) error {
+	ip := base.GetLocalIp()
 	this.serviceId = fmt.Sprintf("%s-%s", serviceInfo.GetServiceName(), ip)
 	this.checkId = fmt.Sprintf("service:%s", this.serviceId)
 	registration := &api.AgentServiceRegistration{
 		ID:                this.serviceId,
 		Name:              serviceInfo.GetServiceName(),
-		Tags:              common.WarpTags(serviceInfo.GetServiceTags()),
+		Tags:              base.WarpTags(serviceInfo.GetServiceTags()),
 		Port:              servicePort,
 		Address:           ip.String(),
 		EnableTagOverride: false,
