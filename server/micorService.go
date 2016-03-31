@@ -50,6 +50,7 @@ func (this *MicorService) Start() error {
 		}
 		this.server.AddFirstFilter("/*", web.SimpleAccessLogFilter)
 	}
+	//TODO 拦截异常返回
 	err = this.server.Start()
 	if err != nil {
 		return err
@@ -76,7 +77,8 @@ func (this *MicorService) regeditEndpoint(endPoint base.EndPoint) error {
 func (this *MicorService) regeditEndpoints() error {
 	endPoints := this.service.GetEndPoints()
 	if len(endPoints) == 0 {
-		return errors.New("not regedit any endpoint")
+		logger.Warn("not regedit any endpoint")
+		return nil
 	}
 	for _, endPoint := range endPoints {
 		err := this.regeditEndpoint(endPoint)

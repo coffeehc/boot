@@ -15,6 +15,7 @@ type ServiceClientConfig struct {
 	Domain          string           `yaml:"domain"`
 	DNSAddress      string           `yaml:"nameServer"`
 	LoadBalanceType LoadBalanceType  `yaml:"loadBalanceType"`
+	DirectBaseUrl   string           `yaml:"directBaseUrl"`
 }
 
 func LoadServiceClientConfig(configFile string) (*ServiceClientConfig, error) {

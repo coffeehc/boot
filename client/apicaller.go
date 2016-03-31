@@ -4,11 +4,25 @@ import (
 	"github.com/coffeehc/resty"
 )
 
-type ApiRequest func(request *resty.Request, query map[string]string, body interface{}) (*resty.Response, error)
+type RequestMethod string
+
+const (
+	RequestMethod_GET     = RequestMethod("GET")
+	RequestMethod_POST    = RequestMethod("POST")
+	RequestMethod_PUT     = RequestMethod("PUT")
+	RequestMethod_DELETE  = RequestMethod("DELETE")
+	RequestMethod_PATCH   = RequestMethod("PATCH")
+	RequestMethod_HEAD    = RequestMethod("HEAD")
+	RequestMethod_OPTIONS = RequestMethod("OPTIONS")
+)
+
+type ApiRequestSetting func(request *resty.Request)
 
 type ApiCaller struct {
-	command    string
-	apiRequest ApiRequest
+	command           string
+	apiRequestSetting ApiRequestSetting
+	method            RequestMethod
+	uri               string
 }
 
 func (this *ApiCaller) GetCommand() string {

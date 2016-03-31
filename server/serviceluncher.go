@@ -6,6 +6,7 @@ import (
 	"syscall"
 
 	"flag"
+	"fmt"
 	"github.com/coffeehc/logger"
 	"github.com/coffeehc/microserviceboot/base"
 )
@@ -24,29 +25,42 @@ func ServiceLauncher(service base.Service, serviceDiscoveryRegedit ServiceDiscov
 		logger.Error("service is nil")
 		return
 	}
-	startService(service)
-	micorService, err := newMicorService(service, serviceDiscoveryRegedit)
+	err := startService(service)
+	defer func(service base.Service) {
+		if service != nil && service.Stop != nil {
+			stopErr := service.Stop()
+			if stopErr != nil {
+				fmt.Printf("关闭服务失败,%s\n", stopErr)
+				os.Exit(-1)
+			}
+		}
+	}(service)
 	if err != nil {
-
+		return
 	}
+	//if serviceDiscoveryRegedit == nil{
+	//	serviceDiscoveryRegedit,_ = consultool.NewConsulServiceRegister(nil)
+	//}
+	micorService, err := newMicorService(service, serviceDiscoveryRegedit)
 	err = micorService.Start()
 	if err != nil {
 		logger.Error("启动微服务出错:%s", err)
 		return
 	}
 	waitStop()
+	if service != nil && service.Stop != nil {
+		stopErr := service.Stop()
+		if stopErr != nil {
+			fmt.Printf("关闭服务失败,%s\n", stopErr)
+		}
+	}
 }
 
-func startService(service base.Service) {
+func startService(service base.Service) (err error) {
 	defer func() {
-		if err := recover(); err != nil {
-			logger.Error("service crash,cause is %s", err)
-		}
-		if service != nil && service.Stop != nil {
-			stopErr := service.Stop()
-			if stopErr != nil {
-				logger.Error("关闭服务失败,%s", stopErr)
-			}
+		if err1 := recover(); err1 != nil {
+			fmt.Printf("service crash,cause is %s\n", err1)
+			err = fmt.Errorf("service crash,cause is %s", err1)
 		}
 	}()
 	if service == nil {
@@ -55,11 +69,12 @@ func startService(service base.Service) {
 	if service.Run == nil {
 		panic("没有指定Run方法")
 	}
-	err := service.Run()
-	if err != nil {
-		panic(logger.Error("服务运行错误:%s", err))
+	err1 := service.Run()
+	if err1 != nil {
+		panic(logger.Error("服务运行错误:%s", err1))
 	}
 	logger.Info("服务已正常启动")
+	return
 }
 
 /*
