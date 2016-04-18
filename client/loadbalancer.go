@@ -1,8 +1,8 @@
 package client
 
 import (
-	"fmt"
 	"github.com/benschw/dns-clb-go/clb"
+	"github.com/coffeehc/logger"
 	"net"
 	"net/http"
 	"time"
@@ -16,15 +16,15 @@ type LoadBalancer struct {
 
 func newDefaultLoadBalancer(lbType clb.LoadBalancerType) *LoadBalancer {
 	loadBalancer := clb.NewDefaultClb(lbType)
-	return _newLoadBalancer(loadBalancer)
+	return _newLoadBalancer(loadBalancer, false)
 }
 
 func newLoadBalancer(nameServer string, port string, lbType clb.LoadBalancerType) *LoadBalancer {
-	loadBalancer := clb.NewClb(nameServer, port, lbType)
-	return _newLoadBalancer(loadBalancer)
+	loadBalancer := clb.NewTtlCacheClb(nameServer, port, lbType, 1)
+	return _newLoadBalancer(loadBalancer, true)
 }
 
-func _newLoadBalancer(loadBalancer clb.LoadBalancer) *LoadBalancer {
+func _newLoadBalancer(loadBalancer clb.LoadBalancer, useDNSLB bool) *LoadBalancer {
 	this := &LoadBalancer{
 		loadBalancer: loadBalancer,
 		dialer: &net.Dialer{
@@ -32,9 +32,11 @@ func _newLoadBalancer(loadBalancer clb.LoadBalancer) *LoadBalancer {
 			KeepAlive: 30 * time.Second,
 		},
 	}
-	this.transport = &http.Transport{
-		MaxIdleConnsPerHost: 10,
-		Dial:                this.Dial,
+	if useDNSLB {
+		this.transport = &http.Transport{
+			MaxIdleConnsPerHost: 10,
+			Dial:                this.Dial,
+		}
 	}
 	return this
 }
@@ -46,7 +48,7 @@ func (this *LoadBalancer) Dial(network, address string) (conn net.Conn, err erro
 	}
 	addr, err := this.loadBalancer.GetAddress(host)
 	if err != nil {
-		fmt.Printf("%s\n", err)
+		logger.Error("%s\n", err)
 		return nil, err
 	}
 	return this.dialer.Dial(network, addr.String())

@@ -1,12 +1,20 @@
 package client
 
 import (
+	"flag"
 	"fmt"
 	"github.com/benschw/dns-clb-go/clb"
+	"github.com/coffeehc/logger"
 	"github.com/coffeehc/microserviceboot/base"
 	"gopkg.in/yaml.v2"
 	"io/ioutil"
 	"net"
+)
+
+var (
+	dataCenter = flag.String("DataCenter", "", "DataCenter")
+	domain     = flag.String("domain", "", "")
+	dnsAddress = flag.String("dnsAddress", "", "DNSAddress")
 )
 
 type ServiceClientConfig struct {
@@ -16,6 +24,20 @@ type ServiceClientConfig struct {
 	DNSAddress      string           `yaml:"nameServer"`
 	LoadBalanceType LoadBalanceType  `yaml:"loadBalanceType"`
 	DirectBaseUrl   string           `yaml:"directBaseUrl"`
+}
+
+func BuildUserServiceApiConfig(serviceInfo base.ServiceInfo, loadBalanceType LoadBalanceType, directBaseUrl string) *ServiceClientConfig {
+	logger.Info("dataCenter is [%s]", *dataCenter)
+	logger.Info("domain is [%s]", *domain)
+	logger.Info("dnsAddress is [%s]", *dnsAddress)
+	return &ServiceClientConfig{
+		Info:            serviceInfo,
+		DataCenter:      *dataCenter,
+		Domain:          *domain,
+		DNSAddress:      *dnsAddress,
+		LoadBalanceType: loadBalanceType,
+		DirectBaseUrl:   directBaseUrl,
+	}
 }
 
 func LoadServiceClientConfig(configFile string) (*ServiceClientConfig, error) {

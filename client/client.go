@@ -6,11 +6,17 @@ import (
 	"fmt"
 	"github.com/afex/hystrix-go/hystrix"
 	"github.com/coffeehc/microserviceboot/base"
-	"github.com/coffeehc/resty"
+	"github.com/go-resty/resty"
 	"github.com/miekg/dns"
 	"github.com/syndtr/goleveldb/leveldb/errors"
+	"net/url"
 	"strings"
 )
+
+func init() {
+	hystrix.DefaultMaxConcurrent = 2000
+	hystrix.DefaultVolumeThreshold = 4000
+}
 
 type ServiceClient struct {
 	client      *resty.Client
@@ -29,6 +35,7 @@ func NewServiceClient(config *ServiceClientConfig, clientSetting func(client *re
 		loadbalancer := config.GetLoadBalancer()
 		client.SetTransport(loadbalancer.getTransport())
 	}
+	client.SetHeader("Accept", "application/json")
 	client.SetHeader("User-Agent", "micorserviceboot httpclient 0.1")
 	client.SetRESTMode()
 	serviceClient := &ServiceClient{
@@ -61,7 +68,7 @@ func (this *ServiceClient) GetBaseUrl() string {
 	return fmt.Sprintf("http://%s.%s.service.%s.%s", tag, this.serviceInfo.GetServiceName(), this.config.DataCenter, this.config.Domain)
 }
 
-func (this *ServiceClient) ApiRegiter(command string, method RequestMethod, uri string, apiRequestSetting ApiRequestSetting) error {
+func (this *ServiceClient) ApiRegister(command string, method RequestMethod, uri string, apiRequestSetting ApiRequestSetting) error {
 	if this.apiCallers[command] == nil {
 		apiCaller := &ApiCaller{
 			command:           command,
@@ -76,8 +83,8 @@ func (this *ServiceClient) ApiRegiter(command string, method RequestMethod, uri 
 
 }
 
-func (this *ServiceClient) SyncCallApiExt(command string, query map[string]string, body interface{}, result interface{}) error {
-	resp, err := this.SyncCallApi(command, query, body)
+func (this *ServiceClient) SyncCallApiExt(command string, pathFragement map[string]string, query url.Values, body interface{}, result interface{}) error {
+	resp, err := this.SyncCallApi(command, pathFragement, query, body)
 	if err != nil {
 		return err
 	}
@@ -92,7 +99,7 @@ func (this *ServiceClient) SyncCallApiExt(command string, query map[string]strin
 	}
 }
 
-func (this *ServiceClient) SyncCallApi(command string, query map[string]string, body interface{}) (*resty.Response, error) {
+func (this *ServiceClient) SyncCallApi(command string, pathFragement map[string]string, query url.Values, body interface{}) (*resty.Response, error) {
 	caller, ok := this.apiCallers[command]
 	if !ok {
 		return nil, fmt.Errorf("没有注册过cmmand[%s]", command)
@@ -100,7 +107,7 @@ func (this *ServiceClient) SyncCallApi(command string, query map[string]string, 
 	var response *resty.Response
 	err := hystrix.Do(command, func() error {
 		var err1 error
-		response, err1 = doCommand(this.client, caller, query, body)
+		response, err1 = doCommand(this.client, caller, query, body, pathFragement)
 		return err1
 	}, func(err error) error {
 		//TODO 处理异常
@@ -112,7 +119,7 @@ func (this *ServiceClient) SyncCallApi(command string, query map[string]string, 
 	return response, nil
 }
 
-func (this *ServiceClient) AsyncCallApi(command string, query map[string]string, body interface{}) (chan<- *resty.Response, error) {
+func (this *ServiceClient) AsyncCallApi(command string, pathFragement map[string]string, query url.Values, body interface{}) (chan<- *resty.Response, error) {
 	caller, ok := this.apiCallers[command]
 	if !ok {
 		return nil, fmt.Errorf("没有注册过cmmand[%s]", command)
@@ -120,7 +127,7 @@ func (this *ServiceClient) AsyncCallApi(command string, query map[string]string,
 	response := make(chan *resty.Response)
 	err := hystrix.Go(command, func() error {
 		var err1 error
-		res, err1 := doCommand(this.client, caller, query, body)
+		res, err1 := doCommand(this.client, caller, query, body, pathFragement)
 		response <- res
 		return err1
 	}, func(err error) error {
@@ -135,13 +142,19 @@ func (this *ServiceClient) AsyncCallApi(command string, query map[string]string,
 	return response, nil
 }
 
-func doCommand(client *resty.Client, caller *ApiCaller, query map[string]string, body interface{}) (*resty.Response, error) {
+func doCommand(client *resty.Client, caller *ApiCaller, query url.Values, body interface{}, pathFragement map[string]string) (*resty.Response, error) {
 	request := client.R()
 	if caller.apiRequestSetting != nil {
 		caller.apiRequestSetting(request)
 	}
-	request.SetQueryParams(query)
+	request.QueryParam = query
 	request.SetBody(body)
-	return request.Execute(string(caller.method), caller.uri)
-
+	if pathFragement == nil || len(pathFragement) == 0 {
+		return request.Execute(string(caller.method), caller.uri)
+	}
+	uri := caller.uri
+	for k, v := range pathFragement {
+		uri = strings.Replace(uri, "{"+k+"}", v, 0)
+	}
+	return request.Execute(string(caller.method), uri)
 }

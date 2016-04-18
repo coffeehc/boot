@@ -1,8 +1,7 @@
 package client
 
-import (
-	"github.com/coffeehc/resty"
-)
+import ()
+import "github.com/go-resty/resty"
 
 type RequestMethod string
 

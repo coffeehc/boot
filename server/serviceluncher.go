@@ -48,12 +48,6 @@ func ServiceLauncher(service base.Service, serviceDiscoveryRegedit ServiceDiscov
 		return
 	}
 	waitStop()
-	if service != nil && service.Stop != nil {
-		stopErr := service.Stop()
-		if stopErr != nil {
-			fmt.Printf("关闭服务失败,%s\n", stopErr)
-		}
-	}
 }
 
 func startService(service base.Service) (err error) {

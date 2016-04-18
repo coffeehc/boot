@@ -48,6 +48,7 @@ func (this *MicorService) Start() error {
 		if apiDefineRquestHandler != nil {
 			this.server.Regedit(fmt.Sprintf("/apidefine/%s.api", serviceInfo.GetServiceName()), web.GET, apiDefineRquestHandler)
 		}
+
 		this.server.AddFirstFilter("/*", web.SimpleAccessLogFilter)
 	}
 	//TODO 拦截异常返回
