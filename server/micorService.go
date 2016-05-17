@@ -9,6 +9,7 @@ import (
 	"github.com/coffeehc/logger"
 	"github.com/coffeehc/microserviceboot/base"
 	"github.com/coffeehc/web"
+	"github.com/coffeehc/web/pprof"
 )
 
 type MicorService struct {
@@ -42,6 +43,7 @@ func (this *MicorService) Start() error {
 	if err != nil {
 		return err
 	}
+	pprof.RegeditPprof(this.server)
 	if base.IsDevModule() {
 		logger.Debug("open dev module")
 		apiDefineRquestHandler := buildApiDefineRquestHandler(serviceInfo)

@@ -83,10 +83,13 @@ func (this *ServiceClient) ApiRegister(command string, method RequestMethod, uri
 
 }
 
-func (this *ServiceClient) SyncCallApiExt(command string, pathFragement map[string]string, query url.Values, body interface{}, result interface{}) error {
+func (this *ServiceClient) SyncCallApiExt(command string, pathFragement map[string]string, query url.Values, body RequestBody, result interface{}) error {
 	resp, err := this.SyncCallApi(command, pathFragement, query, body)
 	if err != nil {
 		return err
+	}
+	if resp.StatusCode() >= 400 {
+		return errors.New(fmt.Sprintf("%s", resp.Body()))
 	}
 	contentType := resp.Header().Get("Content-Type")
 	switch {
@@ -99,7 +102,7 @@ func (this *ServiceClient) SyncCallApiExt(command string, pathFragement map[stri
 	}
 }
 
-func (this *ServiceClient) SyncCallApi(command string, pathFragement map[string]string, query url.Values, body interface{}) (*resty.Response, error) {
+func (this *ServiceClient) SyncCallApi(command string, pathFragement map[string]string, query url.Values, body RequestBody) (*resty.Response, error) {
 	caller, ok := this.apiCallers[command]
 	if !ok {
 		return nil, fmt.Errorf("没有注册过cmmand[%s]", command)
@@ -119,7 +122,7 @@ func (this *ServiceClient) SyncCallApi(command string, pathFragement map[string]
 	return response, nil
 }
 
-func (this *ServiceClient) AsyncCallApi(command string, pathFragement map[string]string, query url.Values, body interface{}) (chan<- *resty.Response, error) {
+func (this *ServiceClient) AsyncCallApi(command string, pathFragement map[string]string, query url.Values, body RequestBody) (chan<- *resty.Response, error) {
 	caller, ok := this.apiCallers[command]
 	if !ok {
 		return nil, fmt.Errorf("没有注册过cmmand[%s]", command)
@@ -142,13 +145,15 @@ func (this *ServiceClient) AsyncCallApi(command string, pathFragement map[string
 	return response, nil
 }
 
-func doCommand(client *resty.Client, caller *ApiCaller, query url.Values, body interface{}, pathFragement map[string]string) (*resty.Response, error) {
+func doCommand(client *resty.Client, caller *ApiCaller, query url.Values, body RequestBody, pathFragement map[string]string) (*resty.Response, error) {
 	request := client.R()
 	if caller.apiRequestSetting != nil {
 		caller.apiRequestSetting(request)
 	}
 	request.QueryParam = query
-	request.SetBody(body)
+	if body != nil {
+		body.SetBody(request)
+	}
 	if pathFragement == nil || len(pathFragement) == 0 {
 		return request.Execute(string(caller.method), caller.uri)
 	}
