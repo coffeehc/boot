@@ -1,4 +1,4 @@
-package server
+package serviceboot
 
 import (
 	"os"
@@ -18,7 +18,7 @@ var (
 /**
  *	Service 启动
  */
-func ServiceLauncher(service base.Service, serviceDiscoveryRegedit ServiceDiscoveryRegister) {
+func ServiceLauncher(service base.Service) {
 	logger.InitLogger()
 	defer logger.WaitToClose()
 	if service == nil {
@@ -36,20 +36,18 @@ func ServiceLauncher(service base.Service, serviceDiscoveryRegedit ServiceDiscov
 		}
 	}(service)
 	if err != nil {
+		fmt.Printf("start service error,%s\n", err)
 		return
 	}
-	//if serviceDiscoveryRegedit == nil{
-	//	serviceDiscoveryRegedit,_ = consultool.NewConsulServiceRegister(nil)
-	//}
-	micorService, err := newMicorService(service, serviceDiscoveryRegedit)
-	err = micorService.Start()
+	micorService, err := newMicroService(service, service.GetServiceDiscoveryRegister())
+	//err = micorService.Start()
 	if err != nil {
-		logger.Error("启动微服务出错:%s", err)
+		fmt.Printf("初始化微服务出错:%s\n", err)
 		return
 	}
+	micorService.Start()
 	waitStop()
 }
-
 func startService(service base.Service) (err error) {
 	defer func() {
 		if err1 := recover(); err1 != nil {
@@ -62,6 +60,12 @@ func startService(service base.Service) (err error) {
 	}
 	if service.Run == nil {
 		panic("没有指定Run方法")
+	}
+	if service.Init != nil {
+		err := service.Init()
+		if err != nil {
+			panic(err)
+		}
 	}
 	err1 := service.Run()
 	if err1 != nil {

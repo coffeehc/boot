@@ -7,10 +7,12 @@ import (
 )
 
 type Service interface {
+	Init() error
 	Run() error
 	Stop() error
 	GetServiceInfo() ServiceInfo
 	GetEndPoints() []EndPoint
+	GetServiceDiscoveryRegister() ServiceDiscoveryRegister
 }
 
 type ServiceInfo interface {

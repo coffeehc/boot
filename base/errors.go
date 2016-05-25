@@ -19,10 +19,10 @@ func NewSimpleError(code int32, message string) Error {
 }
 
 type ErrorResponse struct {
-	Errors []Error `json:"errors"`
+	Errors Error `json:"error"`
 }
 
-func NewErrorResponse(errs ...Error) ErrorResponse {
+func NewErrorResponse(errs Error) ErrorResponse {
 	return ErrorResponse{errs}
 }
 

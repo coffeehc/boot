@@ -1,4 +1,4 @@
-package server
+package serviceboot
 
 import (
 	"errors"
@@ -6,19 +6,26 @@ import (
 	"fmt"
 	"net/http"
 
+	"flag"
 	"github.com/coffeehc/logger"
 	"github.com/coffeehc/microserviceboot/base"
 	"github.com/coffeehc/web"
 	"github.com/coffeehc/web/pprof"
+	"os"
+	"time"
 )
 
-type MicorService struct {
-	server                  *web.Server
-	service                 base.Service
-	serviceDiscoveryRegedit ServiceDiscoveryRegister
+type MicroService struct {
+	server                   *web.Server
+	service                  base.Service
+	serviceDiscoveryRegister base.ServiceDiscoveryRegister
 }
 
-func newMicorService(service base.Service, serviceDiscoveryRegedit ServiceDiscoveryRegister) (*MicorService, error) {
+func newMicroService(service base.Service, serviceDiscoveryRegedit base.ServiceDiscoveryRegister) (*MicroService, error) {
+	if flag.Lookup("help") != nil {
+		flag.PrintDefaults()
+		os.Exit(0)
+	}
 	serviceInfo := service.GetServiceInfo()
 	if serviceInfo == nil {
 		return nil, errors.New("没有指定 ServiceInfo")
@@ -29,16 +36,17 @@ func newMicorService(service base.Service, serviceDiscoveryRegedit ServiceDiscov
 	logger.Info("ServiceName: %s", serviceInfo.GetServiceName())
 	logger.Info("Version: %s", serviceInfo.GetVersion())
 	logger.Info("Descriptor: %s", serviceInfo.GetDescriptor())
-	return &MicorService{
-		server:                  web.NewServer(webConfig),
-		service:                 service,
-		serviceDiscoveryRegedit: serviceDiscoveryRegedit,
+	return &MicroService{
+		server:                   web.NewServer(webConfig),
+		service:                  service,
+		serviceDiscoveryRegister: serviceDiscoveryRegedit,
 	}, nil
 }
 
-func (this *MicorService) Start() error {
+func (this *MicroService) Start() error {
+	logger.Info("Service startting")
+	startTime := time.Now()
 	serviceInfo := this.service.GetServiceInfo()
-	logger.Info("MicorService start")
 	err := this.regeditEndpoints()
 	if err != nil {
 		return err
@@ -46,9 +54,9 @@ func (this *MicorService) Start() error {
 	pprof.RegeditPprof(this.server)
 	if base.IsDevModule() {
 		logger.Debug("open dev module")
-		apiDefineRquestHandler := buildApiDefineRquestHandler(serviceInfo)
-		if apiDefineRquestHandler != nil {
-			this.server.Regedit(fmt.Sprintf("/apidefine/%s.api", serviceInfo.GetServiceName()), web.GET, apiDefineRquestHandler)
+		apiDefineRequestHandler := buildApiDefineRquestHandler(serviceInfo)
+		if apiDefineRequestHandler != nil {
+			this.server.Regedit(fmt.Sprintf("/apidefine/%s.api", serviceInfo.GetServiceName()), web.GET, apiDefineRequestHandler)
 		}
 
 		this.server.AddFirstFilter("/*", web.SimpleAccessLogFilter)
@@ -58,12 +66,13 @@ func (this *MicorService) Start() error {
 	if err != nil {
 		return err
 	}
-	if this.serviceDiscoveryRegedit != nil {
-		err = this.serviceDiscoveryRegedit.RegService(serviceInfo, this.service.GetEndPoints(), *port)
+	if this.serviceDiscoveryRegister != nil {
+		err = this.serviceDiscoveryRegister.RegService(serviceInfo, this.service.GetEndPoints(), *port)
 		if err != nil {
 			return err
 		}
 	}
+	logger.Info("Service started [%s]", time.Since(startTime))
 	return nil
 }
 
@@ -73,11 +82,13 @@ func buildApiDefineRquestHandler(serviceInfo base.ServiceInfo) web.RequestHandle
 	}
 }
 
-func (this *MicorService) regeditEndpoint(endPoint base.EndPoint) error {
-	return this.server.Regedit(endPoint.Path, endPoint.Method, endPoint.HandlerFunc)
+func (this *MicroService) regeditEndpoint(endPoint base.EndPoint) error {
+	metadata := endPoint.Metadata
+	logger.Info("register endpoint [%s] %s %s", metadata.Method, metadata.Path, metadata.Description)
+	return this.server.Regedit(metadata.Path, metadata.Method, endPoint.HandlerFunc)
 }
 
-func (this *MicorService) regeditEndpoints() error {
+func (this *MicroService) regeditEndpoints() error {
 	endPoints := this.service.GetEndPoints()
 	if len(endPoints) == 0 {
 		logger.Warn("not regedit any endpoint")
