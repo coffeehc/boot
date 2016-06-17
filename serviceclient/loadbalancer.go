@@ -1,11 +1,17 @@
-package client
+package serviceclient
 
 import (
-	"github.com/benschw/dns-clb-go/clb"
-	"github.com/coffeehc/logger"
 	"net"
 	"net/http"
 	"time"
+
+	"github.com/benschw/dns-clb-go/clb"
+	"github.com/coffeehc/logger"
+)
+
+var (
+	LoadBalance_RoundRobin = LoadBalanceType("RoundRobin")
+	LoadBalance_Random     = LoadBalanceType("Random")
 )
 
 type LoadBalancer struct {
@@ -14,17 +20,12 @@ type LoadBalancer struct {
 	transport    *http.Transport
 }
 
-func newDefaultLoadBalancer(lbType clb.LoadBalancerType) *LoadBalancer {
-	loadBalancer := clb.NewDefaultClb(lbType)
-	return _newLoadBalancer(loadBalancer, false)
-}
-
 func newLoadBalancer(nameServer string, port string, lbType clb.LoadBalancerType) *LoadBalancer {
 	loadBalancer := clb.NewTtlCacheClb(nameServer, port, lbType, 1)
-	return _newLoadBalancer(loadBalancer, true)
+	return _newLoadBalancer(loadBalancer)
 }
 
-func _newLoadBalancer(loadBalancer clb.LoadBalancer, useDNSLB bool) *LoadBalancer {
+func _newLoadBalancer(loadBalancer clb.LoadBalancer) *LoadBalancer {
 	this := &LoadBalancer{
 		loadBalancer: loadBalancer,
 		dialer: &net.Dialer{
@@ -32,11 +33,9 @@ func _newLoadBalancer(loadBalancer clb.LoadBalancer, useDNSLB bool) *LoadBalance
 			KeepAlive: 30 * time.Second,
 		},
 	}
-	if useDNSLB {
-		this.transport = &http.Transport{
-			MaxIdleConnsPerHost: 10,
-			Dial:                this.Dial,
-		}
+	this.transport = &http.Transport{
+		MaxIdleConnsPerHost: 10,
+		Dial:                this.Dial,
 	}
 	return this
 }

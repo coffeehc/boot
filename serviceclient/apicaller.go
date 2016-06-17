@@ -1,7 +1,6 @@
-package client
+package serviceclient
 
-import ()
-import "github.com/go-resty/resty"
+import "github.com/coffeehc/microserviceboot/base"
 
 type RequestMethod string
 
@@ -15,15 +14,7 @@ const (
 	RequestMethod_OPTIONS = RequestMethod("OPTIONS")
 )
 
-type ApiRequestSetting func(request *resty.Request)
-
 type ApiCaller struct {
-	command           string
-	apiRequestSetting ApiRequestSetting
-	method            RequestMethod
-	uri               string
-}
-
-func (this *ApiCaller) GetCommand() string {
-	return this.command
+	Command      string
+	EndpointMeta base.EndPointMeta
 }
