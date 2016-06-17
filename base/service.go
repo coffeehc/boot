@@ -1,13 +1,15 @@
 package base
 
 import (
-	"github.com/coffeehc/logger"
-	"gopkg.in/yaml.v2"
 	"io/ioutil"
+
+	"github.com/coffeehc/logger"
+	"github.com/coffeehc/web"
+	"gopkg.in/yaml.v2"
 )
 
 type Service interface {
-	Init() error
+	Init(configPath string, server *web.Server) error
 	Run() error
 	Stop() error
 	GetServiceInfo() ServiceInfo

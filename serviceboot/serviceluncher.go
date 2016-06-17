@@ -1,18 +1,14 @@
 package serviceboot
 
 import (
+	"fmt"
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 
-	"flag"
-	"fmt"
 	"github.com/coffeehc/logger"
 	"github.com/coffeehc/microserviceboot/base"
-)
-
-var (
-	port = flag.Int("port", 8888, "服务端口")
 )
 
 /**
@@ -25,7 +21,17 @@ func ServiceLauncher(service base.Service) {
 		logger.Error("service is nil")
 		return
 	}
-	err := startService(service)
+	microService, err := newMicroService(service)
+	if err != nil {
+		fmt.Printf("初始化微服务出错:%s\n", err)
+		return
+	}
+	err = microService.init()
+	if err != nil {
+		fmt.Printf("初始化微服务出错:%s\n", err)
+		return
+	}
+	err = startService(service)
 	defer func(service base.Service) {
 		if service != nil && service.Stop != nil {
 			stopErr := service.Stop()
@@ -39,13 +45,12 @@ func ServiceLauncher(service base.Service) {
 		fmt.Printf("start service error,%s\n", err)
 		return
 	}
-	micorService, err := newMicroService(service, service.GetServiceDiscoveryRegister())
-	//err = micorService.Start()
+	err = microService.start()
 	if err != nil {
-		fmt.Printf("初始化微服务出错:%s\n", err)
-		return
+		logger.Error("service start fail. %s", err)
+		time.Sleep(time.Second)
+		os.Exit(-1)
 	}
-	micorService.Start()
 	waitStop()
 }
 func startService(service base.Service) (err error) {
@@ -60,12 +65,6 @@ func startService(service base.Service) (err error) {
 	}
 	if service.Run == nil {
 		panic("没有指定Run方法")
-	}
-	if service.Init != nil {
-		err := service.Init()
-		if err != nil {
-			panic(err)
-		}
 	}
 	err1 := service.Run()
 	if err1 != nil {

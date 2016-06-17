@@ -2,11 +2,12 @@ package databaseservice
 
 import (
 	"fmt"
+	"time"
+
 	"github.com/coffeehc/logger"
 	"github.com/coffeehc/microserviceboot/base"
 	"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm/dialects/mysql"
-	"time"
 )
 
 type DatabaseConfig struct {

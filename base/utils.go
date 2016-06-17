@@ -3,18 +3,31 @@ package base
 import (
 	"net"
 
-	"github.com/coffeehc/logger"
-	"gopkg.in/yaml.v2"
+	"crypto/rand"
+	"encoding/base64"
 	"io/ioutil"
 	"os"
 	"os/exec"
 	"path"
 	"path/filepath"
+
+	"github.com/coffeehc/logger"
+	"gopkg.in/yaml.v2"
 )
 
 var (
 	localIp = net.IPv4(127, 0, 0, 1)
 )
+
+func GetRand(size int) string {
+	bs := make([]byte, size)
+	_, err := rand.Read(bs)
+	if err != nil {
+		return GetRand(size)
+	}
+	return base64.RawStdEncoding.EncodeToString(bs)
+
+}
 
 func GetLocalIp() net.IP {
 	addrs, err := net.InterfaceAddrs()
@@ -38,7 +51,7 @@ func GetDefaultConfigPath(configPath string) string {
 		configPath = path.Join(GetAppDir(), "config.yml")
 		_, err := os.Open(configPath)
 		if err != nil {
-			logger.Error("%s 不存在", configPath)
+			//logger.Error("%s 不存在", configPath)
 			dir, err := os.Getwd()
 			if err != nil {
 				logger.Error("获取不到工作目录")
@@ -47,7 +60,7 @@ func GetDefaultConfigPath(configPath string) string {
 			configPath = path.Join(dir, "config.yml")
 			_, err = os.Open(configPath)
 			if err != nil {
-				logger.Error("%s 不存在", configPath)
+				//logger.Error("%s 不存在", configPath)
 				return ""
 			}
 		}
@@ -56,6 +69,7 @@ func GetDefaultConfigPath(configPath string) string {
 }
 
 func LoadConfig(configPath string, config interface{}) error {
+	logger.Debug("load config file %s", configPath)
 	data, err := ioutil.ReadFile(configPath)
 	if err != nil {
 		return err

@@ -1,8 +1,9 @@
 package consultool
 
 import (
-	"github.com/hashicorp/consul/api"
 	"time"
+
+	"github.com/hashicorp/consul/api"
 )
 
 type ConsulConfig struct {

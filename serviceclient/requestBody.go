@@ -1,8 +1,11 @@
-package client
+package serviceclient
 
 import (
-	"github.com/go-resty/resty"
 	"io"
+
+	"github.com/go-resty/resty"
+	"github.com/golang/protobuf/proto"
+	"gopkg.in/square/go-jose.v1/json"
 )
 
 type RequestBody interface {
@@ -45,4 +48,30 @@ func NewRequestDataBody(data map[string]string) RequestBody {
 
 func (this RequestDataBody) SetBody(request *resty.Request) {
 	request.SetBody(this.data)
+}
+
+type RequestJsonBody struct {
+	data interface{}
+}
+
+func (this RequestJsonBody) SetBody(request *resty.Request) {
+	d, _ := json.Marshal(this.data)
+	request.SetBody(d).SetHeader("Content-Type", "application/json")
+}
+
+func NewRequestJsonBody(data interface{}) RequestBody {
+	return &RequestJsonBody{data}
+}
+
+type RequestPBBody struct {
+	data proto.Message
+}
+
+func (this RequestPBBody) SetBody(request *resty.Request) {
+	d, _ := proto.Marshal(this.data)
+	request.SetBody(d).SetHeader("Content-Type", "application/x-protobuf")
+}
+
+func NewRequestPBBody(data proto.Message) RequestBody {
+	return &RequestPBBody{data}
 }
