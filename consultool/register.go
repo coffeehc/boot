@@ -2,7 +2,6 @@ package consultool
 
 import (
 	"fmt"
-	"time"
 
 	"github.com/coffeehc/logger"
 	"github.com/coffeehc/microserviceboot/base"
@@ -34,31 +33,38 @@ func (this *ConsulServiceRegister) RegService(serviceInfo base.ServiceInfo, endp
 	this.serviceId = fmt.Sprintf("%s-%s", serviceInfo.GetServiceName(), ip)
 	this.checkId = fmt.Sprintf("service:%s", this.serviceId)
 	registration := &api.AgentServiceRegistration{
-		ID:                this.serviceId,
+		//ID:                this.serviceId,
 		Name:              serviceInfo.GetServiceName(),
 		Tags:              base.WarpTags(serviceInfo.GetServiceTags()),
 		Port:              servicePort,
 		Address:           ip.String(),
-		EnableTagOverride: false,
-		Check: &api.AgentServiceCheck{
-			TTL: "10s",
-		},
+		EnableTagOverride: true,
+		Checks: api.AgentServiceChecks([]*api.AgentServiceCheck{
+			&api.AgentServiceCheck{
+				HTTP:     fmt.Sprintf("http://%s:%d/debug/pprof/threadcreate?debug=1", ip, servicePort),
+				Interval: "10s",
+			},
+			{
+				HTTP:     fmt.Sprintf("http://%s:%d/debug/pprof/block?debug=1", ip, servicePort),
+				Interval: "10s",
+			},
+		}),
 	}
 	err := this.client.Agent().ServiceRegister(registration)
 	if err != nil {
 		logger.Error("注册服务失败:%s", err)
 		return err
 	}
-	go func() {
-		timeout := 5 * time.Second
-		timer := time.NewTimer(timeout)
-		for {
-			timer.Reset(timeout)
-			select {
-			case <-timer.C:
-				this.client.Agent().PassTTL(this.checkId, fmt.Sprintf("ok %s", time.Now()))
-			}
-		}
-	}()
+	//go func() {
+	//	timeout := 5 * time.Second
+	//	timer := time.NewTimer(timeout)
+	//	for {
+	//		timer.Reset(timeout)
+	//		select {
+	//		case <-timer.C:
+	//			this.client.Agent().PassTTL(this.checkId, fmt.Sprintf("ok %s", time.Now()))
+	//		}
+	//	}
+	//}()
 	return nil
 }
