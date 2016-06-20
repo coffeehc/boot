@@ -6,6 +6,8 @@ import (
 
 	"github.com/coffeehc/microserviceboot/base"
 	"github.com/coffeehc/web"
+	"io/ioutil"
+	"encoding/json"
 )
 
 func ErrorRecover(reply web.Reply) {
@@ -34,5 +36,16 @@ func ErrorRecover(reply web.Reply) {
 				SetStatusCode(http.StatusInternalServerError)
 		}
 		//暂时统一按照400处理
+	}
+}
+
+func UnmarshalWhitJson(request *http.Request, data interface{}) {
+	dataBytes, err := ioutil.ReadAll(request.Body)
+	if err != nil {
+		panic(err)
+	}
+	err = json.Unmarshal(dataBytes, data)
+	if err != nil {
+		panic(err)
 	}
 }
