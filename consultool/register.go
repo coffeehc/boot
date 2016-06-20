@@ -20,6 +20,7 @@ func NewConsulServiceRegister(consulConfig *api.Config) (*ConsulServiceRegister,
 	}
 	consulClient, err := api.NewClient(consulConfig)
 	if err != nil {
+		logger.Error("创建 Consul Client 失败")
 		return nil, err
 	}
 	return &ConsulServiceRegister{
@@ -33,14 +34,13 @@ func (this *ConsulServiceRegister) RegService(serviceInfo base.ServiceInfo, endp
 	this.serviceId = fmt.Sprintf("%s-%s", serviceInfo.GetServiceName(), ip)
 	this.checkId = fmt.Sprintf("service:%s", this.serviceId)
 	registration := &api.AgentServiceRegistration{
-		//ID:                this.serviceId,
 		Name:              serviceInfo.GetServiceName(),
 		Tags:              base.WarpTags(serviceInfo.GetServiceTags()),
 		Port:              servicePort,
 		Address:           ip.String(),
 		EnableTagOverride: true,
 		Checks: api.AgentServiceChecks([]*api.AgentServiceCheck{
-			&api.AgentServiceCheck{
+			{
 				HTTP:     fmt.Sprintf("http://%s:%d/debug/pprof/threadcreate?debug=1", ip, servicePort),
 				Interval: "10s",
 			},
@@ -55,16 +55,5 @@ func (this *ConsulServiceRegister) RegService(serviceInfo base.ServiceInfo, endp
 		logger.Error("注册服务失败:%s", err)
 		return err
 	}
-	//go func() {
-	//	timeout := 5 * time.Second
-	//	timer := time.NewTimer(timeout)
-	//	for {
-	//		timer.Reset(timeout)
-	//		select {
-	//		case <-timer.C:
-	//			this.client.Agent().PassTTL(this.checkId, fmt.Sprintf("ok %s", time.Now()))
-	//		}
-	//	}
-	//}()
 	return nil
 }

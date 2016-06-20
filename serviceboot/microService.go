@@ -47,7 +47,7 @@ func (this *MicroService) init() error {
 	*configPath = base.GetDefaultConfigPath(*configPath)
 	err := base.LoadConfig(*configPath, serverConfig)
 	if err != nil {
-		logger.Warn("加载服务器配置失败,%s", err)
+		logger.Warn("加载服务器配置[%s]失败,%s", *configPath, err)
 	}
 	webConfig := serverConfig.GetWebServerConfig()
 	this.server = web.NewServer(webConfig)
