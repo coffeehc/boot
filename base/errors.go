@@ -28,8 +28,8 @@ func (this BizErr) GetDebugCode() int64 {
 	return this.debugCode
 }
 
-func (this BizErr) ToError() Error {
-	return Error{
+func (this BizErr) ToError() *Error {
+	return &Error{
 		Code:     int32(this.GetHttpCode()),
 		Debug_id: int64(this.GetDebugCode()),
 		Message:  this.Error(),
