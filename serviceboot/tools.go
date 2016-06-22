@@ -20,10 +20,10 @@ func ErrorRecover(reply web.Reply) {
 			reply.With(base.NewErrorResponse(e)).
 				SetStatusCode(http.StatusBadRequest)
 		case base.BizErr:
-			reply.With(e.ToError()).
+			reply.With(base.NewErrorResponse(e.ToError())).
 				SetStatusCode(int(e.GetHttpCode()))
 		case *base.BizErr:
-			reply.With(e.ToError()).
+			reply.With(base.NewErrorResponse(e.ToError())).
 				SetStatusCode(int(e.GetHttpCode()))
 		case string:
 			reply.With(base.NewErrorResponse(base.NewSimpleError(http.StatusBadRequest, e))).
