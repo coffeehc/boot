@@ -1,7 +1,6 @@
 package serviceboot
 
 import (
-	"fmt"
 	"os"
 	"os/signal"
 	"syscall"
@@ -9,12 +8,15 @@ import (
 
 	"github.com/coffeehc/logger"
 	"github.com/coffeehc/microserviceboot/base"
+	"log"
+	"fmt"
 )
 
 /**
  *	Service 启动
  */
 func ServiceLauncher(service base.Service) {
+	log.SetFlags(log.Ldate|log.Ltime|log.Llongfile)
 	logger.InitLogger()
 	defer logger.WaitToClose()
 	if service == nil {
@@ -23,12 +25,12 @@ func ServiceLauncher(service base.Service) {
 	}
 	microService, err := newMicroService(service)
 	if err != nil {
-		fmt.Printf("初始化微服务出错:%s\n", err)
+		log.Printf("初始化微服务出错:%s\n", err)
 		return
 	}
 	err = microService.init()
 	if err != nil {
-		fmt.Printf("初始化微服务出错:%s\n", err)
+		log.Printf("初始化微服务出错:%s\n", err)
 		return
 	}
 	err = startService(service)
@@ -36,13 +38,13 @@ func ServiceLauncher(service base.Service) {
 		if service != nil && service.Stop != nil {
 			stopErr := service.Stop()
 			if stopErr != nil {
-				fmt.Printf("关闭服务失败,%s\n", stopErr)
+				log.Printf("关闭服务失败,%s\n", stopErr)
 				os.Exit(-1)
 			}
 		}
 	}(service)
 	if err != nil {
-		fmt.Printf("start service error,%s\n", err)
+		log.Printf("start service error,%s\n", err)
 		return
 	}
 	err = microService.start()
@@ -51,12 +53,15 @@ func ServiceLauncher(service base.Service) {
 		time.Sleep(time.Second)
 		os.Exit(-1)
 	}
+	defer base.DebugPanic(true)
+	defer func() {
+		fmt.Printf("服务[%s]关闭\n",service.GetServiceInfo().GetServiceName())
+	}()
 	waitStop()
 }
 func startService(service base.Service) (err error) {
 	defer func() {
 		if err1 := recover(); err1 != nil {
-			fmt.Printf("service crash,cause is %s\n", err1)
 			err = fmt.Errorf("service crash,cause is %s", err1)
 		}
 	}()
@@ -82,4 +87,5 @@ func waitStop() {
 	signal.Notify(sigChan, os.Interrupt, os.Kill, syscall.SIGTERM)
 	sig := <-sigChan
 	logger.Debug("接收到指令:%s,立即关闭程序", sig)
+	fmt.Printf("接收到指令:%s,立即关闭程序", sig)
 }

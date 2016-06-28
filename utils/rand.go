@@ -16,13 +16,13 @@ func GetRandInt64() int64 {
 }
 
 
-func GetRandString(size int) string {
+func GetRandString(size int,encoding *base64.Encoding) string {
 	bs := make([]byte, size)
 	_, err := rand.Read(bs)
 	if err != nil {
-		return GetRandString(size)
+		return GetRandString(size,encoding)
 	}
-	return base64.RawStdEncoding.EncodeToString(bs)
+	return encoding.EncodeToString(bs)
 }
 
 func GetRandBytes(size int) []byte{
