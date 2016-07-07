@@ -81,6 +81,9 @@ func (this *ServiceClient) SyncCallApiExt(command string, pathParam map[string]s
 		}
 		return base.NewSimpleError(-1, fmt.Sprintf("%s", resp.Body()))
 	}
+	if result == nil {
+		return nil
+	}
 	contentType := resp.Header().Get("Content-Type")
 	switch {
 	case strings.HasPrefix(contentType, "application/json"):
