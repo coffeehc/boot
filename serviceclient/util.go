@@ -18,7 +18,7 @@ func buildServiceDomain(serviceName string, serviceClientDNSConfig ServiceClient
 func WarpUrl(restUrl string, pathParams map[string]string) string {
 	//TODO 此处可以优化
 	for k, v := range pathParams {
-		restUrl = strings.Replace(restUrl, "{"+k+"}", v, 0)
+		restUrl = strings.Replace(restUrl, "{"+k+"}", v, -1)
 	}
 	return restUrl
 }
