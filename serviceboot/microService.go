@@ -109,7 +109,7 @@ func buildApiDefineRequestHandler(serviceInfo base.ServiceInfo) web.RequestHandl
 
 func (this *MicroService) registerEndpoint(endPoint base.EndPoint) error {
 	metadata := endPoint.Metadata
-	logger.Info("register endpoint [%s] %s %s", metadata.Method, metadata.Path, metadata.Description)
+	logger.Debug("register endpoint [%s] %s %s", metadata.Method, metadata.Path, metadata.Description)
 	return this.server.Register(metadata.Path, metadata.Method, endPoint.HandlerFunc)
 }
 
