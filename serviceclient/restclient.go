@@ -15,6 +15,7 @@ import (
 func init() {
 	hystrix.DefaultMaxConcurrent = 2000
 	hystrix.DefaultVolumeThreshold = 4000
+	hystrix.DefaultTimeout = 30000
 }
 
 func newServiceClientByDirectBaseUrl(serviceInfo base.ServiceInfo, directBaseUrl string) (*resty.Client, error) {
