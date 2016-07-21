@@ -43,13 +43,14 @@ func newMicroService(service base.Service) (*MicroService, error) {
 
 func (this *MicroService) init() error {
 	logger.Info("Service startting")
-	serverConfig := new(ServiceConfig)
+	serviceConfig := new(ServiceConfig)
 	*configPath = base.GetDefaultConfigPath(*configPath)
-	err := base.LoadConfig(*configPath, serverConfig)
+	err := base.LoadConfig(*configPath, serviceConfig)
 	if err != nil {
 		logger.Warn("加载服务器配置[%s]失败,%s", *configPath, err)
 	}
-	webConfig := serverConfig.GetWebServerConfig()
+	this.config = serviceConfig
+	webConfig := serviceConfig.GetWebServerConfig()
 	this.server = web.NewServer(webConfig)
 	if this.service.Init != nil {
 		err := this.service.Init(*configPath, this.server)
@@ -64,7 +65,7 @@ func (this *MicroService) init() error {
 	}
 	pprof.RegeditPprof(this.server)
 	if base.IsDevModule() {
-		debugConfig := serverConfig.getDebugConfig()
+		debugConfig := serviceConfig.getDebugConfig()
 		logger.Debug("open dev module")
 		apiDefineRequestHandler := buildApiDefineRequestHandler(serviceInfo)
 		if apiDefineRequestHandler != nil {
@@ -87,7 +88,7 @@ func (this *MicroService) start() error {
 		return err
 	}
 	serviceDiscoveryRegister := this.service.GetServiceDiscoveryRegister()
-	if serviceDiscoveryRegister != nil {
+	if !this.config.DisEnableServiceRegister && serviceDiscoveryRegister != nil {
 		_, port, _ := net.SplitHostPort(this.server.GetServerAddress())
 		p, _ := strconv.Atoi(port)
 		err = serviceDiscoveryRegister.RegService(serviceInfo, this.service.GetEndPoints(), p)
@@ -109,7 +110,7 @@ func buildApiDefineRequestHandler(serviceInfo base.ServiceInfo) web.RequestHandl
 
 func (this *MicroService) registerEndpoint(endPoint base.EndPoint) error {
 	metadata := endPoint.Metadata
-	logger.Info("register endpoint [%s] %s %s", metadata.Method, metadata.Path, metadata.Description)
+	logger.Debug("register endpoint [%s] %s %s", metadata.Method, metadata.Path, metadata.Description)
 	return this.server.Register(metadata.Path, metadata.Method, endPoint.HandlerFunc)
 }
 

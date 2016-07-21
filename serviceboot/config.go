@@ -12,8 +12,9 @@ import (
 var configPath = flag.String("config", "", "配置文件路径")
 
 type ServiceConfig struct {
-	WebServerConfig *WebConfig   `yaml:"webserver"`
-	Debug           *DebugConfig `yaml:"debug"`
+	WebServerConfig          *WebConfig   `yaml:"webserver"`
+	Debug                    *DebugConfig `yaml:"debug"`
+	DisEnableServiceRegister bool         `yaml:"disenableServiceRegister"`
 }
 
 type WebConfig struct {
