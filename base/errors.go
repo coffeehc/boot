@@ -3,12 +3,29 @@ package base
 import (
 	"fmt"
 	"net/http"
-
-	"github.com/coffeehc/web"
 )
 
+type Error interface {
+	Error() string
+	GetErrorCode() int64
+}
+
+type _ErrorWrapper struct {
+	err error
+}
+
+func NewErrorWrapper(err error) Error {
+	return &_ErrorWrapper{err: err}
+}
+
+func (this _ErrorWrapper) Error() string {
+	return this.err.Error()
+}
+func (this _ErrorWrapper) GetErrorCode() int64 {
+	return 0x500
+}
+
 type BizErr struct {
-	httpCode  int64
 	debugCode int64
 	msg       string
 }
@@ -17,85 +34,40 @@ func (this BizErr) Error() string {
 	return this.msg
 }
 
-func (this BizErr) GetHttpCode() int64 {
-	if this.httpCode == 0 {
-		return http.StatusBadRequest
-	}
-	return this.httpCode
-}
-
-func (this BizErr) GetDebugCode() int64 {
+func (this BizErr) GetErrorCode() int64 {
 	return this.debugCode
 }
 
-func (this BizErr) ToError() *Error {
-	return &Error{
-		Code:     int32(this.GetHttpCode()),
-		Debug_id: int64(this.GetDebugCode()),
-		Message:  this.Error(),
-	}
-}
-
 //默认第一个为 httpCode, 第二个为debugCode
-func BuildBizErr(err string, codes ...int64) BizErr {
-	var httpCode, debugCode int64
-	if len(codes) > 0 {
-		httpCode = codes[0]
-	}
-	if len(codes) > 1 {
-		debugCode = codes[1]
-	}
-	return BizErr{
-		msg:       err,
-		httpCode:  httpCode,
+func NewBizErr(debugCode int64, errMsg string) *BizErr {
+	return &BizErr{
+		msg:       errMsg,
 		debugCode: debugCode,
 	}
 }
 
-type Error struct {
-	Code             int32  `json:"code"`
-	Debug_id         int64  `json:"debug_id"`
-	Message          string `json:"message"`
-	Information_link string `json:"information_link"`
-}
-
-func ErrorToResponseError(err error) *Error {
-	if err == nil {
-		return nil
-	}
-	return NewSimpleError(-1, err.Error())
-}
-
-func (this Error) Error() string {
-	return fmt.Sprintf("%d:%s", this.Code, this.Message)
-}
-
-func NewSimpleError(code int32, message string) *Error {
-	return &Error{Code: code, Message: message}
-}
-
 type ErrorResponse struct {
-	Errors *Error `json:"error"`
+	HttpCode        int    `json:"http_code"`
+	ErrorCode       int64  `json:"debug_code"`
+	Message         string `json:"message"`
+	InformationLink string `json:"information_link"`
 }
 
-func NewErrorResponse(errs *Error) ErrorResponse {
-	return ErrorResponse{errs}
+func (this ErrorResponse) Error() string {
+	return fmt.Sprintf("%d:%d:%s", this.HttpCode, this.ErrorCode, this.Message)
 }
 
-func RegeditRestFilter(server *web.Server) {
-	server.AddFirstFilter("/*", restFilter)
+func (this ErrorResponse) GetErrorCode() int64 {
+	return this.ErrorCode
 }
 
-func restFilter(request *http.Request, reply web.Reply, chain web.FilterChain) {
-	defer func() {
-		if err := recover(); err != nil {
-			var httpErr *web.HttpError
-			var ok bool
-			if httpErr, ok = err.(*web.HttpError); !ok {
-				httpErr = web.HTTPERR_500(fmt.Sprintf("%#s", err))
-			}
-			reply.SetStatusCode(httpErr.Code)
-		}
-	}()
+func (this ErrorResponse) GetHttpCode() int {
+	if this.HttpCode == 0 {
+		return http.StatusBadRequest
+	}
+	return this.HttpCode
+}
 
+func NewErrorResponse(httpCode int, errorCode int64, message, informationLink string) *ErrorResponse {
+	return &ErrorResponse{HttpCode: httpCode, ErrorCode: errorCode, Message: message, InformationLink: informationLink}
 }

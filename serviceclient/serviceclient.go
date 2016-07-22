@@ -68,36 +68,42 @@ func (this *ServiceClient) ApiRegister(command string, endpointMeta base.EndPoin
 
 }
 
-func (this *ServiceClient) SyncCallApiExt(command string, pathParam map[string]string, query url.Values, body RequestBody, result interface{}) *base.Error {
+func (this *ServiceClient) SyncCallApiExt(command string, pathParam map[string]string, query url.Values, body RequestBody, result interface{}) base.Error {
 	resp, err := this.SyncCallApi(command, pathParam, query, body)
 	if err != nil {
-		return base.NewSimpleError(-1, fmt.Sprintf("%s", err.Error()))
+		return base.NewErrorWrapper(err)
 	}
 	if resp.StatusCode() >= 400 {
 		response := &base.ErrorResponse{}
-		json.Unmarshal(resp.Body(), response)
-		if response.Errors != nil {
-			return response.Errors
+		err := json.Unmarshal(resp.Body(), response)
+		if err != nil {
+			return base.NewBizErr(base.ERROR_CODE_BASE_DECODE_ERROR, err.Error())
 		}
-		return base.NewSimpleError(-1, fmt.Sprintf("%s", resp.Body()))
+		return response
 	}
+	//TODO 300+的处理需要考虑
 	if result == nil {
 		return nil
 	}
 	contentType := resp.Header().Get("Content-Type")
 	switch {
 	case strings.HasPrefix(contentType, "application/json"):
-		return base.ErrorToResponseError(json.Unmarshal(resp.Body(), result))
+		err = json.Unmarshal(resp.Body(), result)
 	case strings.HasPrefix(contentType, "text/xml"):
-		return base.ErrorToResponseError(xml.Unmarshal(resp.Body(), result))
+		err = xml.Unmarshal(resp.Body(), result)
 	case strings.HasPrefix(contentType, "application/x-protobuf"):
 		if message, ok := result.(proto.Message); ok {
-			return base.ErrorToResponseError(proto.Unmarshal(resp.Body(), message))
+			err = proto.Unmarshal(resp.Body(), message)
+			break
 		}
 		fallthrough
 	default:
-		return base.NewSimpleError(-1, "can't decode response data")
+		return base.NewErrorResponse(500, 0x500, "can't decode response data", "")
 	}
+	if err != nil {
+		return base.NewBizErr(base.ERROR_CODE_BASE_DECODE_ERROR, err.Error())
+	}
+	return nil
 }
 
 func (this *ServiceClient) SyncCallApi(command string, pathParam map[string]string, query url.Values, body RequestBody) (*resty.Response, error) {

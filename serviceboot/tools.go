@@ -4,43 +4,39 @@ import (
 	"fmt"
 	"net/http"
 
+	"encoding/base64"
 	"encoding/json"
+	"github.com/coffeehc/logger"
 	"github.com/coffeehc/microserviceboot/base"
 	"github.com/coffeehc/web"
-	"io/ioutil"
 	"github.com/golang/protobuf/proto"
-	"encoding/base64"
-	"github.com/coffeehc/logger"
+	"io/ioutil"
 )
 
 func ErrorRecover(reply web.Reply) {
 	if err := recover(); err != nil {
-		logger.Error("处理请求,发生错误:%s",err)
-		reply.As(web.Transport_Json)
+		logger.Error("处理请求,发生错误:%s", err)
+		var errorResponse *base.ErrorResponse
 		switch e := err.(type) {
-		case base.Error:
-			reply.With(base.NewErrorResponse(&e)).
-				SetStatusCode(http.StatusBadRequest)
-		case *base.Error:
-			reply.With(base.NewErrorResponse(e)).
-				SetStatusCode(http.StatusBadRequest)
+		case *base.ErrorResponse:
+			errorResponse = e
+		case base.ErrorResponse:
+			errorResponse = &e
 		case base.BizErr:
-			reply.With(base.NewErrorResponse(e.ToError())).
-				SetStatusCode(int(e.GetHttpCode()))
+			errorResponse = base.NewErrorResponse(http.StatusBadRequest, e.GetErrorCode(), e.Error(), "")
 		case *base.BizErr:
-			reply.With(base.NewErrorResponse(e.ToError())).
-				SetStatusCode(int(e.GetHttpCode()))
+			errorResponse = base.NewErrorResponse(http.StatusBadRequest, e.GetErrorCode(), e.Error(), "")
+		case base.Error:
+			errorResponse = base.NewErrorResponse(http.StatusBadRequest, e.GetErrorCode(), e.Error(), "")
 		case string:
-			reply.With(base.NewErrorResponse(base.NewSimpleError(http.StatusBadRequest, e))).
-				SetStatusCode(http.StatusBadRequest)
+			errorResponse = base.NewErrorResponse(http.StatusInternalServerError, base.ERROR_CODE_BASE_SYSTEM_ERROR, e, "")
 		case error:
-			reply.With(base.NewErrorResponse(base.NewSimpleError(http.StatusInternalServerError, e.Error()))).
-				SetStatusCode(http.StatusInternalServerError)
+			errorResponse = base.NewErrorResponse(http.StatusInternalServerError, base.ERROR_CODE_BASE_SYSTEM_ERROR, e.Error(), "")
 		default:
-			reply.With(base.NewErrorResponse(base.NewSimpleError(http.StatusInternalServerError, fmt.Sprintf("%#v", err)))).
-				SetStatusCode(http.StatusInternalServerError)
+			errorResponse = base.NewErrorResponse(http.StatusInternalServerError, base.ERROR_CODE_BASE_SYSTEM_ERROR, fmt.Sprintf("%#v", err), "")
 		}
 		//暂时统一按照400处理
+		reply.SetStatusCode(errorResponse.GetHttpCode()).With(errorResponse).As(web.Transport_Json)
 	}
 }
 
@@ -74,14 +70,14 @@ func PanicErr(err error) {
 	}
 }
 
-func ParsePathParamToBinary(pathFragments map[string]string,name string)[]byte{
+func ParsePathParamToBinary(pathFragments map[string]string, name string) []byte {
 	str, ok := pathFragments[name]
 	if !ok {
-		panic(base.BuildBizErr(fmt.Sprintf("没有指定%s值",name)))
+		panic(base.NewBizErr(base.ERROR_CODE_BASE_INVALID_PARAMTER, fmt.Sprintf("没有指定%s值", name)))
 	}
-	data,err:=base64.RawURLEncoding.DecodeString(str)
-	if err!=nil{
-		panic(base.BuildBizErr(fmt.Sprintf("无法解析%s",name)))
+	data, err := base64.RawURLEncoding.DecodeString(str)
+	if err != nil {
+		panic(base.NewBizErr(base.ERROR_CODE_BASE_DECODE_ERROR, fmt.Sprintf("无法解析%s", name)))
 	}
 	return data
 }
