@@ -88,7 +88,7 @@ func (this *MicroService) start() error {
 		return err
 	}
 	serviceDiscoveryRegister := this.service.GetServiceDiscoveryRegister()
-	if !this.config.DisEnableServiceRegister && serviceDiscoveryRegister != nil {
+	if !this.config.DisableServiceRegister && serviceDiscoveryRegister != nil {
 		_, port, _ := net.SplitHostPort(this.server.GetServerAddress())
 		p, _ := strconv.Atoi(port)
 		err = serviceDiscoveryRegister.RegService(serviceInfo, this.service.GetEndPoints(), p)
