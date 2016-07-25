@@ -1,8 +1,6 @@
 package serviceboot
 
 import (
-	"errors"
-
 	"fmt"
 	"net/http"
 
@@ -24,14 +22,14 @@ type MicroService struct {
 	service base.Service
 }
 
-func newMicroService(service base.Service) (*MicroService, error) {
+func newMicroService(service base.Service) (*MicroService, base.Error) {
 	if flag.Lookup("help") != nil {
 		flag.PrintDefaults()
 		os.Exit(0)
 	}
 	serviceInfo := service.GetServiceInfo()
 	if serviceInfo == nil {
-		return nil, errors.New("没有指定 ServiceInfo")
+		return nil, base.NewError(base.ERROR_CODE_BASE_INIT_ERROR, "没有指定 ServiceInfo")
 	}
 	logger.Info("ServiceName: %s", serviceInfo.GetServiceName())
 	logger.Info("Version: %s", serviceInfo.GetVersion())
@@ -41,7 +39,7 @@ func newMicroService(service base.Service) (*MicroService, error) {
 	}, nil
 }
 
-func (this *MicroService) init() error {
+func (microService *MicroService) init() base.Error {
 	logger.Info("Service startting")
 	serviceConfig := new(ServiceConfig)
 	*configPath = base.GetDefaultConfigPath(*configPath)
@@ -49,54 +47,54 @@ func (this *MicroService) init() error {
 	if err != nil {
 		logger.Warn("加载服务器配置[%s]失败,%s", *configPath, err)
 	}
-	this.config = serviceConfig
+	microService.config = serviceConfig
 	webConfig := serviceConfig.GetWebServerConfig()
-	this.server = web.NewServer(webConfig)
-	if this.service.Init != nil {
-		err := this.service.Init(*configPath, this.server)
+	microService.server = web.NewServer(webConfig)
+	if microService.service.Init != nil {
+		err := microService.service.Init(*configPath, microService.server)
 		if err != nil {
 			return err
 		}
 	}
-	serviceInfo := this.service.GetServiceInfo()
-	err = this.registerEndpoints()
+	serviceInfo := microService.service.GetServiceInfo()
+	err = microService.registerEndpoints()
 	if err != nil {
 		return err
 	}
-	pprof.RegeditPprof(this.server)
+	pprof.RegeditPprof(microService.server)
 	if base.IsDevModule() {
 		debugConfig := serviceConfig.getDebugConfig()
 		logger.Debug("open dev module")
 		apiDefineRequestHandler := buildApiDefineRequestHandler(serviceInfo)
 		if apiDefineRequestHandler != nil {
-			this.server.Register(fmt.Sprintf("/apidefine/%s.api", serviceInfo.GetServiceName()), web.GET, apiDefineRequestHandler)
+			microService.server.Register(fmt.Sprintf("/apidefine/%s.api", serviceInfo.GetServiceName()), web.GET, apiDefineRequestHandler)
 		}
 		if debugConfig.IsEnableAccessInfo() {
-			this.server.AddFirstFilter("/*", web.SimpleAccessLogFilter)
+			microService.server.AddFirstFilter("/*", web.SimpleAccessLogFilter)
 		}
 	}
 
 	return nil
 }
 
-func (this *MicroService) start() error {
+func (microService *MicroService) start() base.Error {
 	startTime := time.Now()
-	serviceInfo := this.service.GetServiceInfo()
+	serviceInfo := microService.service.GetServiceInfo()
 	//TODO 拦截异常返回
-	err := this.server.Start()
+	err := microService.server.Start()
 	if err != nil {
-		return err
+		return base.NewError(base.ERROR_CODE_BASE_INIT_ERROR, err.Error())
 	}
-	serviceDiscoveryRegister := this.service.GetServiceDiscoveryRegister()
-	if !this.config.DisableServiceRegister && serviceDiscoveryRegister != nil {
-		_, port, _ := net.SplitHostPort(this.server.GetServerAddress())
+	serviceDiscoveryRegister := microService.service.GetServiceDiscoveryRegister()
+	if !microService.config.DisableServiceRegister && serviceDiscoveryRegister != nil {
+		_, port, _ := net.SplitHostPort(microService.server.GetServerAddress())
 		p, _ := strconv.Atoi(port)
-		err = serviceDiscoveryRegister.RegService(serviceInfo, this.service.GetEndPoints(), p)
-		if err != nil {
-			logger.Info("注册服务[%s]失败,%s", this.service.GetServiceInfo().GetServiceName(), err)
-			return err
+		registerError := serviceDiscoveryRegister.RegService(serviceInfo, microService.service.GetEndPoints(), p)
+		if registerError != nil {
+			logger.Info("注册服务[%s]失败,%s", microService.service.GetServiceInfo().GetServiceName(), registerError.Error())
+			return registerError
 		}
-		logger.Info("注册服务[%s]成功", this.service.GetServiceInfo().GetServiceName())
+		logger.Info("注册服务[%s]成功", microService.service.GetServiceInfo().GetServiceName())
 	}
 	logger.Info("Service started [%s]", time.Since(startTime))
 	return nil
@@ -108,13 +106,17 @@ func buildApiDefineRequestHandler(serviceInfo base.ServiceInfo) web.RequestHandl
 	}
 }
 
-func (this *MicroService) registerEndpoint(endPoint base.EndPoint) error {
+func (this *MicroService) registerEndpoint(endPoint base.EndPoint) base.Error {
 	metadata := endPoint.Metadata
 	logger.Debug("register endpoint [%s] %s %s", metadata.Method, metadata.Path, metadata.Description)
-	return this.server.Register(metadata.Path, metadata.Method, endPoint.HandlerFunc)
+	err := this.server.Register(metadata.Path, metadata.Method, endPoint.HandlerFunc)
+	if err != nil {
+		return base.NewError(base.ERROR_CODE_BASE_INIT_ERROR, err.Error())
+	}
+	return nil
 }
 
-func (this *MicroService) registerEndpoints() error {
+func (this *MicroService) registerEndpoints() base.Error {
 	endPoints := this.service.GetEndPoints()
 	if len(endPoints) == 0 {
 		logger.Warn("not regedit any endpoint")

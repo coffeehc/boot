@@ -18,7 +18,7 @@ func init() {
 	hystrix.DefaultTimeout = 30000
 }
 
-func newServiceClientByDirectBaseUrl(serviceInfo base.ServiceInfo, directBaseUrl string) (*resty.Client, error) {
+func newServiceClientByDirectBaseUrl(serviceInfo base.ServiceInfo, directBaseUrl string) (*resty.Client, base.Error) {
 	d := &net.Dialer{
 		Timeout:   30 * time.Second,
 		KeepAlive: 30 * time.Second,
@@ -30,18 +30,18 @@ func newServiceClientByDirectBaseUrl(serviceInfo base.ServiceInfo, directBaseUrl
 	return NewRestClient(directBaseUrl, transport, nil)
 }
 
-func newServiceClientByConsul(serviceInfo base.ServiceInfo, serviceClientDNSConfig ServiceClientConsulConfig) (*resty.Client, error) {
+func newServiceClientByConsul(serviceInfo base.ServiceInfo, serviceClientDNSConfig ServiceClientConsulConfig) (*resty.Client, base.Error) {
 	logger.Info("dataCenter is [%s]", serviceClientDNSConfig.GetDataCenter())
 	logger.Info("dnsAddress is [%s]", serviceClientDNSConfig.GetNameServer())
 	ip, port, err := net.SplitHostPort(serviceClientDNSConfig.GetNameServer())
 	if err != nil {
-		return nil, err
+		return nil, base.NewError(base.ERROR_CODE_BASE_INIT_ERROR,err.Error())
 	}
 	loadBalancer := newLoadBalancer(ip, port, serviceClientDNSConfig.GetLoadBalanceType())
 	return NewRestClient(fmt.Sprintf("http://%s/", buildServiceDomain(serviceInfo.GetServiceName(), serviceClientDNSConfig)), loadBalancer.getTransport(), nil)
 }
 
-func NewRestClient(baseUrl string, transport *http.Transport, clientSetting func(client *resty.Client)) (*resty.Client, error) {
+func NewRestClient(baseUrl string, transport *http.Transport, clientSetting func(client *resty.Client)) (*resty.Client, base.Error) {
 	client := resty.New()
 	client.SetTransport(transport)
 	client.SetHeader("Accept", "application/json")

@@ -25,12 +25,12 @@ func ServiceLauncher(service base.Service) {
 	}
 	microService, err := newMicroService(service)
 	if err != nil {
-		log.Printf("初始化微服务出错:%s\n", err)
+		log.Printf("初始化微服务出错:%s\n", err.Error())
 		return
 	}
 	err = microService.init()
 	if err != nil {
-		log.Printf("初始化微服务出错:%s\n", err)
+		log.Printf("初始化微服务出错:%s\n", err.Error())
 		return
 	}
 	err = startService(service)
@@ -59,21 +59,25 @@ func ServiceLauncher(service base.Service) {
 	}()
 	waitStop()
 }
-func startService(service base.Service) (err error) {
+func startService(service base.Service) (err base.Error) {
 	defer func() {
 		if err1 := recover(); err1 != nil {
-			err = fmt.Errorf("service crash,cause is %s", err1)
+			if e,ok:=err1.(base.Error);ok{
+				err = e
+				return
+			}
+			err = base.NewError(base.ERROR_CODE_BASE_SYSTEM_ERROR,fmt.Sprintf("service crash,cause is %s", err1))
 		}
 	}()
 	if service == nil {
-		panic("没有 Service 的实例")
+		panic(base.NewError(base.ERROR_CODE_BASE_INIT_ERROR,"没有 Service 的实例"))
 	}
 	if service.Run == nil {
-		panic("没有指定Run方法")
+		panic(base.NewError(base.ERROR_CODE_BASE_INIT_ERROR,"没有指定Run方法"))
 	}
 	err1 := service.Run()
 	if err1 != nil {
-		panic(logger.Error("服务运行错误:%s", err1))
+		panic(err1)
 	}
 	logger.Info("服务已正常启动")
 	return
@@ -84,7 +88,7 @@ func startService(service base.Service) (err error) {
 */
 func waitStop() {
 	var sigChan = make(chan os.Signal, 3)
-	signal.Notify(sigChan, os.Interrupt, os.Kill, syscall.SIGTERM)
+	signal.Notify(sigChan, os.Interrupt, syscall.SIGTERM)
 	sig := <-sigChan
 	logger.Debug("接收到指令:%s,立即关闭程序", sig)
 	fmt.Printf("接收到指令:%s,立即关闭程序", sig)

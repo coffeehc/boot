@@ -22,9 +22,9 @@ func ErrorRecover(reply web.Reply) {
 			errorResponse = e
 		case base.ErrorResponse:
 			errorResponse = &e
-		case base.BizErr:
+		case base.BaseError:
 			errorResponse = base.NewErrorResponse(http.StatusBadRequest, e.GetErrorCode(), e.Error(), "")
-		case *base.BizErr:
+		case *base.BaseError:
 			errorResponse = base.NewErrorResponse(http.StatusBadRequest, e.GetErrorCode(), e.Error(), "")
 		case base.Error:
 			errorResponse = base.NewErrorResponse(http.StatusBadRequest, e.GetErrorCode(), e.Error(), "")
@@ -73,11 +73,11 @@ func PanicErr(err error) {
 func ParsePathParamToBinary(pathFragments map[string]string, name string) []byte {
 	str, ok := pathFragments[name]
 	if !ok {
-		panic(base.NewBizErr(base.ERROR_CODE_BASE_INVALID_PARAMTER, fmt.Sprintf("没有指定%s值", name)))
+		panic(base.NewError(base.ERROR_CODE_BASE_INVALID_PARAM, fmt.Sprintf("没有指定%s值", name)))
 	}
 	data, err := base64.RawURLEncoding.DecodeString(str)
 	if err != nil {
-		panic(base.NewBizErr(base.ERROR_CODE_BASE_DECODE_ERROR, fmt.Sprintf("无法解析%s", name)))
+		panic(base.NewError(base.ERROR_CODE_BASE_DECODE_ERROR, fmt.Sprintf("无法解析%s", name)))
 	}
 	return data
 }

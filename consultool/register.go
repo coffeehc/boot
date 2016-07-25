@@ -14,14 +14,14 @@ type ConsulServiceRegister struct {
 	checkId   string
 }
 
-func NewConsulServiceRegister(consulConfig *api.Config) (*ConsulServiceRegister, error) {
+func NewConsulServiceRegister(consulConfig *api.Config) (*ConsulServiceRegister, base.Error) {
 	if consulConfig == nil {
 		consulConfig = api.DefaultConfig()
 	}
 	consulClient, err := api.NewClient(consulConfig)
 	if err != nil {
 		logger.Error("创建 Consul Client 失败")
-		return nil, err
+		return nil, base.NewError(base.ERROR_CODE_BASE_INIT_ERROR,err.Error())
 	}
 	return &ConsulServiceRegister{
 		client: consulClient,
@@ -29,7 +29,7 @@ func NewConsulServiceRegister(consulConfig *api.Config) (*ConsulServiceRegister,
 
 }
 
-func (this *ConsulServiceRegister) RegService(serviceInfo base.ServiceInfo, endpints []base.EndPoint, servicePort int) error {
+func (this *ConsulServiceRegister) RegService(serviceInfo base.ServiceInfo, endpints []base.EndPoint, servicePort int) base.Error {
 	ip := base.GetLocalIp()
 	this.serviceId = fmt.Sprintf("%s-%s", serviceInfo.GetServiceName(), ip)
 	this.checkId = fmt.Sprintf("service:%s", this.serviceId)
@@ -53,7 +53,7 @@ func (this *ConsulServiceRegister) RegService(serviceInfo base.ServiceInfo, endp
 	err := this.client.Agent().ServiceRegister(registration)
 	if err != nil {
 		logger.Error("注册服务失败:%s", err)
-		return err
+		return  base.NewError(base.ERROR_CODE_BASE_SERVICE_REGISTER_ERROR,err.Error())
 	}
 	return nil
 }

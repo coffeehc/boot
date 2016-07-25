@@ -68,13 +68,17 @@ func GetDefaultConfigPath(configPath string) string {
 	return configPath
 }
 
-func LoadConfig(configPath string, config interface{}) error {
+func LoadConfig(configPath string, config interface{}) Error {
 	logger.Debug("load config file %s", configPath)
 	data, err := ioutil.ReadFile(configPath)
 	if err != nil {
-		return err
+		return NewError(ERROR_CODE_BASE_CONFIG_ERROR,err.Error())
 	}
-	return yaml.Unmarshal(data, config)
+	err = yaml.Unmarshal(data, config)
+	if err!=nil{
+		return NewError(ERROR_CODE_BASE_CONFIG_ERROR,err.Error())
+	}
+	return nil
 }
 
 func GetAppPath() string {

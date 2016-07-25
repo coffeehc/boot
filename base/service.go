@@ -5,13 +5,12 @@ import (
 
 	"github.com/coffeehc/logger"
 	"github.com/coffeehc/web"
-	"gopkg.in/yaml.v2"
 )
 
 type Service interface {
-	Init(configPath string, server *web.Server) error
-	Run() error
-	Stop() error
+	Init(configPath string, server *web.Server) Error
+	Run() Error
+	Stop() Error
 	GetServiceInfo() ServiceInfo
 	GetEndPoints() []EndPoint
 	GetServiceDiscoveryRegister() ServiceDiscoveryRegister
@@ -42,19 +41,6 @@ type LoadingServiceInfo struct {
 	CartFile      string   `yaml:"cartFile"`
 	KeyFile       string   `yaml:"keyFile"`
 	DevModule     bool     `yaml:"devModule"`
-}
-
-func LoadServiceInfoConfig(configFile string) (ServiceInfo, error) {
-	data, err := ioutil.ReadFile(configFile)
-	if err != nil {
-		return nil, err
-	}
-	info := new(LoadingServiceInfo)
-	err = yaml.Unmarshal(data, info)
-	if err != nil {
-		return nil, err
-	}
-	return info, nil
 }
 
 func (this *LoadingServiceInfo) GetApiDefine() string {

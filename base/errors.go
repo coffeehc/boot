@@ -18,29 +18,29 @@ func NewErrorWrapper(err error) Error {
 	return &_ErrorWrapper{err: err}
 }
 
-func (this _ErrorWrapper) Error() string {
-	return this.err.Error()
+func (err _ErrorWrapper) Error() string {
+	return err.err.Error()
 }
-func (this _ErrorWrapper) GetErrorCode() int64 {
-	return 0x500
+func (_ErrorWrapper) GetErrorCode() int64 {
+	return ERROR_CODE_BASE_SYSTEM_ERROR
 }
 
-type BizErr struct {
+type BaseError struct {
 	debugCode int64
 	msg       string
 }
 
-func (this BizErr) Error() string {
-	return this.msg
+func (err BaseError) Error() string {
+	return err.msg
 }
 
-func (this BizErr) GetErrorCode() int64 {
-	return this.debugCode
+func (err BaseError) GetErrorCode() int64 {
+	return err.debugCode
 }
 
 //默认第一个为 httpCode, 第二个为debugCode
-func NewBizErr(debugCode int64, errMsg string) *BizErr {
-	return &BizErr{
+func NewError(debugCode int64, errMsg string) Error {
+	return &BaseError{
 		msg:       errMsg,
 		debugCode: debugCode,
 	}
@@ -53,19 +53,19 @@ type ErrorResponse struct {
 	InformationLink string `json:"information_link"`
 }
 
-func (this ErrorResponse) Error() string {
-	return fmt.Sprintf("%d:%d:%s", this.HttpCode, this.ErrorCode, this.Message)
+func (err ErrorResponse) Error() string {
+	return fmt.Sprintf("%d:%d:%s", err.HttpCode, err.ErrorCode, err.Message)
 }
 
-func (this ErrorResponse) GetErrorCode() int64 {
-	return this.ErrorCode
+func (err ErrorResponse) GetErrorCode() int64 {
+	return err.ErrorCode
 }
 
-func (this ErrorResponse) GetHttpCode() int {
-	if this.HttpCode == 0 {
+func (err ErrorResponse) GetHttpCode() int {
+	if err.HttpCode == 0 {
 		return http.StatusBadRequest
 	}
-	return this.HttpCode
+	return err.HttpCode
 }
 
 func NewErrorResponse(httpCode int, errorCode int64, message, informationLink string) *ErrorResponse {
