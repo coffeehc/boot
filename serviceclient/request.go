@@ -17,7 +17,7 @@ type Request interface {
 	Init(baseUrl string, endpointMeta *base.EndPointMeta) base.Error
 	SetPathParam(map[string]string) base.Error
 	SetQueryParam(values url.Values) base.Error
-	SetBody(data interface{}, handler RequestBodyEncoder) base.Error
+	EncodeBody(data interface{}, handler RequestBodyEncoder) base.Error
 	GetHeader() http.Header
 	//Release() //用于复用对象
 }
@@ -62,7 +62,7 @@ func (this *_Request) SetQueryParam(values url.Values) base.Error {
 	this.request.URL.RawQuery = values.Encode()
 	return nil
 }
-func (this *_Request) SetBody(data interface{}, handler RequestBodyEncoder) base.Error {
+func (this *_Request) EncodeBody(data interface{}, handler RequestBodyEncoder) base.Error {
 	return handler(data, this.request)
 }
 func (this *_Request) GetHeader() http.Header {

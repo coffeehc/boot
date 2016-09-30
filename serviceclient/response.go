@@ -14,7 +14,7 @@ import (
 type Response interface {
 	GetStatusCode() int
 	GetBody() io.ReadCloser
-	GetData(decoder ResponseBodyDecoder, target interface{}) base.Error
+	DecodeBody(decoder ResponseBodyDecoder, target interface{}) base.Error
 }
 
 func buildResponse(res *http.Response) Response {
@@ -34,14 +34,14 @@ func (this *_Response) GetStatusCode() int {
 func (this *_Response) GetBody() io.ReadCloser {
 	return this.response.Body
 }
-func (this *_Response) GetData(decoder ResponseBodyDecoder, target interface{}) base.Error {
+func (this *_Response) DecodeBody(decoder ResponseBodyDecoder, target interface{}) base.Error {
 	return decoder(this.GetBody(), target)
 }
 
 type ResponseBodyDecoder func(body io.ReadCloser, target interface{}) base.Error
 
 func ResponseFormBodyDecoder(body io.ReadCloser, target interface{}) base.Error {
-	//TODO 考虑关闭 body
+	defer body.Close()
 	if vs, ok := target.(url.Values); ok {
 		data, err := ioutil.ReadAll(body)
 		if err != nil {
