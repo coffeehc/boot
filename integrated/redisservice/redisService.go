@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"time"
 
-	"gopkg.in/redis.v3"
 	"github.com/coffeehc/microserviceboot/base"
+	"gopkg.in/redis.v3"
 )
 
 type RedisService interface {
@@ -205,7 +205,7 @@ func NewRedisService(config *RedisConfig) (RedisService, base.Error) {
 	}
 	err := client.Ping().Err()
 	if err != nil {
-		return nil, base.NewError(base.ERROR_CODE_BASE_INIT_ERROR,fmt.Sprintf("Redis Ping 失败:%s", err))
+		return nil, base.NewError(base.ERROR_CODE_BASE_INIT_ERROR, fmt.Sprintf("Redis Ping 失败:%s", err))
 	}
 	return client, nil
 	//return &_RedisService{

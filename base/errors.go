@@ -31,7 +31,7 @@ type BaseError struct {
 }
 
 func (err BaseError) Error() string {
-	return err.msg
+	return fmt.Sprintf("%d:%s", err.debugCode, err.msg)
 }
 
 func (err BaseError) GetErrorCode() int64 {

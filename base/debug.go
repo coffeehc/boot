@@ -1,8 +1,9 @@
 package base
 
 import (
-	"github.com/coffeehc/logger"
 	"runtime/debug"
+
+	"github.com/coffeehc/logger"
 )
 
 func DebugPanic(printStick bool) {

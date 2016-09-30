@@ -21,7 +21,7 @@ func NewConsulServiceRegister(consulConfig *api.Config) (*ConsulServiceRegister,
 	consulClient, err := api.NewClient(consulConfig)
 	if err != nil {
 		logger.Error("创建 Consul Client 失败")
-		return nil, base.NewError(base.ERROR_CODE_BASE_INIT_ERROR,err.Error())
+		return nil, base.NewError(base.ERROR_CODE_BASE_INIT_ERROR, err.Error())
 	}
 	return &ConsulServiceRegister{
 		client: consulClient,
@@ -53,7 +53,7 @@ func (this *ConsulServiceRegister) RegService(serviceInfo base.ServiceInfo, endp
 	err := this.client.Agent().ServiceRegister(registration)
 	if err != nil {
 		logger.Error("注册服务失败:%s", err)
-		return  base.NewError(base.ERROR_CODE_BASE_SERVICE_REGISTER_ERROR,err.Error())
+		return base.NewError(base.ERROR_CODE_BASE_SERVICE_REGISTER_ERROR, err.Error())
 	}
 	return nil
 }

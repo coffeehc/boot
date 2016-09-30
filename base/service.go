@@ -8,7 +8,7 @@ import (
 )
 
 type Service interface {
-	Init(configPath string, server *web.Server) Error
+	Init(configPath string, server web.HttpServer) Error
 	Run() Error
 	Stop() Error
 	GetServiceInfo() ServiceInfo

@@ -1,7 +1,7 @@
 package utils
 
 const (
-	key_const = 2862933555777941757
+	key_const  = 2862933555777941757
 	jump_const = float64(1 << 31)
 )
 
@@ -10,8 +10,8 @@ func JumpConsistentHash(key uint64, partition int64) int64 {
 	var j int64 = 0
 	for j < partition {
 		b = j
-		key = key * key_const + 1
-		j = int64(float64(b + 1) * jump_const / float64((key >> 33) + 1))
+		key = key*key_const + 1
+		j = int64(float64(b+1) * jump_const / float64((key>>33)+1))
 	}
 	return b
 

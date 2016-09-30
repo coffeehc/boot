@@ -6,19 +6,21 @@ import (
 	"syscall"
 	"time"
 
+	"fmt"
+	"log"
+
 	"github.com/coffeehc/logger"
 	"github.com/coffeehc/microserviceboot/base"
-	"log"
-	"fmt"
 )
 
 /**
  *	Service 启动
  */
 func ServiceLauncher(service base.Service) {
-	log.SetFlags(log.Ldate|log.Ltime|log.Llongfile)
+	log.SetFlags(log.Ldate | log.Ltime | log.Llongfile)
 	logger.InitLogger()
 	defer logger.WaitToClose()
+	startTime := time.Now()
 	if service == nil {
 		logger.Error("service is nil")
 		return
@@ -55,25 +57,26 @@ func ServiceLauncher(service base.Service) {
 	}
 	defer base.DebugPanic(true)
 	defer func() {
-		fmt.Printf("服务[%s]关闭\n",service.GetServiceInfo().GetServiceName())
+		fmt.Printf("服务[%s]关闭\n", service.GetServiceInfo().GetServiceName())
 	}()
+	logger.Info("Service started [%s]", time.Since(startTime))
 	waitStop()
 }
 func startService(service base.Service) (err base.Error) {
 	defer func() {
 		if err1 := recover(); err1 != nil {
-			if e,ok:=err1.(base.Error);ok{
+			if e, ok := err1.(base.Error); ok {
 				err = e
 				return
 			}
-			err = base.NewError(base.ERROR_CODE_BASE_SYSTEM_ERROR,fmt.Sprintf("service crash,cause is %s", err1))
+			err = base.NewError(base.ERROR_CODE_BASE_SYSTEM_ERROR, fmt.Sprintf("service crash,cause is %s", err1))
 		}
 	}()
 	if service == nil {
-		panic(base.NewError(base.ERROR_CODE_BASE_INIT_ERROR,"没有 Service 的实例"))
+		panic(base.NewError(base.ERROR_CODE_BASE_INIT_ERROR, "没有 Service 的实例"))
 	}
 	if service.Run == nil {
-		panic(base.NewError(base.ERROR_CODE_BASE_INIT_ERROR,"没有指定Run方法"))
+		panic(base.NewError(base.ERROR_CODE_BASE_INIT_ERROR, "没有指定Run方法"))
 	}
 	err1 := service.Run()
 	if err1 != nil {

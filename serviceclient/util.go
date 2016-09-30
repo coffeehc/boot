@@ -8,11 +8,14 @@ import (
 )
 
 func buildServiceDomain(serviceName string, serviceClientDNSConfig ServiceClientConsulConfig) string {
-	tag := "pro"
+	tag := ""
 	if base.IsDevModule() {
 		tag = "dev"
 	}
-	return fmt.Sprintf("%s.%s.service.%s.%s", tag, serviceName, serviceClientDNSConfig.GetDataCenter(), serviceClientDNSConfig.GetDomain())
+	if len(tag) > 0 {
+		tag += "."
+	}
+	return fmt.Sprintf("%s%s.service.%s.%s", tag, serviceName, serviceClientDNSConfig.GetDataCenter(), serviceClientDNSConfig.GetDomain())
 }
 
 func WarpUrl(restUrl string, pathParams map[string]string) string {
@@ -21,4 +24,16 @@ func WarpUrl(restUrl string, pathParams map[string]string) string {
 		restUrl = strings.Replace(restUrl, "{"+k+"}", v, -1)
 	}
 	return restUrl
+}
+
+func addMissingPort(addr string, isTLS bool) string {
+	n := strings.Index(addr, ":")
+	if n >= 0 {
+		return addr
+	}
+	port := 80
+	if isTLS {
+		port = 443
+	}
+	return fmt.Sprintf("%s:%d", addr, port)
 }
