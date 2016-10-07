@@ -1,291 +1,178 @@
 {
-  "comment": "",
-  "ignore": "test README.md microserviceboot.iml",
-  "package": [
-    {
-      "path": "README.md",
-      "revision": ""
-    },
-    {
-      "path": "base",
-      "revision": ""
-    },
-    {
-      "path": "consultool",
-      "revision": ""
-    },
-    {
-      "checksumSHA1": "L7oNsWBEl2cVD7attjCXYNM2eOY=",
-      "path": "github.com/afex/hystrix-go/hystrix",
-      "revision": "9351b724be3950ef0ca82c53f817dcd33947e95e",
-      "revisionTime": "2015-09-09T03:42:20Z"
-    },
-    {
-      "checksumSHA1": "U0ciFGz5i3PUxw9tUdpsqDaD4Ug=",
-      "path": "github.com/afex/hystrix-go/hystrix/metric_collector",
-      "revision": "9351b724be3950ef0ca82c53f817dcd33947e95e",
-      "revisionTime": "2015-09-09T03:42:20Z"
-    },
-    {
-      "checksumSHA1": "ERbZ6cXXPJhus2uCOo5A6uFFfQw=",
-      "path": "github.com/afex/hystrix-go/hystrix/rolling",
-      "revision": "9351b724be3950ef0ca82c53f817dcd33947e95e",
-      "revisionTime": "2015-09-09T03:42:20Z"
-    },
-    {
-      "checksumSHA1": "iBtPGjn2UGtbqxTh2z+IDwMRe/0=",
-      "path": "github.com/benschw/dns-clb-go/clb",
-      "revision": "d27e15d9d464003443a1849927183b42ffdf588d",
-      "revisionTime": "2015-10-27T18:25:44Z"
-    },
-    {
-      "checksumSHA1": "6sDi+mv72REy02sTq/dkYE5hzrE=",
-      "path": "github.com/benschw/dns-clb-go/dns",
-      "revision": "d27e15d9d464003443a1849927183b42ffdf588d",
-      "revisionTime": "2015-10-27T18:25:44Z"
-    },
-    {
-      "checksumSHA1": "A/qSpPqPTaEM7ZId2W2cV9g47ws=",
-      "path": "github.com/benschw/dns-clb-go/randomclb",
-      "revision": "d27e15d9d464003443a1849927183b42ffdf588d",
-      "revisionTime": "2015-10-27T18:25:44Z"
-    },
-    {
-      "checksumSHA1": "vWGntxBKZMxXo8mHw/iEdWnl+as=",
-      "path": "github.com/benschw/dns-clb-go/roundrobinclb",
-      "revision": "d27e15d9d464003443a1849927183b42ffdf588d",
-      "revisionTime": "2015-10-27T18:25:44Z"
-    },
-    {
-      "checksumSHA1": "ij8E+cxM4b5ZOhOi7IuDQGuCSVU=",
-      "path": "github.com/benschw/dns-clb-go/ttlcache",
-      "revision": "d27e15d9d464003443a1849927183b42ffdf588d",
-      "revisionTime": "2015-10-27T18:25:44Z"
-    },
-    {
-      "checksumSHA1": "ReVouFzIpenxZjGm8UXgmd6WP8k=",
-      "path": "github.com/coffeehc/logger",
-      "revision": "2b16b7b871e94ffb9f6d4dc77a0bf9d66b15ba9f",
-      "revisionTime": "2016-09-20T03:16:53Z"
-    },
-    {
-      "checksumSHA1": "CVZJLezB2+18nL2dIVmfeEJafXI=",
-      "path": "github.com/coffeehc/microserviceboot/base",
-      "revision": "9be7e4f4f140aa4a3b410fd9e5a0ec246b095226",
-      "revisionTime": "2016-07-25T08:33:42Z"
-    },
-    {
-      "checksumSHA1": "HHFuRhIMuYCNLcMI/ARLUjTRuD0=",
-      "path": "github.com/coffeehc/microserviceboot/consultool",
-      "revision": "9be7e4f4f140aa4a3b410fd9e5a0ec246b095226",
-      "revisionTime": "2016-07-25T08:33:42Z"
-    },
-    {
-      "checksumSHA1": "fvp1XlpVQX3rya3wB3ZBZsyf688=",
-      "path": "github.com/coffeehc/microserviceboot/integrated/databaseservice",
-      "revision": "9be7e4f4f140aa4a3b410fd9e5a0ec246b095226",
-      "revisionTime": "2016-07-25T08:33:42Z"
-    },
-    {
-      "checksumSHA1": "TXbuRV0Ney2lJNxJfRxdV0xyxz8=",
-      "path": "github.com/coffeehc/microserviceboot/integrated/redisservice",
-      "revision": "9be7e4f4f140aa4a3b410fd9e5a0ec246b095226",
-      "revisionTime": "2016-07-25T08:33:42Z"
-    },
-    {
-      "checksumSHA1": "Ap8NpDzEZb0MlxPx2V8AH1TTJTU=",
-      "path": "github.com/coffeehc/microserviceboot/serviceboot",
-      "revision": "9be7e4f4f140aa4a3b410fd9e5a0ec246b095226",
-      "revisionTime": "2016-07-25T08:33:42Z"
-    },
-    {
-      "checksumSHA1": "2BYK12hLOJoAtZ9ezgVrGV43wjo=",
-      "path": "github.com/coffeehc/microserviceboot/serviceclient",
-      "revision": "9be7e4f4f140aa4a3b410fd9e5a0ec246b095226",
-      "revisionTime": "2016-07-25T08:33:42Z"
-    },
-    {
-      "checksumSHA1": "IyMXQ0kpB3CBr5KBOT22brvRSaA=",
-      "path": "github.com/coffeehc/microserviceboot/utils",
-      "revision": "9be7e4f4f140aa4a3b410fd9e5a0ec246b095226",
-      "revisionTime": "2016-07-25T08:33:42Z"
-    },
-    {
-      "checksumSHA1": "P5xBQ9DigJBuLsInDUqMlaHPwts=",
-      "path": "github.com/coffeehc/web",
-      "revision": "803293a334d8af2fd94d500c65f7d2ded7a609d7",
-      "revisionTime": "2016-09-20T06:40:15Z"
-    },
-    {
-      "checksumSHA1": "jiKaQesv5IG+lCBSzJ5fS+JP7iM=",
-      "path": "github.com/coffeehc/web/pprof",
-      "revision": "803293a334d8af2fd94d500c65f7d2ded7a609d7",
-      "revisionTime": "2016-09-20T06:40:15Z"
-    },
-    {
-      "checksumSHA1": "AzOt34C4RJ42Vak7A+iME7luE6c=",
-      "path": "github.com/go-sql-driver/mysql",
-      "revision": "66312f7fe2678aa0f5ec770f96702f4c4ec5aa8e",
-      "revisionTime": "2016-03-10T22:28:42Z"
-    },
-    {
-      "checksumSHA1": "kVJ5YScYaDWw6iotbpZwQJ6xCGM=",
-      "path": "github.com/golang/protobuf/proto",
-      "revision": "0c1f6d65b5a189c2250d10e71a5506f06f9fa0a0",
-      "revisionTime": "2016-06-14T22:31:40Z"
-    },
-    {
-      "checksumSHA1": "glOabn8rkJvz7tjz/xfX4lmt070=",
-      "path": "github.com/hashicorp/consul/api",
-      "revision": "755c3647c8d2ddeafb024b8e78fbaf09f1b5d316",
-      "revisionTime": "2016-06-21T05:54:50Z"
-    },
-    {
-      "checksumSHA1": "fSe5y1UgTDeYlnFfUcDA1zzcw+U=",
-      "origin": "github.com/hashicorp/consul/vendor/github.com/hashicorp/go-cleanhttp",
-      "path": "github.com/hashicorp/go-cleanhttp",
-      "revision": "755c3647c8d2ddeafb024b8e78fbaf09f1b5d316",
-      "revisionTime": "2016-06-21T05:54:50Z"
-    },
-    {
-      "checksumSHA1": "E3Xcanc9ouQwL+CZGOUyA/+giLg=",
-      "origin": "github.com/hashicorp/consul/vendor/github.com/hashicorp/serf/coordinate",
-      "path": "github.com/hashicorp/serf/coordinate",
-      "revision": "755c3647c8d2ddeafb024b8e78fbaf09f1b5d316",
-      "revisionTime": "2016-06-21T05:54:50Z"
-    },
-    {
-      "checksumSHA1": "UyeG/EY+twf164MGs6W6eppHHXU=",
-      "path": "github.com/jinzhu/gorm",
-      "revision": "27522453dea253cf90dcb5345286a5fcf0fbed7c",
-      "revisionTime": "2016-05-22T11:10:33Z"
-    },
-    {
-      "checksumSHA1": "eECxSkwh0WmhLwaxHfkvcLOWS08=",
-      "path": "github.com/jinzhu/gorm/dialects/mysql",
-      "revision": "27522453dea253cf90dcb5345286a5fcf0fbed7c",
-      "revisionTime": "2016-05-22T11:10:33Z"
-    },
-    {
-      "checksumSHA1": "9Fb+a7sS7os6y+72DjHAVegPBwY=",
-      "path": "github.com/jinzhu/inflection",
-      "revision": "3272df6c21d04180007eb3349844c89a3856bc25",
-      "revisionTime": "2015-10-09T08:41:29Z"
-    },
-    {
-      "checksumSHA1": "wiM/nOLvR8gZ4kmED7xcLHhRnFo=",
-      "path": "github.com/klauspost/compress/flate",
-      "revision": "9d711f4445beb7f6488148ce04e3b4dc6e72242d",
-      "revisionTime": "2016-03-24T10:56:39Z"
-    },
-    {
-      "checksumSHA1": "fwC1ob/fwvPkjuwAusYPDwdwBUU=",
-      "path": "github.com/klauspost/compress/gzip",
-      "revision": "9d711f4445beb7f6488148ce04e3b4dc6e72242d",
-      "revisionTime": "2016-03-24T10:56:39Z"
-    },
-    {
-      "checksumSHA1": "MSfzKJkDgCfuW95gPLm4wbf08Q4=",
-      "path": "github.com/klauspost/compress/zlib",
-      "revision": "9d711f4445beb7f6488148ce04e3b4dc6e72242d",
-      "revisionTime": "2016-03-24T10:56:39Z"
-    },
-    {
-      "checksumSHA1": "iKPMvbAueGfdyHcWCgzwKzm8WVo=",
-      "path": "github.com/klauspost/cpuid",
-      "revision": "09cded8978dc9e80714c4d85b0322337b0a1e5e0",
-      "revisionTime": "2016-03-02T07:53:16Z"
-    },
-    {
-      "checksumSHA1": "hX+j017F4PEtIUGflAneDtLC6hs=",
-      "path": "github.com/klauspost/crc32",
-      "revision": "19b0b332c9e4516a6370a0456e6182c3b5036720",
-      "revisionTime": "2016-02-19T14:26:09Z"
-    },
-    {
-      "checksumSHA1": "92iF6u5pEEUm+6iCC09UMOgRcX0=",
-      "path": "github.com/miekg/dns",
-      "revision": "48ab6605c66ac797e07f615101c3e9e10e932b66",
-      "revisionTime": "2016-05-12T06:43:16Z"
-    },
-    {
-      "checksumSHA1": "jgSEWhALjy8F4DfWfrRUUMBYRT8=",
-      "path": "github.com/valyala/fasthttp",
-      "revision": "e9544cbb6fb446b65697099b65ff43cb7e225d7a",
-      "revisionTime": "2016-04-04T12:02:33Z"
-    },
-    {
-      "checksumSHA1": "+4r0PnLwwyhO5/jvU5R/TEJb4kA=",
-      "path": "gopkg.in/bsm/ratelimit.v1",
-      "revision": "db14e161995a5177acef654cb0dd785e8ee8bc22",
-      "revisionTime": "2016-02-20T15:49:07Z"
-    },
-    {
-      "checksumSHA1": "m3qkRWmZBzqd+Pnd+XsI7gxGOqU=",
-      "path": "gopkg.in/redis.v3",
-      "revision": "5183f8dcde9737db7583dbfa9881800dba26e3fa",
-      "revisionTime": "2016-05-02T11:39:45Z"
-    },
-    {
-      "checksumSHA1": "b4Z72l8sq4xuWhR+nM5vbLQIv+o=",
-      "path": "gopkg.in/redis.v3/internal",
-      "revision": "5183f8dcde9737db7583dbfa9881800dba26e3fa",
-      "revisionTime": "2016-05-02T11:39:45Z"
-    },
-    {
-      "checksumSHA1": "tNI/mAuqqQqfYU4vuJghUroIts4=",
-      "path": "gopkg.in/redis.v3/internal/consistenthash",
-      "revision": "5183f8dcde9737db7583dbfa9881800dba26e3fa",
-      "revisionTime": "2016-05-02T11:39:45Z"
-    },
-    {
-      "checksumSHA1": "JvqkSear94dc+NgofRqBAUmLcN0=",
-      "path": "gopkg.in/redis.v3/internal/hashtag",
-      "revision": "5183f8dcde9737db7583dbfa9881800dba26e3fa",
-      "revisionTime": "2016-05-02T11:39:45Z"
-    },
-    {
-      "checksumSHA1": "ROpD4/McQLnnxpPenjA0mEZfTL8=",
-      "path": "gopkg.in/redis.v3/internal/pool",
-      "revision": "5183f8dcde9737db7583dbfa9881800dba26e3fa",
-      "revisionTime": "2016-05-02T11:39:45Z"
-    },
-    {
-      "checksumSHA1": "UYvcpB3og7YJHbRu4feZFxXAU/A=",
-      "path": "gopkg.in/square/go-jose.v1/json",
-      "revision": "e3f973b66b91445ec816dd7411ad1b6495a5a2fc",
-      "revisionTime": "2016-05-02T21:53:29Z"
-    },
-    {
-      "checksumSHA1": "Ww6wiSKdA8LwxoJz4DNUF+crH4g=",
-      "path": "gopkg.in/yaml.v2",
-      "revision": "f7716cbe52baa25d2e9b0d0da546fcf909fc16b4",
-      "revisionTime": "2015-12-01T16:27:45Z"
-    },
-    {
-      "path": "integrated",
-      "revision": ""
-    },
-    {
-      "path": "microserviceboot.iml",
-      "revision": ""
-    },
-    {
-      "path": "serviceboot",
-      "revision": ""
-    },
-    {
-      "path": "serviceclient",
-      "revision": ""
-    },
-    {
-      "path": "utils",
-      "revision": ""
-    },
-    {
-      "path": "vendor",
-      "revision": ""
-    }
-  ],
-  "rootPath": "github.com/coffeehc/microserviceboot"
+	"Path": "github.com/coffeehc/microserviceboot",
+	"comment": "",
+	"ignore": "test",
+	"package": [
+		{
+			"checksumSHA1": "L7oNsWBEl2cVD7attjCXYNM2eOY=",
+			"path": "github.com/afex/hystrix-go/hystrix",
+			"revision": "9351b724be3950ef0ca82c53f817dcd33947e95e",
+			"revisionTime": "2015-09-09T03:42:20Z"
+		},
+		{
+			"checksumSHA1": "U0ciFGz5i3PUxw9tUdpsqDaD4Ug=",
+			"path": "github.com/afex/hystrix-go/hystrix/metric_collector",
+			"revision": "9351b724be3950ef0ca82c53f817dcd33947e95e",
+			"revisionTime": "2015-09-09T03:42:20Z"
+		},
+		{
+			"checksumSHA1": "ERbZ6cXXPJhus2uCOo5A6uFFfQw=",
+			"path": "github.com/afex/hystrix-go/hystrix/rolling",
+			"revision": "9351b724be3950ef0ca82c53f817dcd33947e95e",
+			"revisionTime": "2015-09-09T03:42:20Z"
+		},
+		{
+			"checksumSHA1": "iBtPGjn2UGtbqxTh2z+IDwMRe/0=",
+			"path": "github.com/benschw/dns-clb-go/clb",
+			"revision": "d27e15d9d464003443a1849927183b42ffdf588d",
+			"revisionTime": "2015-10-27T18:25:44Z"
+		},
+		{
+			"checksumSHA1": "6sDi+mv72REy02sTq/dkYE5hzrE=",
+			"path": "github.com/benschw/dns-clb-go/dns",
+			"revision": "d27e15d9d464003443a1849927183b42ffdf588d",
+			"revisionTime": "2015-10-27T18:25:44Z"
+		},
+		{
+			"checksumSHA1": "A/qSpPqPTaEM7ZId2W2cV9g47ws=",
+			"path": "github.com/benschw/dns-clb-go/randomclb",
+			"revision": "d27e15d9d464003443a1849927183b42ffdf588d",
+			"revisionTime": "2015-10-27T18:25:44Z"
+		},
+		{
+			"checksumSHA1": "vWGntxBKZMxXo8mHw/iEdWnl+as=",
+			"path": "github.com/benschw/dns-clb-go/roundrobinclb",
+			"revision": "d27e15d9d464003443a1849927183b42ffdf588d",
+			"revisionTime": "2015-10-27T18:25:44Z"
+		},
+		{
+			"checksumSHA1": "ij8E+cxM4b5ZOhOi7IuDQGuCSVU=",
+			"path": "github.com/benschw/dns-clb-go/ttlcache",
+			"revision": "d27e15d9d464003443a1849927183b42ffdf588d",
+			"revisionTime": "2015-10-27T18:25:44Z"
+		},
+		{
+			"checksumSHA1": "ReVouFzIpenxZjGm8UXgmd6WP8k=",
+			"path": "github.com/coffeehc/logger",
+			"revision": "2b16b7b871e94ffb9f6d4dc77a0bf9d66b15ba9f",
+			"revisionTime": "2016-09-20T03:16:53Z"
+		},
+		{
+			"checksumSHA1": "CfqU3dbVnYBL6CTTvYCbrmnRuF0=",
+			"path": "github.com/coffeehc/web",
+			"revision": "fc52a3620394a3eb8b6b9f80a44954fa2baf9bde",
+			"revisionTime": "2016-10-06T07:54:56Z"
+		},
+		{
+			"checksumSHA1": "jiKaQesv5IG+lCBSzJ5fS+JP7iM=",
+			"path": "github.com/coffeehc/web/pprof",
+			"revision": "fc52a3620394a3eb8b6b9f80a44954fa2baf9bde",
+			"revisionTime": "2016-10-06T07:54:56Z"
+		},
+		{
+			"checksumSHA1": "zlpe0MT0wtPGQ/bQ+/PsRr5XHzo=",
+			"path": "github.com/coreos/etcd/Godeps/_workspace/src/github.com/gogo/protobuf/proto",
+			"revision": "0813a0f2d143ae5ef28c40dcf7b30889330bc1a0",
+			"revisionTime": "2015-09-23T18:39:21Z"
+		},
+		{
+			"checksumSHA1": "AzOt34C4RJ42Vak7A+iME7luE6c=",
+			"path": "github.com/go-sql-driver/mysql",
+			"revision": "66312f7fe2678aa0f5ec770f96702f4c4ec5aa8e",
+			"revisionTime": "2016-03-10T22:28:42Z"
+		},
+		{
+			"checksumSHA1": "kVJ5YScYaDWw6iotbpZwQJ6xCGM=",
+			"path": "github.com/golang/protobuf/proto",
+			"revision": "0c1f6d65b5a189c2250d10e71a5506f06f9fa0a0",
+			"revisionTime": "2016-06-14T22:31:40Z"
+		},
+		{
+			"checksumSHA1": "gPi7fIH7BzYjebIeXKn4vWO+bfI=",
+			"path": "github.com/hashicorp/consul/api",
+			"revision": "3193507d9ac34fb600c5c973d0f2111a0d413af6",
+			"revisionTime": "2016-09-26T23:58:32Z"
+		},
+		{
+			"checksumSHA1": "Uzyon2091lmwacNsl1hCytjhHtg=",
+			"origin": "github.com/hashicorp/consul/vendor/github.com/hashicorp/go-cleanhttp",
+			"path": "github.com/hashicorp/go-cleanhttp",
+			"revision": "3193507d9ac34fb600c5c973d0f2111a0d413af6",
+			"revisionTime": "2016-09-26T23:58:32Z"
+		},
+		{
+			"checksumSHA1": "E3Xcanc9ouQwL+CZGOUyA/+giLg=",
+			"origin": "github.com/hashicorp/consul/vendor/github.com/hashicorp/serf/coordinate",
+			"path": "github.com/hashicorp/serf/coordinate",
+			"revision": "3193507d9ac34fb600c5c973d0f2111a0d413af6",
+			"revisionTime": "2016-09-26T23:58:32Z"
+		},
+		{
+			"checksumSHA1": "UyeG/EY+twf164MGs6W6eppHHXU=",
+			"path": "github.com/jinzhu/gorm",
+			"revision": "27522453dea253cf90dcb5345286a5fcf0fbed7c",
+			"revisionTime": "2016-05-22T11:10:33Z"
+		},
+		{
+			"checksumSHA1": "eECxSkwh0WmhLwaxHfkvcLOWS08=",
+			"path": "github.com/jinzhu/gorm/dialects/mysql",
+			"revision": "27522453dea253cf90dcb5345286a5fcf0fbed7c",
+			"revisionTime": "2016-05-22T11:10:33Z"
+		},
+		{
+			"checksumSHA1": "9Fb+a7sS7os6y+72DjHAVegPBwY=",
+			"path": "github.com/jinzhu/inflection",
+			"revision": "3272df6c21d04180007eb3349844c89a3856bc25",
+			"revisionTime": "2015-10-09T08:41:29Z"
+		},
+		{
+			"checksumSHA1": "92iF6u5pEEUm+6iCC09UMOgRcX0=",
+			"path": "github.com/miekg/dns",
+			"revision": "48ab6605c66ac797e07f615101c3e9e10e932b66",
+			"revisionTime": "2016-05-12T06:43:16Z"
+		},
+		{
+			"checksumSHA1": "+4r0PnLwwyhO5/jvU5R/TEJb4kA=",
+			"path": "gopkg.in/bsm/ratelimit.v1",
+			"revision": "db14e161995a5177acef654cb0dd785e8ee8bc22",
+			"revisionTime": "2016-02-20T15:49:07Z"
+		},
+		{
+			"checksumSHA1": "m3qkRWmZBzqd+Pnd+XsI7gxGOqU=",
+			"path": "gopkg.in/redis.v3",
+			"revision": "5183f8dcde9737db7583dbfa9881800dba26e3fa",
+			"revisionTime": "2016-05-02T11:39:45Z"
+		},
+		{
+			"checksumSHA1": "b4Z72l8sq4xuWhR+nM5vbLQIv+o=",
+			"path": "gopkg.in/redis.v3/internal",
+			"revision": "5183f8dcde9737db7583dbfa9881800dba26e3fa",
+			"revisionTime": "2016-05-02T11:39:45Z"
+		},
+		{
+			"checksumSHA1": "tNI/mAuqqQqfYU4vuJghUroIts4=",
+			"path": "gopkg.in/redis.v3/internal/consistenthash",
+			"revision": "5183f8dcde9737db7583dbfa9881800dba26e3fa",
+			"revisionTime": "2016-05-02T11:39:45Z"
+		},
+		{
+			"checksumSHA1": "JvqkSear94dc+NgofRqBAUmLcN0=",
+			"path": "gopkg.in/redis.v3/internal/hashtag",
+			"revision": "5183f8dcde9737db7583dbfa9881800dba26e3fa",
+			"revisionTime": "2016-05-02T11:39:45Z"
+		},
+		{
+			"checksumSHA1": "ROpD4/McQLnnxpPenjA0mEZfTL8=",
+			"path": "gopkg.in/redis.v3/internal/pool",
+			"revision": "5183f8dcde9737db7583dbfa9881800dba26e3fa",
+			"revisionTime": "2016-05-02T11:39:45Z"
+		},
+		{
+			"checksumSHA1": "Ww6wiSKdA8LwxoJz4DNUF+crH4g=",
+			"path": "gopkg.in/yaml.v2",
+			"revision": "f7716cbe52baa25d2e9b0d0da546fcf909fc16b4",
+			"revisionTime": "2015-12-01T16:27:45Z"
+		}
+	],
+	"rootPath": "github.com/coffeehc/microserviceboot"
 }
