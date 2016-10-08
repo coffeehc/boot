@@ -2,13 +2,11 @@ package serviceboot
 
 import (
 	"fmt"
-	"net/http"
 
 	"flag"
 	"net"
 	"os"
 	"strconv"
-	"time"
 
 	"github.com/coffeehc/logger"
 	"github.com/coffeehc/microserviceboot/base"
@@ -17,9 +15,9 @@ import (
 )
 
 type MicroService struct {
-	config  *ServiceConfig
-	server  *web.Server
-	service base.Service
+	config     *ServiceConfig
+	httpServer web.HttpServer
+	service    base.Service
 }
 
 func newMicroService(service base.Service) (*MicroService, base.Error) {
@@ -47,11 +45,12 @@ func (microService *MicroService) init() base.Error {
 	if err != nil {
 		logger.Warn("加载服务器配置[%s]失败,%s", *configPath, err)
 	}
+	logger.Debug("serviceboot Config is %#v", serviceConfig)
 	microService.config = serviceConfig
 	webConfig := serviceConfig.GetWebServerConfig()
-	microService.server = web.NewServer(webConfig)
+	microService.httpServer = web.NewHttpServer(webConfig)
 	if microService.service.Init != nil {
-		err := microService.service.Init(*configPath, microService.server)
+		err := microService.service.Init(*configPath, microService.httpServer)
 		if err != nil {
 			return err
 		}
@@ -61,16 +60,16 @@ func (microService *MicroService) init() base.Error {
 	if err != nil {
 		return err
 	}
-	pprof.RegeditPprof(microService.server)
+	pprof.RegeditPprof(microService.httpServer)
 	if base.IsDevModule() {
 		debugConfig := serviceConfig.getDebugConfig()
 		logger.Debug("open dev module")
 		apiDefineRequestHandler := buildApiDefineRequestHandler(serviceInfo)
 		if apiDefineRequestHandler != nil {
-			microService.server.Register(fmt.Sprintf("/apidefine/%s.api", serviceInfo.GetServiceName()), web.GET, apiDefineRequestHandler)
+			microService.httpServer.Register(fmt.Sprintf("/apidefine/%s.api", serviceInfo.GetServiceName()), web.GET, apiDefineRequestHandler)
 		}
 		if debugConfig.IsEnableAccessInfo() {
-			microService.server.AddFirstFilter("/*", web.SimpleAccessLogFilter)
+			microService.httpServer.AddFirstFilter("/*", web.SimpleAccessLogFilter)
 		}
 	}
 
@@ -78,16 +77,18 @@ func (microService *MicroService) init() base.Error {
 }
 
 func (microService *MicroService) start() base.Error {
-	startTime := time.Now()
 	serviceInfo := microService.service.GetServiceInfo()
 	//TODO 拦截异常返回
-	err := microService.server.Start()
-	if err != nil {
-		return base.NewError(base.ERROR_CODE_BASE_INIT_ERROR, err.Error())
-	}
+	errSign := microService.httpServer.Start()
+	defer func() {
+		err := <-errSign
+		if err != nil {
+			panic(base.NewError(base.ERROR_CODE_BASE_INIT_ERROR, err.Error()))
+		}
+	}()
 	serviceDiscoveryRegister := microService.service.GetServiceDiscoveryRegister()
 	if !microService.config.DisableServiceRegister && serviceDiscoveryRegister != nil {
-		_, port, _ := net.SplitHostPort(microService.server.GetServerAddress())
+		_, port, _ := net.SplitHostPort(microService.httpServer.GetServerAddress())
 		p, _ := strconv.Atoi(port)
 		registerError := serviceDiscoveryRegister.RegService(serviceInfo, microService.service.GetEndPoints(), p)
 		if registerError != nil {
@@ -96,20 +97,19 @@ func (microService *MicroService) start() base.Error {
 		}
 		logger.Info("注册服务[%s]成功", microService.service.GetServiceInfo().GetServiceName())
 	}
-	logger.Info("Service started [%s]", time.Since(startTime))
 	return nil
 }
 
 func buildApiDefineRequestHandler(serviceInfo base.ServiceInfo) web.RequestHandler {
-	return func(request *http.Request, pathFragments map[string]string, reply web.Reply) {
-		reply.With(serviceInfo.GetApiDefine()).As(web.Transport_Text)
+	return func(reply web.Reply) {
+		reply.With(serviceInfo.GetApiDefine()).As(web.Default_Render_Text)
 	}
 }
 
 func (this *MicroService) registerEndpoint(endPoint base.EndPoint) base.Error {
 	metadata := endPoint.Metadata
 	logger.Debug("register endpoint [%s] %s %s", metadata.Method, metadata.Path, metadata.Description)
-	err := this.server.Register(metadata.Path, metadata.Method, endPoint.HandlerFunc)
+	err := this.httpServer.Register(metadata.Path, metadata.Method, endPoint.HandlerFunc)
 	if err != nil {
 		return base.NewError(base.ERROR_CODE_BASE_INIT_ERROR, err.Error())
 	}

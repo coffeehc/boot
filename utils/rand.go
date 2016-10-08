@@ -1,9 +1,9 @@
 package utils
 
 import (
-	"encoding/binary"
-	"encoding/base64"
 	"crypto/rand"
+	"encoding/base64"
+	"encoding/binary"
 )
 
 func GetRandInt64() int64 {
@@ -15,17 +15,16 @@ func GetRandInt64() int64 {
 	return int64(binary.BigEndian.Uint64(bs))
 }
 
-
-func GetRandString(size int,encoding *base64.Encoding) string {
+func GetRandString(size int, encoding *base64.Encoding) string {
 	bs := make([]byte, size)
 	_, err := rand.Read(bs)
 	if err != nil {
-		return GetRandString(size,encoding)
+		return GetRandString(size, encoding)
 	}
 	return encoding.EncodeToString(bs)
 }
 
-func GetRandBytes(size int) []byte{
+func GetRandBytes(size int) []byte {
 	bs := make([]byte, size)
 	_, err := rand.Read(bs)
 	if err != nil {

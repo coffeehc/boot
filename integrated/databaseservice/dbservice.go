@@ -49,7 +49,7 @@ type DBService interface {
 func NewDBService(config *DatabaseConfig, initDB func(db *gorm.DB)) (DBService, base.Error) {
 	db, err := newDB(config.User, config.Password, config.Host, config.Port, config.DatabaseName)
 	if err != nil {
-		return nil, base.NewError(base.ERROR_CODE_BASE_INIT_ERROR,err.Error())
+		return nil, base.NewError(base.ERROR_CODE_BASE_INIT_ERROR, err.Error())
 	}
 	if base.IsDevModule() {
 		db.LogMode(true)

@@ -6,11 +6,12 @@ import (
 
 	"encoding/base64"
 	"encoding/json"
+	"io/ioutil"
+
 	"github.com/coffeehc/logger"
 	"github.com/coffeehc/microserviceboot/base"
 	"github.com/coffeehc/web"
 	"github.com/golang/protobuf/proto"
-	"io/ioutil"
 )
 
 func ErrorRecover(reply web.Reply) {
@@ -36,7 +37,7 @@ func ErrorRecover(reply web.Reply) {
 			errorResponse = base.NewErrorResponse(http.StatusInternalServerError, base.ERROR_CODE_BASE_SYSTEM_ERROR, fmt.Sprintf("%#v", err), "")
 		}
 		//暂时统一按照400处理
-		reply.SetStatusCode(errorResponse.GetHttpCode()).With(errorResponse).As(web.Transport_Json)
+		reply.SetStatusCode(errorResponse.GetHttpCode()).With(errorResponse).As(web.Default_Render_Json)
 	}
 }
 
