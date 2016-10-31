@@ -1,4 +1,4 @@
-package serviceclient
+package restclient
 
 import (
 	"net"
@@ -11,6 +11,7 @@ import (
 	"github.com/afex/hystrix-go/hystrix"
 	"github.com/coffeehc/logger"
 	"github.com/coffeehc/microserviceboot/base"
+	"github.com/coffeehc/microserviceboot/base/restbase"
 )
 
 func init() {
@@ -21,7 +22,7 @@ func init() {
 
 type HttpClient interface {
 	GetBaseUrl() string
-	BuildRequest(*base.EndPointMeta) (Request, base.Error)
+	BuildRequest(*restbase.EndPointMeta) (Request, base.Error)
 	Do(cxt context.Context, req Request) (Response, base.Error)
 }
 
@@ -35,7 +36,7 @@ func (this *_HttpClientWithBase) GetBaseUrl() string {
 	return this.baseUrl
 }
 
-func (this *_HttpClientWithBase) BuildRequest(endPointMeta *base.EndPointMeta) (Request, base.Error) {
+func (this *_HttpClientWithBase) BuildRequest(endPointMeta *restbase.EndPointMeta) (Request, base.Error) {
 	request := AcquireRequest()
 	err := request.Init(this.baseUrl, endPointMeta)
 	if err != nil {

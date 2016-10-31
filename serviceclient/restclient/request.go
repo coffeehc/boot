@@ -1,4 +1,4 @@
-package serviceclient
+package restclient
 
 import (
 	"bytes"
@@ -9,12 +9,13 @@ import (
 	"strings"
 
 	"github.com/coffeehc/microserviceboot/base"
+	"github.com/coffeehc/microserviceboot/base/restbase"
 	"github.com/golang/protobuf/proto"
 )
 
 type Request interface {
 	GetCommand() string
-	Init(baseUrl string, endpointMeta *base.EndPointMeta) base.Error
+	Init(baseUrl string, endpointMeta *restbase.EndPointMeta) base.Error
 	SetPathParam(map[string]string) base.Error
 	SetQueryParam(values url.Values) base.Error
 	EncodeBody(data interface{}, handler RequestBodyEncoder) base.Error
@@ -37,7 +38,7 @@ func (this *_Request) GetCommand() string {
 	return this.command
 }
 
-func (this *_Request) Init(baseUrl string, endpointMeta *base.EndPointMeta) base.Error {
+func (this *_Request) Init(baseUrl string, endpointMeta *restbase.EndPointMeta) base.Error {
 	_url, err := url.Parse(baseUrl + endpointMeta.Path)
 	if err != nil {
 		return base.NewErrorWrapper(err)

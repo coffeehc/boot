@@ -29,23 +29,25 @@ func NewConsulServiceRegister(consulConfig *api.Config) (*ConsulServiceRegister,
 
 }
 
-func (this *ConsulServiceRegister) RegService(serviceInfo base.ServiceInfo, endpints []base.EndPoint, servicePort int) base.Error {
-	ip := base.GetLocalIp()
-	this.serviceId = fmt.Sprintf("%s-%s", serviceInfo.GetServiceName(), ip)
+func (this *ConsulServiceRegister) RegService(serviceInfo base.ServiceInfo, serviceAddr string, servicePort int) base.Error {
+	if serviceAddr == "" {
+		serviceAddr = base.GetLocalIp().String()
+	}
+	this.serviceId = fmt.Sprintf("%s-%s", serviceInfo.GetServiceName(), serviceAddr)
 	this.checkId = fmt.Sprintf("service:%s", this.serviceId)
 	registration := &api.AgentServiceRegistration{
 		Name:              serviceInfo.GetServiceName(),
 		Tags:              base.WarpTags(serviceInfo.GetServiceTags()),
 		Port:              servicePort,
-		Address:           ip.String(),
+		Address:           serviceAddr,
 		EnableTagOverride: true,
 		Checks: api.AgentServiceChecks([]*api.AgentServiceCheck{
 			{
-				HTTP:     fmt.Sprintf("http://%s:%d/debug/pprof/threadcreate?debug=1", ip, servicePort),
+				HTTP:     fmt.Sprintf("http://%s:%d/debug/pprof/threadcreate?debug=1", serviceAddr, servicePort),
 				Interval: "10s",
 			},
 			{
-				HTTP:     fmt.Sprintf("http://%s:%d/debug/pprof/block?debug=1", ip, servicePort),
+				HTTP:     fmt.Sprintf("http://%s:%d/debug/pprof/block?debug=1", serviceAddr, servicePort),
 				Interval: "10s",
 			},
 		}),

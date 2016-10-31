@@ -1,4 +1,4 @@
-package base
+package restbase
 
 import "github.com/coffeehc/web"
 

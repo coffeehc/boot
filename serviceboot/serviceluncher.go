@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"log"
 
+	"flag"
 	"github.com/coffeehc/logger"
 	"github.com/coffeehc/microserviceboot/base"
 )
@@ -16,21 +17,32 @@ import (
 /**
  *	Service 启动
  */
-func ServiceLauncher(service base.Service) {
+func ServiceLauncher(service base.Service, serviceBuilder MicroServiceBuilder) {
 	log.SetFlags(log.Ldate | log.Ltime | log.Llongfile)
 	logger.InitLogger()
 	defer logger.WaitToClose()
+	if flag.Lookup("help") != nil {
+		flag.PrintDefaults()
+		os.Exit(0)
+	}
 	startTime := time.Now()
 	if service == nil {
 		logger.Error("service is nil")
 		return
 	}
-	microService, err := newMicroService(service)
+	serviceInfo := service.GetServiceInfo()
+	if serviceInfo == nil {
+		return nil, base.NewError(base.ERROR_CODE_BASE_INIT_ERROR, "没有指定 ServiceInfo")
+	}
+	logger.Info("ServiceName: %s", serviceInfo.GetServiceName())
+	logger.Info("Version: %s", serviceInfo.GetVersion())
+	logger.Info("Descriptor: %s", serviceInfo.GetDescriptor())
+	microService, err := serviceBuilder(service)
 	if err != nil {
 		log.Printf("初始化微服务出错:%s\n", err.Error())
 		return
 	}
-	err = microService.init()
+	err = microService.Init()
 	if err != nil {
 		log.Printf("初始化微服务出错:%s\n", err.Error())
 		return
@@ -49,7 +61,7 @@ func ServiceLauncher(service base.Service) {
 		log.Printf("start service error,%s\n", err)
 		return
 	}
-	err = microService.start()
+	err = microService.Start()
 	if err != nil {
 		logger.Error("service start fail. %s", err)
 		time.Sleep(time.Second)

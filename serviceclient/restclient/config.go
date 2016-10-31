@@ -1,4 +1,4 @@
-package serviceclient
+package restclient
 
 import (
 	"time"
