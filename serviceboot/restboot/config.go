@@ -10,13 +10,12 @@ import (
 
 type Config struct {
 	serviceboot.ServiceConfig
-	WebServerConfig *WebConfig `yaml:"webserver"`
+	WebServerConfig *WebConfig `yaml:"web_server_config"`
 }
 
 type WebConfig struct {
-	ServerAddr   string        `yaml:"serverAddr"`
-	ReadTimeout  time.Duration `yaml:"readTimeout"`
-	WriteTimeout time.Duration `yaml:"writeTimeout"`
+	ReadTimeout  time.Duration `yaml:"read_timeout"`
+	WriteTimeout time.Duration `yaml:"write_timeout"`
 	Concurrency  int           `yaml:"concurrency"` //暂时没有使用
 }
 
@@ -26,10 +25,10 @@ func (this *Config) GetWebServerConfig() *web.HttpServerConfig {
 	if wc == nil {
 		wc = new(WebConfig)
 	}
-	if wc.ServerAddr == "" {
+	if this.ServerAddr == "" {
 		webConfig.ServerAddr = fmt.Sprintf("%s:8888", base.GetLocalIp())
 	} else {
-		webConfig.ServerAddr = wc.ServerAddr
+		webConfig.ServerAddr = this.ServerAddr
 	}
 	if wc.Concurrency == 0 {
 		wc.Concurrency = 100000

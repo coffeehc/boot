@@ -2,6 +2,8 @@ package serviceboot
 
 import (
 	"flag"
+	"fmt"
+	"github.com/coffeehc/microserviceboot/base"
 )
 
 var configPath = flag.String("config", "", "配置文件路径")
@@ -9,6 +11,7 @@ var configPath = flag.String("config", "", "配置文件路径")
 type ServiceConfig struct {
 	Debug                  *DebugConfig `yaml:"debug"`
 	DisableServiceRegister bool         `yaml:"disableServiceRegister"`
+	ServerAddr             string       `yaml:"server_addr"`
 }
 
 func (this *ServiceConfig) GetDebugConfig() *DebugConfig {
@@ -16,4 +19,11 @@ func (this *ServiceConfig) GetDebugConfig() *DebugConfig {
 		this.Debug = &DebugConfig{}
 	}
 	return this.Debug
+}
+
+func (this *ServiceConfig) GetServerAddr() string {
+	if this.ServerAddr == "" {
+		this.ServerAddr = fmt.Sprintf("%s:8888", base.GetLocalIp())
+	}
+	return this.ServerAddr
 }

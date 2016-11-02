@@ -5,8 +5,10 @@ import (
 )
 
 type MicroService interface {
-	Init() base.Error
+	Init() (*ServiceConfig, base.Error)
 	Start() base.Error
+	Stop()
+	GetService() base.Service
 }
 
 type MicroServiceBuilder func(base.Service) (MicroService, base.Error)

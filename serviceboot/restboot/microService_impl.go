@@ -8,8 +8,6 @@ import (
 	"github.com/coffeehc/microserviceboot/serviceboot"
 	"github.com/coffeehc/web"
 	"github.com/coffeehc/web/pprof"
-	"net"
-	"strconv"
 )
 
 const RestMicroServiceBuilder serviceboot.MicroServiceBuilder = microServiceBuild
@@ -31,8 +29,7 @@ func microServiceBuild(service base.Service) (serviceboot.MicroService, base.Err
 	}, nil
 }
 
-func (microService *MicroService_Rest) Init() base.Error {
-	logger.Info("Service startting")
+func (microService *MicroService_Rest) Init() (*serviceboot.ServiceConfig, base.Error) {
 	serviceConfig := new(Config)
 	configPath := serviceboot.LoadConfigPath(serviceConfig)
 	microService.config = serviceConfig
@@ -41,13 +38,13 @@ func (microService *MicroService_Rest) Init() base.Error {
 	if microService.service.Init != nil {
 		err := microService.service.Init(configPath, microService.httpServer)
 		if err != nil {
-			return err
+			return nil, err
 		}
 	}
 	serviceInfo := microService.service.GetServiceInfo()
 	err := microService.registerEndpoints()
 	if err != nil {
-		return err
+		return nil, err
 	}
 	pprof.RegeditPprof(microService.httpServer)
 	if base.IsDevModule() {
@@ -62,31 +59,25 @@ func (microService *MicroService_Rest) Init() base.Error {
 		}
 	}
 
-	return nil
+	return serviceConfig.ServiceConfig, nil
 }
 
 func (microService *MicroService_Rest) Start() base.Error {
-	serviceInfo := microService.service.GetServiceInfo()
-	//TODO 拦截异常返回
 	errSign := microService.httpServer.Start()
-	defer func() {
+	go func() {
 		err := <-errSign
 		if err != nil {
 			panic(base.NewError(base.ERROR_CODE_BASE_INIT_ERROR, err.Error()))
 		}
 	}()
-	serviceDiscoveryRegister := microService.service.GetServiceDiscoveryRegister()
-	if !microService.config.DisableServiceRegister && serviceDiscoveryRegister != nil {
-		_, port, _ := net.SplitHostPort(microService.httpServer.GetServerAddress())
-		p, _ := strconv.Atoi(port)
-		registerError := serviceDiscoveryRegister.RegService(serviceInfo, microService.service.GetEndPoints(), p)
-		if registerError != nil {
-			logger.Info("注册服务[%s]失败,%s", microService.service.GetServiceInfo().GetServiceName(), registerError.Error())
-			return registerError
-		}
-		logger.Info("注册服务[%s]成功", microService.service.GetServiceInfo().GetServiceName())
-	}
 	return nil
+}
+
+func (microService *MicroService_Rest) GetService() base.Service {
+	return microService.service
+}
+
+func (microService *MicroService_Rest) Stop() {
 }
 
 func buildApiDefineRequestHandler(serviceInfo base.ServiceInfo) web.RequestHandler {

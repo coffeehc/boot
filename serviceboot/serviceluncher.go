@@ -32,7 +32,8 @@ func ServiceLauncher(service base.Service, serviceBuilder MicroServiceBuilder) {
 	}
 	serviceInfo := service.GetServiceInfo()
 	if serviceInfo == nil {
-		return nil, base.NewError(base.ERROR_CODE_BASE_INIT_ERROR, "没有指定 ServiceInfo")
+		logger.Error("没有指定 ServiceInfo")
+		return
 	}
 	logger.Info("ServiceName: %s", serviceInfo.GetServiceName())
 	logger.Info("Version: %s", serviceInfo.GetVersion())
@@ -42,12 +43,16 @@ func ServiceLauncher(service base.Service, serviceBuilder MicroServiceBuilder) {
 		log.Printf("初始化微服务出错:%s\n", err.Error())
 		return
 	}
-	err = microService.Init()
-	if err != nil {
+	logger.Info("Service initing")
+	config, initErr := microService.Init()
+	if initErr != nil {
 		log.Printf("初始化微服务出错:%s\n", err.Error())
 		return
 	}
+	logger.Info("Service inited")
+	logger.Info("Service starting")
 	err = startService(service)
+	defer microService.Stop()
 	defer func(service base.Service) {
 		if service != nil && service.Stop != nil {
 			stopErr := service.Stop()
@@ -61,11 +66,22 @@ func ServiceLauncher(service base.Service, serviceBuilder MicroServiceBuilder) {
 		log.Printf("start service error,%s\n", err)
 		return
 	}
+
 	err = microService.Start()
 	if err != nil {
 		logger.Error("service start fail. %s", err)
 		time.Sleep(time.Second)
 		os.Exit(-1)
+	}
+	serviceDiscoveryRegister := service.GetServiceDiscoveryRegister()
+	if !config.DisableServiceRegister && serviceDiscoveryRegister != nil {
+		registerError := serviceDiscoveryRegister.RegService(serviceInfo, config.GetServerAddr())
+		if registerError != nil {
+			logger.Info("注册服务[%s]失败,%s", service.GetServiceInfo().GetServiceName(), registerError.Error())
+			time.Sleep(time.Second)
+			os.Exit(-1)
+		}
+		logger.Info("注册服务[%s]成功", service.GetServiceInfo().GetServiceName())
 	}
 	defer base.DebugPanic(true)
 	defer func() {
