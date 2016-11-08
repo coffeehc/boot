@@ -9,6 +9,7 @@ import (
 	"github.com/coffeehc/microserviceboot/base"
 	"github.com/coffeehc/microserviceboot/base/grpcbase"
 	"github.com/coffeehc/microserviceboot/serviceboot"
+	"google.golang.org/grpc/grpclog"
 )
 
 var GRpcMicroServiceBuilder serviceboot.MicroServiceBuilder = microServiceBuilder
@@ -31,6 +32,7 @@ type GRpcMicroService struct {
 }
 
 func (this *GRpcMicroService) Init() (*serviceboot.ServiceConfig, base.Error) {
+	grpclog.SetLogger(&_logger{})
 	serviceConfig := new(Config)
 	configPath := serviceboot.LoadConfigPath(serviceConfig)
 	this.config = serviceConfig
@@ -47,12 +49,12 @@ func (this *GRpcMicroService) Init() (*serviceboot.ServiceConfig, base.Error) {
 	}
 	this.grpcServer = grpc.NewServer(grpcOptions...)
 	this.service.RegisterServer(this.grpcServer)
-	return &serviceConfig.ServiceConfig, nil
+	return serviceConfig.GetBaseConfig(), nil
 }
 
 func (this *GRpcMicroService) Start() base.Error {
 	//启动服务器
-	lis, err := net.Listen("tcp", this.config.GetServerAddr())
+	lis, err := net.Listen("tcp", this.config.GetBaseConfig().GetServerAddr())
 	if err != nil {
 		return base.NewError(-1, logger.Error("failed to listen: %v", err))
 	}
@@ -62,7 +64,9 @@ func (this *GRpcMicroService) Start() base.Error {
 }
 
 func (this *GRpcMicroService) Stop() {
-	this.listener.Close()
+	if this.listener != nil {
+		this.listener.Close()
+	}
 }
 
 func (this *GRpcMicroService) GetService() base.Service {

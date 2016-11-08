@@ -10,10 +10,10 @@ import (
 	"github.com/coffeehc/web/pprof"
 )
 
-const RestMicroServiceBuilder serviceboot.MicroServiceBuilder = microServiceBuild
+var RestMicroServiceBuilder serviceboot.MicroServiceBuilder = microServiceBuild
 
 type MicroService_Rest struct {
-	config     *serviceboot.ServiceConfig
+	config     *Config
 	httpServer web.HttpServer
 	service    restbase.RestService
 }
@@ -48,7 +48,7 @@ func (microService *MicroService_Rest) Init() (*serviceboot.ServiceConfig, base.
 	}
 	pprof.RegeditPprof(microService.httpServer)
 	if base.IsDevModule() {
-		debugConfig := serviceConfig.GetDebugConfig()
+		debugConfig := serviceConfig.GetBaseConfig().GetDebugConfig()
 		logger.Debug("open dev module")
 		apiDefineRequestHandler := buildApiDefineRequestHandler(serviceInfo)
 		if apiDefineRequestHandler != nil {
@@ -59,7 +59,7 @@ func (microService *MicroService_Rest) Init() (*serviceboot.ServiceConfig, base.
 		}
 	}
 
-	return serviceConfig.ServiceConfig, nil
+	return serviceConfig.GetBaseConfig(), nil
 }
 
 func (microService *MicroService_Rest) Start() base.Error {

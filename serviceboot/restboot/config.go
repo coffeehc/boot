@@ -9,8 +9,8 @@ import (
 )
 
 type Config struct {
-	serviceboot.ServiceConfig
-	WebServerConfig *WebConfig `yaml:"web_server_config"`
+	BaseConfig      *serviceboot.ServiceConfig `yaml:"base_config"`
+	WebServerConfig *WebConfig                 `yaml:"web_server_config"`
 }
 
 type WebConfig struct {
@@ -19,16 +19,23 @@ type WebConfig struct {
 	Concurrency  int           `yaml:"concurrency"` //暂时没有使用
 }
 
+func (this *Config) GetBaseConfig() *serviceboot.ServiceConfig {
+	if this.BaseConfig == nil {
+		this.BaseConfig = new(serviceboot.ServiceConfig)
+	}
+	return this.BaseConfig
+}
+
 func (this *Config) GetWebServerConfig() *web.HttpServerConfig {
 	webConfig := new(web.HttpServerConfig)
 	wc := this.WebServerConfig
 	if wc == nil {
 		wc = new(WebConfig)
 	}
-	if this.ServerAddr == "" {
+	if this.BaseConfig.ServerAddr == "" {
 		webConfig.ServerAddr = fmt.Sprintf("%s:8888", base.GetLocalIp())
 	} else {
-		webConfig.ServerAddr = this.ServerAddr
+		webConfig.ServerAddr = this.BaseConfig.ServerAddr
 	}
 	if wc.Concurrency == 0 {
 		wc.Concurrency = 100000

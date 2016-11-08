@@ -73,6 +73,7 @@ func ServiceLauncher(service base.Service, serviceBuilder MicroServiceBuilder) {
 		time.Sleep(time.Second)
 		os.Exit(-1)
 	}
+	logger.Info("核心服务启动成功,服务地址:%s", config.GetServerAddr())
 	serviceDiscoveryRegister := service.GetServiceDiscoveryRegister()
 	if !config.DisableServiceRegister && serviceDiscoveryRegister != nil {
 		registerError := serviceDiscoveryRegister.RegService(serviceInfo, config.GetServerAddr())

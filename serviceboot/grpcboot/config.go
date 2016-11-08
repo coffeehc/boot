@@ -6,8 +6,8 @@ import (
 )
 
 type Config struct {
-	serviceboot.ServiceConfig
-	GrpcConfig *GRpcConfig `yaml:"grpc_config"`
+	BaseConfig *serviceboot.ServiceConfig `yaml:"base_config"`
+	GrpcConfig *GRpcConfig                `yaml:"grpc_config"`
 }
 
 type GRpcConfig struct {
@@ -20,6 +20,13 @@ func (this *GRpcConfig) GetGrpcOptions() []grpc.ServerOption {
 		grpc.MaxConcurrentStreams(this.MaxConcurrentStreams),
 		grpc.MaxMsgSize(this.MaxMsgSize),
 	}
+}
+
+func (this *Config) GetBaseConfig() *serviceboot.ServiceConfig {
+	if this.BaseConfig == nil {
+		this.BaseConfig = new(serviceboot.ServiceConfig)
+	}
+	return this.BaseConfig
 }
 
 func (this *Config) GetGRpcServerConfig() *GRpcConfig {

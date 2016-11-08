@@ -10,7 +10,7 @@ var configPath = flag.String("config", "", "配置文件路径")
 
 type ServiceConfig struct {
 	Debug                  *DebugConfig `yaml:"debug"`
-	DisableServiceRegister bool         `yaml:"disableServiceRegister"`
+	DisableServiceRegister bool         `yaml:"disable_service_register"`
 	ServerAddr             string       `yaml:"server_addr"`
 }
 
