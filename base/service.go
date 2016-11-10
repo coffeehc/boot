@@ -19,3 +19,46 @@ type ServiceInfo interface {
 	//获取 Service tags
 	GetServiceTags() []string
 }
+
+type SimpleServiceInfo struct {
+	ServiceName string
+	Version     string
+	Descriptor  string
+	ApiDefine   string
+	Tags        []string
+}
+
+func (this *SimpleServiceInfo) GetApiDefine() string {
+	return this.ApiDefine
+}
+func (this *SimpleServiceInfo) GetServiceName() string {
+	return this.ServiceName
+}
+func (this *SimpleServiceInfo) GetVersion() string {
+	return this.Version
+}
+func (this *SimpleServiceInfo) GetDescriptor() string {
+	return this.Descriptor
+}
+func (this *SimpleServiceInfo) GetServiceTags() []string {
+	return this.Tags
+}
+
+func BuildSimpleServiceInfo(serviceName string, version string, vars ...string) ServiceInfo {
+	serviceInfo := &SimpleServiceInfo{
+		ServiceName: serviceName,
+		Version:     version,
+	}
+
+	if len(vars) > 0 {
+		serviceInfo.Descriptor = vars[0]
+	}
+	if len(vars) > 1 {
+		serviceInfo.ApiDefine = vars[1]
+	}
+	if len(vars) > 2 {
+		serviceInfo.Tags = vars[2:]
+	}
+	return serviceInfo
+
+}
