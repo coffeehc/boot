@@ -2,8 +2,6 @@ package serviceboot
 
 import (
 	"os"
-	"os/signal"
-	"syscall"
 	"time"
 
 	"fmt"
@@ -12,6 +10,7 @@ import (
 	"flag"
 	"github.com/coffeehc/logger"
 	"github.com/coffeehc/microserviceboot/base"
+	"github.com/coffeehc/microserviceboot/utils"
 )
 
 /**
@@ -89,7 +88,7 @@ func ServiceLauncher(service base.Service, serviceBuilder MicroServiceBuilder) {
 		fmt.Printf("服务[%s]关闭\n", service.GetServiceInfo().GetServiceName())
 	}()
 	logger.Info("Service started [%s]", time.Since(startTime))
-	waitStop()
+	utils.WaitStop()
 }
 func startService(service base.Service) (err base.Error) {
 	defer func() {
@@ -113,15 +112,4 @@ func startService(service base.Service) (err base.Error) {
 	}
 	logger.Info("服务已正常启动")
 	return
-}
-
-/*
-	wait,一般是可执行函数的最后用于阻止程序退出
-*/
-func waitStop() {
-	var sigChan = make(chan os.Signal, 3)
-	signal.Notify(sigChan, os.Interrupt, syscall.SIGTERM)
-	sig := <-sigChan
-	logger.Debug("接收到指令:%s,立即关闭程序", sig)
-	fmt.Printf("接收到指令:%s,立即关闭程序", sig)
 }
