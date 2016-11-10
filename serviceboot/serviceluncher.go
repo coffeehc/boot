@@ -83,7 +83,6 @@ func ServiceLauncher(service base.Service, serviceBuilder MicroServiceBuilder) {
 		}
 		logger.Info("注册服务[%s]成功", service.GetServiceInfo().GetServiceName())
 	}
-	defer base.DebugPanic(true)
 	defer func() {
 		fmt.Printf("服务[%s]关闭\n", service.GetServiceInfo().GetServiceName())
 	}()

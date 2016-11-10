@@ -1,54 +1,18 @@
 package base
 
 import (
-	"net"
-
-	"crypto/rand"
-	"encoding/base64"
 	"io/ioutil"
 	"os"
-	"os/exec"
 	"path"
-	"path/filepath"
 
+	"github.com/coffeehc/commons"
 	"github.com/coffeehc/logger"
 	"gopkg.in/yaml.v2"
 )
 
-var (
-	localIp = net.IPv4(127, 0, 0, 1)
-)
-
-func GetRand(size int) string {
-	bs := make([]byte, size)
-	_, err := rand.Read(bs)
-	if err != nil {
-		return GetRand(size)
-	}
-	return base64.RawStdEncoding.EncodeToString(bs)
-
-}
-
-func GetLocalIp() net.IP {
-	addrs, err := net.InterfaceAddrs()
-	if err != nil {
-		logger.Error("无法获取网络接口信息,%s", err)
-		return localIp
-	}
-
-	for _, a := range addrs {
-		if ipnet, ok := a.(*net.IPNet); ok && !ipnet.IP.IsLoopback() {
-			if ipnet.IP.To4() != nil {
-				return ipnet.IP
-			}
-		}
-	}
-	return localIp
-}
-
 func GetDefaultConfigPath(configPath string) string {
 	if configPath == "" {
-		configPath = path.Join(GetAppDir(), "config.yml")
+		configPath = path.Join(commons.GetAppDir(), "config.yml")
 		_, err := os.Open(configPath)
 		if err != nil {
 			//logger.Error("%s 不存在", configPath)
@@ -79,17 +43,4 @@ func LoadConfig(configPath string, config interface{}) Error {
 		return NewError(ERROR_CODE_BASE_CONFIG_ERROR, err.Error())
 	}
 	return nil
-}
-
-func GetAppPath() string {
-	file, _ := exec.LookPath(os.Args[0])
-	path, _ := filepath.Abs(file)
-	return path
-}
-
-/*
-	获取App执行文件目录
-*/
-func GetAppDir() string {
-	return filepath.Dir(GetAppPath())
 }
