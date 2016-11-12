@@ -59,7 +59,7 @@ func (this *ConsulServiceRegister) RegService(serviceInfo base.ServiceInfo, serv
 			},
 		}),
 	}
-	err := this.client.Agent().ServiceRegister(registration)
+	err = this.client.Agent().ServiceRegister(registration)
 	if err != nil {
 		logger.Error("注册服务失败:%s", err)
 		return base.NewError(base.ERROR_CODE_BASE_SERVICE_REGISTER_ERROR, err.Error())

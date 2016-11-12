@@ -8,9 +8,9 @@ import (
 	"log"
 
 	"flag"
+	"github.com/coffeehc/commons"
 	"github.com/coffeehc/logger"
 	"github.com/coffeehc/microserviceboot/base"
-	"github.com/coffeehc/microserviceboot/utils"
 )
 
 /**
@@ -87,7 +87,7 @@ func ServiceLauncher(service base.Service, serviceBuilder MicroServiceBuilder) {
 		fmt.Printf("服务[%s]关闭\n", service.GetServiceInfo().GetServiceName())
 	}()
 	logger.Info("Service started [%s]", time.Since(startTime))
-	utils.WaitStop()
+	commons.WaitStop()
 }
 func startService(service base.Service) (err base.Error) {
 	defer func() {

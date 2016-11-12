@@ -2,7 +2,7 @@ package restboot
 
 import (
 	"fmt"
-	"github.com/coffeehc/microserviceboot/base"
+	"github.com/coffeehc/commons"
 	"github.com/coffeehc/microserviceboot/serviceboot"
 	"github.com/coffeehc/web"
 	"time"
@@ -33,7 +33,7 @@ func (this *Config) GetWebServerConfig() *web.HttpServerConfig {
 		wc = new(WebConfig)
 	}
 	if this.BaseConfig.ServerAddr == "" {
-		webConfig.ServerAddr = fmt.Sprintf("%s:8888", base.GetLocalIp())
+		webConfig.ServerAddr = fmt.Sprintf("%s:8888", commons.GetLocalIp())
 	} else {
 		webConfig.ServerAddr = this.BaseConfig.ServerAddr
 	}

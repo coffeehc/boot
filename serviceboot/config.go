@@ -3,7 +3,7 @@ package serviceboot
 import (
 	"flag"
 	"fmt"
-	"github.com/coffeehc/microserviceboot/base"
+	"github.com/coffeehc/commons"
 )
 
 var configPath = flag.String("config", "", "配置文件路径")
@@ -23,7 +23,7 @@ func (this *ServiceConfig) GetDebugConfig() *DebugConfig {
 
 func (this *ServiceConfig) GetServerAddr() string {
 	if this.ServerAddr == "" {
-		this.ServerAddr = fmt.Sprintf("%s:8888", base.GetLocalIp())
+		this.ServerAddr = fmt.Sprintf("%s:8888", commons.GetLocalIp())
 	}
 	return this.ServerAddr
 }
