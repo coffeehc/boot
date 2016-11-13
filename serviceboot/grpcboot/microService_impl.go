@@ -9,7 +9,10 @@ import (
 	"github.com/coffeehc/microserviceboot/base"
 	"github.com/coffeehc/microserviceboot/base/grpcbase"
 	"github.com/coffeehc/microserviceboot/serviceboot"
+	"github.com/grpc-ecosystem/go-grpc-prometheus"
+	"github.com/prometheus/client_golang/prometheus"
 	"google.golang.org/grpc/grpclog"
+	"net/http"
 )
 
 var GRpcMicroServiceBuilder serviceboot.MicroServiceBuilder = microServiceBuilder
@@ -49,6 +52,8 @@ func (this *GRpcMicroService) Init() (*serviceboot.ServiceConfig, base.Error) {
 	}
 	this.grpcServer = grpc.NewServer(grpcOptions...)
 	this.service.RegisterServer(this.grpcServer)
+	grpc_prometheus.Register(this.grpcServer)
+	http.Handle("/metrics", prometheus.Handler())
 	return serviceConfig.GetBaseConfig(), nil
 }
 
