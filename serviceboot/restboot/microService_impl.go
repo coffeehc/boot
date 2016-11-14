@@ -32,9 +32,13 @@ func (this *MicroService_Rest) Init() (*serviceboot.ServiceConfig, base.Error) {
 	serviceConfig := new(serviceboot.ServiceConfig)
 	configPath := serviceboot.LoadConfigPath(serviceConfig)
 	this.config = serviceConfig
-	this.httpServer = serviceboot.NewHttpServer(configPath, serviceConfig.GetWebServerConfig(), this.service)
+	httpServer, err := serviceboot.NewHttpServer(configPath, serviceConfig.GetWebServerConfig(), this.service)
+	if err != nil {
+		return nil, err
+	}
+	this.httpServer = httpServer
 	serviceInfo := this.service.GetServiceInfo()
-	err := this.registerEndpoints()
+	err = this.registerEndpoints()
 	if err != nil {
 		return nil, err
 	}

@@ -44,37 +44,40 @@ func Open(dialect string, args ...interface{}) (*DB, error) {
 
 	if len(args) == 0 {
 		err = errors.New("invalid database source")
-	} else {
-		var source string
-		var dbSQL sqlCommon
+		return nil, err
+	}
+	var source string
+	var dbSQL sqlCommon
 
-		switch value := args[0].(type) {
-		case string:
-			var driver = dialect
-			if len(args) == 1 {
-				source = value
-			} else if len(args) >= 2 {
-				driver = value
-				source = args[1].(string)
-			}
-			dbSQL, err = sql.Open(driver, source)
-		case sqlCommon:
-			source = reflect.Indirect(reflect.ValueOf(value)).FieldByName("dsn").String()
-			dbSQL = value
+	switch value := args[0].(type) {
+	case string:
+		var driver = dialect
+		if len(args) == 1 {
+			source = value
+		} else if len(args) >= 2 {
+			driver = value
+			source = args[1].(string)
 		}
+		dbSQL, err = sql.Open(driver, source)
+	case sqlCommon:
+		source = reflect.Indirect(reflect.ValueOf(value)).FieldByName("dsn").String()
+		dbSQL = value
+	}
 
-		db = DB{
-			dialect:   newDialect(dialect, dbSQL.(*sql.DB)),
-			logger:    defaultLogger,
-			callbacks: DefaultCallback,
-			source:    source,
-			values:    map[string]interface{}{},
-			db:        dbSQL,
-		}
-		db.parent = &db
+	db = DB{
+		dialect:   newDialect(dialect, dbSQL.(*sql.DB)),
+		logger:    defaultLogger,
+		callbacks: DefaultCallback,
+		source:    source,
+		values:    map[string]interface{}{},
+		db:        dbSQL,
+	}
+	db.parent = &db
 
-		if err == nil {
-			err = db.DB().Ping() // Send a ping to make sure the database connection is alive.
+	if err == nil {
+		err = db.DB().Ping() // Send a ping to make sure the database connection is alive.
+		if err != nil {
+			db.DB().Close()
 		}
 	}
 
@@ -89,6 +92,11 @@ func (s *DB) Close() error {
 // DB get `*sql.DB` from current connection
 func (s *DB) DB() *sql.DB {
 	return s.db.(*sql.DB)
+}
+
+// Dialect get dialect
+func (s *DB) Dialect() Dialect {
+	return s.parent.dialect
 }
 
 // New clone a new db connection without search conditions
@@ -156,17 +164,20 @@ func (s *DB) Not(query interface{}, args ...interface{}) *DB {
 }
 
 // Limit specify the number of records to be retrieved
-func (s *DB) Limit(limit int) *DB {
+func (s *DB) Limit(limit interface{}) *DB {
 	return s.clone().search.Limit(limit).db
 }
 
 // Offset specify the number of records to skip before starting to return the records
-func (s *DB) Offset(offset int) *DB {
+func (s *DB) Offset(offset interface{}) *DB {
 	return s.clone().search.Offset(offset).db
 }
 
 // Order specify order when retrieve records from database, set reorder to `true` to overwrite defined conditions
-func (s *DB) Order(value string, reorder ...bool) *DB {
+//     db.Order("name DESC")
+//     db.Order("name DESC", true) // reorder
+//     db.Order(gorm.Expr("name = ? DESC", "first")) // sql expression
+func (s *DB) Order(value interface{}, reorder ...bool) *DB {
 	return s.clone().search.Order(value, reorder...).db
 }
 
@@ -319,13 +330,13 @@ func (s *DB) FirstOrInit(out interface{}, where ...interface{}) *DB {
 // https://jinzhu.github.io/gorm/curd.html#firstorcreate
 func (s *DB) FirstOrCreate(out interface{}, where ...interface{}) *DB {
 	c := s.clone()
-	if result := c.First(out, where...); result.Error != nil {
+	if result := s.First(out, where...); result.Error != nil {
 		if !result.RecordNotFound() {
 			return result
 		}
-		c.AddError(c.NewScope(out).inlineCondition(where...).initialize().callCallbacks(c.parent.callbacks.creates).db.Error)
+		return c.NewScope(out).inlineCondition(where...).initialize().callCallbacks(c.parent.callbacks.creates).db
 	} else if len(c.search.assignAttrs) > 0 {
-		c.AddError(c.NewScope(out).InstanceSet("gorm:update_interface", c.search.assignAttrs).callCallbacks(c.parent.callbacks.updates).db.Error)
+		return c.NewScope(out).InstanceSet("gorm:update_interface", c.search.assignAttrs).callCallbacks(c.parent.callbacks.updates).db
 	}
 	return c
 }
@@ -360,10 +371,14 @@ func (s *DB) UpdateColumns(values interface{}) *DB {
 // Save update value in database, if the value doesn't have primary key, will insert it
 func (s *DB) Save(value interface{}) *DB {
 	scope := s.clone().NewScope(value)
-	if scope.PrimaryKeyZero() {
-		return scope.callCallbacks(s.parent.callbacks.creates).db
+	if !scope.PrimaryKeyZero() {
+		newDB := scope.callCallbacks(s.parent.callbacks.updates).db
+		if newDB.Error == nil && newDB.RowsAffected == 0 {
+			return s.New().FirstOrCreate(value)
+		}
+		return newDB
 	}
-	return scope.callCallbacks(s.parent.callbacks.updates).db
+	return scope.callCallbacks(s.parent.callbacks.creates).db
 }
 
 // Create insert the value into database

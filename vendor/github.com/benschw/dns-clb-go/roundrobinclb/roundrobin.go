@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net"
 	"sort"
+	"sync"
 
 	"github.com/benschw/dns-clb-go/dns"
 )
@@ -24,13 +25,14 @@ func NewRoundRobinClb(lib dns.Lookup) *RoundRobinClb {
 	lb := new(RoundRobinClb)
 	lb.dnsLib = lib
 	lb.i = 0
-
+	lb.muext = new(sync.Mutex)
 	return lb
 }
 
 type RoundRobinClb struct {
 	dnsLib dns.Lookup
 	i      int
+	muext  *sync.Mutex
 }
 
 func (lb *RoundRobinClb) GetAddress(name string) (dns.Address, error) {
@@ -45,12 +47,14 @@ func (lb *RoundRobinClb) GetAddress(name string) (dns.Address, error) {
 	if len(srvs) == 0 {
 		return add, fmt.Errorf("no SRV records found")
 	}
+	lb.muext.Lock()
 	if len(srvs)-1 < lb.i {
 		lb.i = 0
 	}
 	//	log.Printf("%d/%d / %+v", lb.i, len(srvs), srvs)
 	srv := srvs[lb.i]
 	lb.i = lb.i + 1
+	lb.muext.Unlock()
 
 	ip, err := lb.dnsLib.LookupA(srv.Target)
 	if err != nil {

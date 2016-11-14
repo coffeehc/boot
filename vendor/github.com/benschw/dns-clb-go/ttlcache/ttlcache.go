@@ -3,6 +3,7 @@ package ttlcache
 import (
 	"github.com/benschw/dns-clb-go/dns"
 	"net"
+	"sync"
 	"time"
 )
 
@@ -11,7 +12,7 @@ func NewTtlCache(lib dns.Lookup, ttl int) *TtlCache {
 	c.lib = lib
 	c.ttl = ttl
 	c.lastUpdate = 0
-
+	c.rwmutex = new(sync.RWMutex)
 	return c
 }
 
@@ -21,6 +22,7 @@ type TtlCache struct {
 	lastUpdate int32
 	srvs       []net.SRV
 	as         map[string]string
+	rwmutex    *sync.RWMutex
 }
 
 func (l *TtlCache) LookupSRV(name string) ([]net.SRV, error) {
@@ -43,15 +45,19 @@ func (l *TtlCache) LookupA(name string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-
+	l.rwmutex.RLock()
 	_, ok := l.as[name]
+	l.rwmutex.RUnlock()
 	if !ok {
+		l.rwmutex.Lock()
 		l.as[name], err = l.lib.LookupA(name)
+		l.rwmutex.Unlock()
 		if err != nil {
 			return "", err
 		}
 	}
-
+	l.rwmutex.RLock()
+	defer l.rwmutex.RUnlock()
 	return l.as[name], nil
 }
 

@@ -43,7 +43,11 @@ func (this *GRpcMicroService) Init() (*serviceboot.ServiceConfig, base.Error) {
 			return nil, err
 		}
 	}
-	this.httpServer = serviceboot.NewHttpServer(configPath, serviceConfig.GetBaseConfig().GetWebServerConfig(), this.service)
+	httpServer, err := serviceboot.NewHttpServer(configPath, serviceConfig.GetBaseConfig().GetWebServerConfig(), this.service)
+	if err != nil {
+		return nil, err
+	}
+	this.httpServer = httpServer
 	grpcServerConfig := this.config.GetGRpcServerConfig()
 	grpcOptions := grpcServerConfig.GetGrpcOptions()
 	if len(this.service.GetGrpcOptions()) > 0 {
