@@ -2,6 +2,7 @@ package main
 
 import (
 	"github.com/coffeehc/microserviceboot/base"
+	"github.com/coffeehc/web"
 	"google.golang.org/grpc"
 )
 
@@ -11,7 +12,7 @@ type Service struct {
 func (this *Service) GetGrpcOptions() []grpc.ServerOption {
 	return nil
 }
-func (this *Service) Init(configPath string) base.Error {
+func (this *Service) Init(configPath string, httpServer web.HttpServer) base.Error {
 	return nil
 }
 func (this *Service) RegisterServer(s *grpc.Server) base.Error {

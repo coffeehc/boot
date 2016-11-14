@@ -37,17 +37,17 @@ func (this *GRpcMicroService) Init() (*serviceboot.ServiceConfig, base.Error) {
 	serviceConfig := new(Config)
 	configPath := serviceboot.LoadConfigPath(serviceConfig)
 	this.config = serviceConfig
-	if this.service.Init != nil {
-		err := this.service.Init(configPath)
-		if err != nil {
-			return nil, err
-		}
-	}
 	httpServer, err := serviceboot.NewHttpServer(configPath, serviceConfig.GetBaseConfig().GetWebServerConfig(), this.service)
 	if err != nil {
 		return nil, err
 	}
 	this.httpServer = httpServer
+	if this.service.Init != nil {
+		err := this.service.Init(configPath, httpServer)
+		if err != nil {
+			return nil, err
+		}
+	}
 	grpcServerConfig := this.config.GetGRpcServerConfig()
 	grpcOptions := grpcServerConfig.GetGrpcOptions()
 	if len(this.service.GetGrpcOptions()) > 0 {
@@ -62,7 +62,10 @@ func (this *GRpcMicroService) Init() (*serviceboot.ServiceConfig, base.Error) {
 	grpc_prometheus.Register(this.grpcServer)
 	grpcFilter := &grpcFilter{this.grpcServer}
 	this.httpServer.AddFirstFilter("/*", grpcFilter.filter)
-	this.httpServer.RegisterHttpHandlerFunc("/metrics", web.GET, prometheus.Handler)
+	err1 := this.httpServer.RegisterHttpHandler("/metrics", web.GET, prometheus.Handler())
+	if err1 != nil {
+		return nil, base.NewErrorWrapper(err1)
+	}
 	return serviceConfig.GetBaseConfig(), nil
 }
 
