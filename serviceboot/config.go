@@ -46,8 +46,8 @@ func (this *ServiceConfig) GetWebServerConfig() *web.HttpServerConfig {
 	if wc.Concurrency == 0 {
 		wc.Concurrency = 100000
 	}
-	webConfig.ReadTimeout = time.Duration(wc.ReadTimeout / time.Second)
-	webConfig.WriteTimeout = time.Duration(wc.WriteTimeout / time.Second)
+	webConfig.ReadTimeout = wc.ReadTimeout
+	webConfig.WriteTimeout = wc.WriteTimeout
 	webConfig.DefaultRender = web.Default_Render_Json
 	return webConfig
 }
