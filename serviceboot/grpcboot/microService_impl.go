@@ -3,6 +3,7 @@ package grpcboot
 import (
 	"google.golang.org/grpc"
 
+	"github.com/coffeehc/logger"
 	"github.com/coffeehc/microserviceboot/base"
 	"github.com/coffeehc/microserviceboot/base/grpcbase"
 	"github.com/coffeehc/microserviceboot/serviceboot"
@@ -36,6 +37,7 @@ func (this *GRpcMicroService) Init() (*serviceboot.ServiceConfig, base.Error) {
 	grpclog.SetLogger(&_logger{})
 	serviceConfig := new(Config)
 	configPath := serviceboot.LoadConfigPath(serviceConfig)
+	logger.Debug("config is %#v", serviceConfig.GetBaseConfig().GetWebServerConfig())
 	this.config = serviceConfig
 	httpServer, err := serviceboot.NewHttpServer(configPath, serviceConfig.GetBaseConfig().GetWebServerConfig(), this.service)
 	if err != nil {

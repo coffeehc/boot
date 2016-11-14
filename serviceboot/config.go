@@ -43,6 +43,7 @@ func (this *ServiceConfig) GetWebServerConfig() *web.HttpServerConfig {
 	if wc == nil {
 		wc = new(WebConfig)
 	}
+	webConfig.ServerAddr = wc.GetServerAddr()
 	if wc.Concurrency == 0 {
 		wc.Concurrency = 100000
 	}

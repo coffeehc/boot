@@ -1,7 +1,11 @@
 base_config:
-  debug: true
-  server_addr: 0.0.0.0:8888
+  debug:
+    enableAccessInfo: true
   disable_service_register: true
+  web_server_config:
+    server_addr: 0.0.0.0:7777
+    read_timeout: 30
+    write_timeout: 30
 grpc_config:
   max_msg_size: 1024
   max_concurrent_streams: 10000
