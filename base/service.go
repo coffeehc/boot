@@ -1,6 +1,9 @@
 package base
 
+import "github.com/coffeehc/web"
+
 type Service interface {
+	Init(configPath string, server web.HttpServer) Error
 	Run() Error
 	Stop() Error
 	GetServiceInfo() ServiceInfo

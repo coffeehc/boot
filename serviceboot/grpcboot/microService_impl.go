@@ -1,18 +1,15 @@
 package grpcboot
 
 import (
-	"net"
-
 	"google.golang.org/grpc"
 
-	"github.com/coffeehc/logger"
 	"github.com/coffeehc/microserviceboot/base"
 	"github.com/coffeehc/microserviceboot/base/grpcbase"
 	"github.com/coffeehc/microserviceboot/serviceboot"
+	"github.com/coffeehc/web"
 	"github.com/grpc-ecosystem/go-grpc-prometheus"
 	"github.com/prometheus/client_golang/prometheus"
 	"google.golang.org/grpc/grpclog"
-	"net/http"
 )
 
 var GRpcMicroServiceBuilder serviceboot.MicroServiceBuilder = microServiceBuilder
@@ -28,9 +25,10 @@ func microServiceBuilder(service base.Service) (serviceboot.MicroService, base.E
 }
 
 type GRpcMicroService struct {
-	service    grpcbase.GRpcService
-	config     *Config
-	listener   net.Listener
+	service grpcbase.GRpcService
+	config  *Config
+	//listener   net.Listener
+	httpServer web.HttpServer
 	grpcServer *grpc.Server
 }
 
@@ -45,32 +43,40 @@ func (this *GRpcMicroService) Init() (*serviceboot.ServiceConfig, base.Error) {
 			return nil, err
 		}
 	}
+	this.httpServer = serviceboot.NewHttpServer(serviceConfig.GetBaseConfig().GetWebServerConfig(), this.service)
 	grpcServerConfig := this.config.GetGRpcServerConfig()
 	grpcOptions := grpcServerConfig.GetGrpcOptions()
 	if len(this.service.GetGrpcOptions()) > 0 {
 		grpcOptions = append(grpcOptions, this.service.GetGrpcOptions()...)
 	}
+	grpc.EnableTracing = false
+	if base.IsDevModule() {
+		grpc.EnableTracing = true
+	}
 	this.grpcServer = grpc.NewServer(grpcOptions...)
 	this.service.RegisterServer(this.grpcServer)
 	grpc_prometheus.Register(this.grpcServer)
-	http.Handle("/metrics", prometheus.Handler())
+	grpcFilter := &grpcFilter{this.grpcServer}
+	this.httpServer.AddFirstFilter("/*", grpcFilter.filter)
+	this.httpServer.RegisterHttpHandlerFunc("/metrics", web.GET, prometheus.Handler)
 	return serviceConfig.GetBaseConfig(), nil
 }
 
 func (this *GRpcMicroService) Start() base.Error {
 	//启动服务器
-	lis, err := net.Listen("tcp", this.config.GetBaseConfig().GetServerAddr())
-	if err != nil {
-		return base.NewError(-1, logger.Error("failed to listen: %v", err))
-	}
-	this.listener = lis
-	go this.grpcServer.Serve(lis)
+	errSign := this.httpServer.Start()
+	go func() {
+		err := <-errSign
+		if err != nil {
+			panic(base.NewError(base.ERROR_CODE_BASE_INIT_ERROR, err.Error()))
+		}
+	}()
 	return nil
 }
 
 func (this *GRpcMicroService) Stop() {
-	if this.listener != nil {
-		this.listener.Close()
+	if this.httpServer != nil {
+		this.httpServer.Stop()
 	}
 }
 

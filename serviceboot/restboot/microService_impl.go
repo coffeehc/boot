@@ -13,7 +13,7 @@ import (
 var RestMicroServiceBuilder serviceboot.MicroServiceBuilder = microServiceBuild
 
 type MicroService_Rest struct {
-	config     *Config
+	config     *serviceboot.ServiceConfig
 	httpServer web.HttpServer
 	service    restbase.RestService
 }
@@ -23,47 +23,39 @@ func microServiceBuild(service base.Service) (serviceboot.MicroService, base.Err
 	if !ok {
 		return nil, base.NewError(-1, "service 不是Rest 服务")
 	}
-
 	return &MicroService_Rest{
 		service: restService,
 	}, nil
 }
 
-func (microService *MicroService_Rest) Init() (*serviceboot.ServiceConfig, base.Error) {
-	serviceConfig := new(Config)
-	configPath := serviceboot.LoadConfigPath(serviceConfig)
-	microService.config = serviceConfig
-	webConfig := serviceConfig.GetWebServerConfig()
-	microService.httpServer = web.NewHttpServer(webConfig)
-	if microService.service.Init != nil {
-		err := microService.service.Init(configPath, microService.httpServer)
-		if err != nil {
-			return nil, err
-		}
-	}
-	serviceInfo := microService.service.GetServiceInfo()
-	err := microService.registerEndpoints()
+func (this *MicroService_Rest) Init() (*serviceboot.ServiceConfig, base.Error) {
+	serviceConfig := new(serviceboot.ServiceConfig)
+	serviceboot.LoadConfigPath(serviceConfig)
+	this.config = serviceConfig
+	this.httpServer = serviceboot.NewHttpServer(serviceConfig.GetWebServerConfig(), this.service)
+	serviceInfo := this.service.GetServiceInfo()
+	err := this.registerEndpoints()
 	if err != nil {
 		return nil, err
 	}
-	pprof.RegeditPprof(microService.httpServer)
+	pprof.RegeditPprof(this.httpServer)
 	if base.IsDevModule() {
-		debugConfig := serviceConfig.GetBaseConfig().GetDebugConfig()
+		debugConfig := serviceConfig.GetDebugConfig()
 		logger.Debug("open dev module")
 		apiDefineRequestHandler := buildApiDefineRequestHandler(serviceInfo)
 		if apiDefineRequestHandler != nil {
-			microService.httpServer.Register(fmt.Sprintf("/apidefine/%s.api", serviceInfo.GetServiceName()), web.GET, apiDefineRequestHandler)
+			this.httpServer.Register(fmt.Sprintf("/apidefine/%s.api", serviceInfo.GetServiceName()), web.GET, apiDefineRequestHandler)
 		}
 		if debugConfig.IsEnableAccessInfo() {
-			microService.httpServer.AddFirstFilter("/*", web.SimpleAccessLogFilter)
+			this.httpServer.AddFirstFilter("/*", web.SimpleAccessLogFilter)
 		}
 	}
 
-	return serviceConfig.GetBaseConfig(), nil
+	return serviceConfig, nil
 }
 
-func (microService *MicroService_Rest) Start() base.Error {
-	errSign := microService.httpServer.Start()
+func (this *MicroService_Rest) Start() base.Error {
+	errSign := this.httpServer.Start()
 	go func() {
 		err := <-errSign
 		if err != nil {
@@ -73,11 +65,14 @@ func (microService *MicroService_Rest) Start() base.Error {
 	return nil
 }
 
-func (microService *MicroService_Rest) GetService() base.Service {
-	return microService.service
+func (this *MicroService_Rest) GetService() base.Service {
+	return this.service
 }
 
-func (microService *MicroService_Rest) Stop() {
+func (this *MicroService_Rest) Stop() {
+	if this.httpServer != nil {
+		this.httpServer.Stop()
+	}
 }
 
 func buildApiDefineRequestHandler(serviceInfo base.ServiceInfo) web.RequestHandler {

@@ -4,6 +4,8 @@ import (
 	"flag"
 	"fmt"
 	"github.com/coffeehc/commons"
+	"github.com/coffeehc/web"
+	"time"
 )
 
 var configPath = flag.String("config", "", "配置文件路径")
@@ -11,7 +13,7 @@ var configPath = flag.String("config", "", "配置文件路径")
 type ServiceConfig struct {
 	Debug                  *DebugConfig `yaml:"debug"`
 	DisableServiceRegister bool         `yaml:"disable_service_register"`
-	ServerAddr             string       `yaml:"server_addr"`
+	WebServerConfig        *WebConfig   `yaml:"web_server_config"`
 }
 
 func (this *ServiceConfig) GetDebugConfig() *DebugConfig {
@@ -21,9 +23,31 @@ func (this *ServiceConfig) GetDebugConfig() *DebugConfig {
 	return this.Debug
 }
 
-func (this *ServiceConfig) GetServerAddr() string {
+type WebConfig struct {
+	ServerAddr   string        `yaml:"server_addr"`
+	ReadTimeout  time.Duration `yaml:"read_timeout"`
+	WriteTimeout time.Duration `yaml:"write_timeout"`
+	Concurrency  int           `yaml:"concurrency"` //暂时没有使用
+}
+
+func (this *WebConfig) GetServerAddr() string {
 	if this.ServerAddr == "" {
 		this.ServerAddr = fmt.Sprintf("%s:8888", commons.GetLocalIp())
 	}
 	return this.ServerAddr
+}
+
+func (this *ServiceConfig) GetWebServerConfig() *web.HttpServerConfig {
+	webConfig := new(web.HttpServerConfig)
+	wc := this.WebServerConfig
+	if wc == nil {
+		wc = new(WebConfig)
+	}
+	if wc.Concurrency == 0 {
+		wc.Concurrency = 100000
+	}
+	webConfig.ReadTimeout = time.Duration(wc.ReadTimeout / time.Second)
+	webConfig.WriteTimeout = time.Duration(wc.WriteTimeout / time.Second)
+	webConfig.DefaultRender = web.Default_Render_Json
+	return webConfig
 }
