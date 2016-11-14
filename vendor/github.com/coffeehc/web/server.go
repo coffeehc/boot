@@ -45,6 +45,7 @@ func NewHttpServer(serverConfig *HttpServerConfig) HttpServer {
 
 func (this *_Server) Stop() {
 	if this.listener != nil {
+		logger.Info("http Listener Close")
 		this.listener.Close()
 	}
 }
@@ -62,22 +63,20 @@ func (this *_Server) Start() <-chan error {
 		TLSNextProto:   conf.TLSNextProto,
 		ConnState:      conf.ConnState,
 	}
-	if !conf.getDisabledKeepAlive() {
-		server.SetKeepAlivesEnabled(true)
-	}
 	if conf.HttpErrorLogout != nil {
 		server.ErrorLog = logger.CreatLoggerAdapter(logger.LOGGER_LEVEL_ERROR, "", "", conf.HttpErrorLogout)
 	}
 	this.httpServer = server
 	logger.Info("start HttpServer :%s", conf.getServerAddr())
 	errorSign := make(chan error, 1)
-	listen, err := net.Listen("tcp", conf.getServerAddr())
+	listener, err := net.Listen("tcp", conf.getServerAddr())
 	//TODO listen Option
 	if err != nil {
 		logger.Error("绑定监听地址[%s]失败", conf.getServerAddr())
 		errorSign <- err
 		return errorSign
 	}
+	this.listener = tcpKeepAliveListener{TCPListener: listener.(*net.TCPListener), keepAliveDuration: conf.getKeepAliveDuration()}
 	if conf.EnabledTLS {
 		cer, err := tls.LoadX509KeyPair(conf.CertFile, conf.KeyFile)
 		if err != nil {
@@ -91,10 +90,10 @@ func (this *_Server) Start() <-chan error {
 		} else {
 			server.TLSConfig.Certificates = []tls.Certificate{cer}
 		}
-		listen = tls.NewListener(tcpKeepAliveListener{listen.(*net.TCPListener)}, server.TLSConfig)
+		this.listener = tls.NewListener(this.listener, server.TLSConfig)
 	}
 	go func() {
-		err := server.Serve(listen)
+		err := server.Serve(this.listener)
 		errorSign <- errors.New(logger.Error("启动 HttpServer 失败:%s", err))
 	}()
 	return errorSign

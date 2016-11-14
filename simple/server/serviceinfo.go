@@ -9,12 +9,12 @@ func (this *ServiceInfo) GetApiDefine() string {
 
 //获取 Service 名称
 func (this *ServiceInfo) GetServiceName() string {
-	return ""
+	return "simple Service"
 }
 
 //获取服务版本号
 func (this *ServiceInfo) GetVersion() string {
-	return ""
+	return "0.0.1"
 }
 
 //获取服务描述

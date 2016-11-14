@@ -7,7 +7,6 @@ import (
 	"github.com/coffeehc/microserviceboot/base/restbase"
 	"github.com/coffeehc/microserviceboot/serviceboot"
 	"github.com/coffeehc/web"
-	"github.com/coffeehc/web/pprof"
 )
 
 var RestMicroServiceBuilder serviceboot.MicroServiceBuilder = microServiceBuild
@@ -42,7 +41,6 @@ func (this *MicroService_Rest) Init() (*serviceboot.ServiceConfig, base.Error) {
 	if err != nil {
 		return nil, err
 	}
-	pprof.RegeditPprof(this.httpServer)
 	if base.IsDevModule() {
 		debugConfig := serviceConfig.GetDebugConfig()
 		logger.Debug("open dev module")

@@ -3,7 +3,7 @@ base_config:
     enableAccessInfo: true
   disable_service_register: true
   web_server_config:
-    server_addr: 0.0.0.0:7777
+    server_addr: 127.0.0.1:8888
     read_timeout: 30
     write_timeout: 30
 grpc_config:

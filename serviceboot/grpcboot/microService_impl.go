@@ -3,13 +3,11 @@ package grpcboot
 import (
 	"google.golang.org/grpc"
 
-	"github.com/coffeehc/logger"
 	"github.com/coffeehc/microserviceboot/base"
 	"github.com/coffeehc/microserviceboot/base/grpcbase"
 	"github.com/coffeehc/microserviceboot/serviceboot"
 	"github.com/coffeehc/web"
 	"github.com/grpc-ecosystem/go-grpc-prometheus"
-	"github.com/prometheus/client_golang/prometheus"
 	"google.golang.org/grpc/grpclog"
 )
 
@@ -26,9 +24,8 @@ func microServiceBuilder(service base.Service) (serviceboot.MicroService, base.E
 }
 
 type GRpcMicroService struct {
-	service grpcbase.GRpcService
-	config  *Config
-	//listener   net.Listener
+	service    grpcbase.GRpcService
+	config     *Config
 	httpServer web.HttpServer
 	grpcServer *grpc.Server
 }
@@ -37,7 +34,6 @@ func (this *GRpcMicroService) Init() (*serviceboot.ServiceConfig, base.Error) {
 	grpclog.SetLogger(&_logger{})
 	serviceConfig := new(Config)
 	configPath := serviceboot.LoadConfigPath(serviceConfig)
-	logger.Debug("config is %#v", serviceConfig.GetBaseConfig().GetWebServerConfig())
 	this.config = serviceConfig
 	httpServer, err := serviceboot.NewHttpServer(configPath, serviceConfig.GetBaseConfig().GetWebServerConfig(), this.service)
 	if err != nil {
@@ -64,10 +60,6 @@ func (this *GRpcMicroService) Init() (*serviceboot.ServiceConfig, base.Error) {
 	grpc_prometheus.Register(this.grpcServer)
 	grpcFilter := &grpcFilter{this.grpcServer}
 	this.httpServer.AddFirstFilter("/*", grpcFilter.filter)
-	err1 := this.httpServer.RegisterHttpHandler("/metrics", web.GET, prometheus.Handler())
-	if err1 != nil {
-		return nil, base.NewErrorWrapper(err1)
-	}
 	return serviceConfig.GetBaseConfig(), nil
 }
 

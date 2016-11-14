@@ -1,7 +1,6 @@
 package grpcboot
 
 import (
-	"github.com/coffeehc/logger"
 	"github.com/coffeehc/web"
 	"google.golang.org/grpc"
 )
@@ -13,7 +12,6 @@ type grpcFilter struct {
 func (this *grpcFilter) filter(reply web.Reply, chain web.FilterChain) {
 	//TODO web 改版后直接使用 NotFountHandler
 	request := reply.GetRequest()
-	logger.Debug("request Is %#v", request)
 	if request.ProtoMajor != 2 {
 		chain(reply)
 		return

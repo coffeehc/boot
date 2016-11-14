@@ -21,11 +21,14 @@ type HttpServerConfig struct {
 	CertFile          string
 	KeyFile           string
 	DefaultRender     Render
-	DisabledKeepAlive bool
+	KeepAliveDuration time.Duration
 }
 
-func (this *HttpServerConfig) getDisabledKeepAlive() bool {
-	return this.DisabledKeepAlive
+func (this *HttpServerConfig) getKeepAliveDuration() time.Duration {
+	if this.KeepAliveDuration == 0 {
+		this.KeepAliveDuration = 3 * time.Second
+	}
+	return this.KeepAliveDuration
 }
 
 func (this *HttpServerConfig) getDefaultRender() Render {
@@ -46,14 +49,14 @@ func (this *HttpServerConfig) getReadTimeout() time.Duration {
 	if this.ReadTimeout < 0 {
 		this.ReadTimeout = 0
 	}
-	return this.ReadTimeout
+	return this.ReadTimeout * time.Second
 }
 
 func (this *HttpServerConfig) getWriteTimeout() time.Duration {
 	if this.WriteTimeout < 0 {
 		this.WriteTimeout = 0
 	}
-	return this.WriteTimeout
+	return this.WriteTimeout * time.Second
 }
 
 func (this *HttpServerConfig) getMaxHeaderBytes() int {
