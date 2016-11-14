@@ -30,9 +30,9 @@ func microServiceBuild(service base.Service) (serviceboot.MicroService, base.Err
 
 func (this *MicroService_Rest) Init() (*serviceboot.ServiceConfig, base.Error) {
 	serviceConfig := new(serviceboot.ServiceConfig)
-	serviceboot.LoadConfigPath(serviceConfig)
+	configPath := serviceboot.LoadConfigPath(serviceConfig)
 	this.config = serviceConfig
-	this.httpServer = serviceboot.NewHttpServer(serviceConfig.GetWebServerConfig(), this.service)
+	this.httpServer = serviceboot.NewHttpServer(configPath, serviceConfig.GetWebServerConfig(), this.service)
 	serviceInfo := this.service.GetServiceInfo()
 	err := this.registerEndpoints()
 	if err != nil {

@@ -5,7 +5,7 @@ import (
 	"github.com/coffeehc/web"
 )
 
-func NewHttpServer(config *web.HttpServerConfig, service base.Service) web.HttpServer {
+func NewHttpServer(configPath string, config *web.HttpServerConfig, service base.Service) web.HttpServer {
 	httpServer := web.NewHttpServer(config)
 	if service.Init != nil {
 		err := service.Init(configPath, httpServer)
