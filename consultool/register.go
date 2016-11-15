@@ -50,11 +50,7 @@ func (this *ConsulServiceRegister) RegService(serviceInfo base.ServiceInfo, serv
 		EnableTagOverride: true,
 		Checks: api.AgentServiceChecks([]*api.AgentServiceCheck{
 			{
-				HTTP:     fmt.Sprintf("http://%s:%d/debug/pprof/threadcreate?debug=1", addr, p),
-				Interval: "10s",
-			},
-			{
-				HTTP:     fmt.Sprintf("http://%s:%d/debug/pprof/block?debug=1", addr, p),
+				HTTP:     fmt.Sprintf("http://%s/health", serviceAddr),
 				Interval: "10s",
 			},
 		}),
