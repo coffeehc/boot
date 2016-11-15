@@ -2,6 +2,7 @@ package main
 
 import (
 	"github.com/coffeehc/microserviceboot/base"
+	"github.com/coffeehc/microserviceboot/consultool"
 	"github.com/coffeehc/web"
 	"google.golang.org/grpc"
 )
@@ -27,6 +28,6 @@ func (this *Service) Stop() base.Error {
 func (this *Service) GetServiceInfo() base.ServiceInfo {
 	return &ServiceInfo{}
 }
-func (this *Service) GetServiceDiscoveryRegister() base.ServiceDiscoveryRegister {
-	return nil
+func (this *Service) GetServiceDiscoveryRegister() (base.ServiceDiscoveryRegister, base.Error) {
+	return consultool.NewConsulServiceRegister(&consultool.ConsulConfig{})
 }

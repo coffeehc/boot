@@ -7,7 +7,7 @@ type Service interface {
 	Run() Error
 	Stop() Error
 	GetServiceInfo() ServiceInfo
-	GetServiceDiscoveryRegister() ServiceDiscoveryRegister
+	GetServiceDiscoveryRegister() (ServiceDiscoveryRegister, Error)
 }
 
 type ServiceInfo interface {

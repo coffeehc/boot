@@ -6,5 +6,5 @@ import (
 )
 
 func main() {
-	serviceboot.ServiceLauncher(&Service{}, grpcboot.GRpcMicroServiceBuilder)
+	serviceboot.ServiceLaunch(&Service{}, grpcboot.GRpcMicroServiceBuilder)
 }

@@ -10,28 +10,28 @@ import (
 	"strconv"
 )
 
-type ConsulServiceRegister struct {
+type consulServiceRegister struct {
 	client    *api.Client
 	serviceId string
 	checkId   string
 }
 
-func NewConsulServiceRegister(consulConfig *api.Config) (*ConsulServiceRegister, base.Error) {
+func NewConsulServiceRegister(consulConfig *ConsulConfig) (base.ServiceDiscoveryRegister, base.Error) {
 	if consulConfig == nil {
-		consulConfig = api.DefaultConfig()
+		consulConfig = &ConsulConfig{}
 	}
-	consulClient, err := api.NewClient(consulConfig)
+	consulClient, err := api.NewClient(warpConsulConfig(consulConfig))
 	if err != nil {
 		logger.Error("创建 Consul Client 失败")
 		return nil, base.NewError(base.ERROR_CODE_BASE_INIT_ERROR, err.Error())
 	}
-	return &ConsulServiceRegister{
+	return &consulServiceRegister{
 		client: consulClient,
 	}, nil
 
 }
 
-func (this *ConsulServiceRegister) RegService(serviceInfo base.ServiceInfo, serviceAddr string) base.Error {
+func (this *consulServiceRegister) RegService(serviceInfo base.ServiceInfo, serviceAddr string) base.Error {
 	if serviceAddr == "" {
 		return base.NewError(-1, "serverAddr is nil")
 	}

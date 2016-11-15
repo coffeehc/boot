@@ -1,7 +1,7 @@
 base_config:
   debug:
     enableAccessInfo: true
-  disable_service_register: true
+  disable_service_register: false
   web_server_config:
     server_addr: 127.0.0.1:8888
     read_timeout: 30

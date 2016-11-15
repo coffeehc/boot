@@ -16,7 +16,7 @@ import (
 /**
  *	Service 启动
  */
-func ServiceLauncher(service base.Service, serviceBuilder MicroServiceBuilder) {
+func ServiceLaunch(service base.Service, serviceBuilder MicroServiceBuilder) {
 	log.SetFlags(log.Ldate | log.Ltime | log.Llongfile)
 	logger.InitLogger()
 	defer logger.WaitToClose()
@@ -57,7 +57,6 @@ func ServiceLauncher(service base.Service, serviceBuilder MicroServiceBuilder) {
 			stopErr := service.Stop()
 			if stopErr != nil {
 				log.Printf("关闭服务失败,%s\n", stopErr)
-				os.Exit(-1)
 			}
 		}
 	}(service)
@@ -73,13 +72,17 @@ func ServiceLauncher(service base.Service, serviceBuilder MicroServiceBuilder) {
 		os.Exit(-1)
 	}
 	logger.Info("核心服务启动成功,服务地址:%s", config.GetWebServerConfig().ServerAddr)
-	serviceDiscoveryRegister := service.GetServiceDiscoveryRegister()
-	if !config.DisableServiceRegister && serviceDiscoveryRegister != nil {
+	serviceDiscoveryRegister, err := service.GetServiceDiscoveryRegister()
+	if err != nil {
+		launchError(fmt.Errorf("获取没有指定serviceDiscoveryRegister失败,注册服务[%s]失败", service.GetServiceInfo().GetServiceName()))
+	}
+	if !config.DisableServiceRegister {
+		if serviceDiscoveryRegister == nil {
+			launchError(fmt.Errorf("没有指定serviceDiscoveryRegister,注册服务[%s]失败", service.GetServiceInfo().GetServiceName()))
+		}
 		registerError := serviceDiscoveryRegister.RegService(serviceInfo, config.GetWebServerConfig().ServerAddr)
 		if registerError != nil {
-			logger.Info("注册服务[%s]失败,%s", service.GetServiceInfo().GetServiceName(), registerError.Error())
-			time.Sleep(time.Second)
-			os.Exit(-1)
+			launchError(fmt.Errorf("注册服务[%s]失败,%s", service.GetServiceInfo().GetServiceName(), registerError.Error()))
 		}
 		logger.Info("注册服务[%s]成功", service.GetServiceInfo().GetServiceName())
 	}
@@ -111,4 +114,10 @@ func startService(service base.Service) (err base.Error) {
 	}
 	logger.Info("服务已正常启动")
 	return
+}
+
+func launchError(err error) {
+	logger.Error("启动失败:%s", err.Error())
+	time.Sleep(500 * time.Millisecond)
+	os.Exit(-1)
 }
