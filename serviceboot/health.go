@@ -12,20 +12,20 @@ func (this *Health) health(reply web.Reply) {
 }
 
 type Health struct {
-	ServiceName string   `json:"service_name"`
-	Version     string   `json:"version"`
-	Tags        []string `json:"tags"`
-	GoVersion   string   `json:"go_version"`
-	GoRoutine   int      `json:"go_routine"`
-	CpuNum      int      `json:"cpu_num"`
-	GoRach      string   `json:"go_rach"`
-	GoOS        string   `json:"go_os"`
+	ServiceName string `json:"service_name"`
+	Version     string `json:"version"`
+	Tag         string `json:"tag"`
+	GoVersion   string `json:"go_version"`
+	GoRoutine   int    `json:"go_routine"`
+	CpuNum      int    `json:"cpu_num"`
+	GoRach      string `json:"go_rach"`
+	GoOS        string `json:"go_os"`
 }
 
 func newHealth(serviceInfo base.ServiceInfo) *Health {
 	return &Health{
 		ServiceName: serviceInfo.GetServiceName(),
-		Tags:        serviceInfo.GetServiceTags(),
+		Tag:         serviceInfo.GetServiceTag(),
 		Version:     serviceInfo.GetVersion(),
 		GoVersion:   runtime.Version(),
 		CpuNum:      runtime.NumCPU(),

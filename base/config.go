@@ -9,15 +9,3 @@ var (
 func IsDevModule() bool {
 	return *devmodule
 }
-
-func WarpTags(tags []string) []string {
-	if tags == nil {
-		tags = []string{}
-	}
-	if IsDevModule() {
-		tags = append([]string{"dev"}, tags...)
-	} else {
-		tags = append([]string{"pro"}, tags...)
-	}
-	return tags
-}

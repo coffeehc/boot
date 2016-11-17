@@ -16,15 +16,7 @@ type consulServiceRegister struct {
 	checkId   string
 }
 
-func NewConsulServiceRegister(consulConfig *ConsulConfig) (base.ServiceDiscoveryRegister, base.Error) {
-	if consulConfig == nil {
-		consulConfig = &ConsulConfig{}
-	}
-	consulClient, err := api.NewClient(warpConsulConfig(consulConfig))
-	if err != nil {
-		logger.Error("创建 Consul Client 失败")
-		return nil, base.NewError(base.ERROR_CODE_BASE_INIT_ERROR, err.Error())
-	}
+func NewConsulServiceRegister(consulClient *api.Client) (base.ServiceDiscoveryRegister, base.Error) {
 	return &consulServiceRegister{
 		client: consulClient,
 	}, nil
@@ -44,7 +36,7 @@ func (this *consulServiceRegister) RegService(serviceInfo base.ServiceInfo, serv
 	p, _ := strconv.Atoi(port)
 	registration := &api.AgentServiceRegistration{
 		Name:              serviceInfo.GetServiceName(),
-		Tags:              base.WarpTags(serviceInfo.GetServiceTags()),
+		Tags:              []string{serviceInfo.GetServiceTag()},
 		Port:              p,
 		Address:           addr,
 		EnableTagOverride: true,
