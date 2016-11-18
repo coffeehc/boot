@@ -3,6 +3,7 @@ package main
 import (
 	"github.com/coffeehc/microserviceboot/base"
 	"github.com/coffeehc/microserviceboot/consultool"
+	"github.com/coffeehc/microserviceboot/simple/simplemodel"
 	"github.com/coffeehc/web"
 	"google.golang.org/grpc"
 )
@@ -17,6 +18,7 @@ func (this *Service) Init(configPath string, httpServer web.HttpServer) base.Err
 	return nil
 }
 func (this *Service) RegisterServer(s *grpc.Server) base.Error {
+	simplemodel.RegisterGreeterServer(s, &_GreeterServer{})
 	return nil
 }
 func (this *Service) Run() base.Error {
@@ -25,9 +27,11 @@ func (this *Service) Run() base.Error {
 func (this *Service) Stop() base.Error {
 	return nil
 }
-func (this *Service) GetServiceInfo() base.ServiceInfo {
-	return &ServiceInfo{}
-}
+
 func (this *Service) GetServiceDiscoveryRegister() (base.ServiceDiscoveryRegister, base.Error) {
-	return consultool.NewConsulServiceRegister(&consultool.ConsulConfig{})
+	consulClient, err := consultool.NewConsulClient(&consultool.ConsulConfig{})
+	if err != nil {
+		return nil, err
+	}
+	return consultool.NewConsulServiceRegister(consulClient)
 }

@@ -3,6 +3,7 @@ package grpcboot
 import (
 	"github.com/coffeehc/web"
 	"google.golang.org/grpc"
+	"strings"
 )
 
 type grpcFilter struct {
@@ -10,11 +11,10 @@ type grpcFilter struct {
 }
 
 func (this *grpcFilter) filter(reply web.Reply, chain web.FilterChain) {
-	//TODO web 改版后直接使用 NotFountHandler
 	request := reply.GetRequest()
-	if request.ProtoMajor == 2 && request.Header.Get("Content-Type") == "application/grpc" {
+	if request.ProtoMajor == 2 && strings.Contains(request.Header.Get("Content-Type"), "application/grpc") {
 		reply.AdapterHttpHandler(true)
-		this.server.ServeHTTP(reply.GetResponseWriter(), reply.GetRequest())
+		this.server.ServeHTTP(reply.GetResponseWriter(), request)
 		return
 	}
 	chain(reply)

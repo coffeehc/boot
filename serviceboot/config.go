@@ -4,6 +4,7 @@ import (
 	"flag"
 	"fmt"
 	"github.com/coffeehc/commons"
+	"github.com/coffeehc/microserviceboot/base"
 	"github.com/coffeehc/web"
 	"time"
 )
@@ -11,9 +12,10 @@ import (
 var configPath = flag.String("config", "", "配置文件路径")
 
 type ServiceConfig struct {
-	Debug                  *DebugConfig `yaml:"debug"`
-	DisableServiceRegister bool         `yaml:"disable_service_register"`
-	WebServerConfig        *WebConfig   `yaml:"web_server_config"`
+	ServiceInfo            *base.SimpleServiceInfo `yaml:"service_info"`
+	Debug                  *DebugConfig            `yaml:"debug"`
+	DisableServiceRegister bool                    `yaml:"disable_service_register"`
+	WebServerConfig        *WebConfig              `yaml:"web_server_config"`
 }
 
 func (this *ServiceConfig) GetDebugConfig() *DebugConfig {

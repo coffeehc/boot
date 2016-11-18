@@ -9,6 +9,7 @@ type MicroService interface {
 	Start() base.Error
 	Stop()
 	GetService() base.Service
+	GetServiceInfo() base.ServiceInfo
 }
 
 type MicroServiceBuilder func(base.Service) (MicroService, base.Error)

@@ -4,21 +4,12 @@ package simplemodel;
 
 service Greeter {
 	rpc SayHello (Request) returns (Response);
-	// rpc SayHelloStream (Request) returns (stream Response);
 }
 
 message Request {
-	string
-	name
-	=
-	1
-	;
+	string name = 1;
 }
 
 message Response {
-	string
-	message
-	=
-	1
-	;
+	string message = 1;
 }

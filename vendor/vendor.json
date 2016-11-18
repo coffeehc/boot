@@ -69,16 +69,16 @@
 			"revisionTime": "2016-11-11T15:35:59Z"
 		},
 		{
-          "checksumSHA1": "ucwXwAfAEoCDvaolmUu3nST22Bc=",
+          "checksumSHA1": "RvJjLjBnryNaP+bt9dsWnRHjQMM=",
 			"path": "github.com/coffeehc/web",
-          "revision": "e0530df336c7a4408bcf9092d1e252d0a2df0e13",
-          "revisionTime": "2016-11-14T11:36:57Z"
+          "revision": "4037b801241797cbe3bddbae875532d64cd3a058",
+          "revisionTime": "2016-11-17T13:07:09Z"
 		},
 		{
 			"checksumSHA1": "jiKaQesv5IG+lCBSzJ5fS+JP7iM=",
 			"path": "github.com/coffeehc/web/pprof",
-          "revision": "e0530df336c7a4408bcf9092d1e252d0a2df0e13",
-          "revisionTime": "2016-11-14T11:36:57Z"
+          "revision": "4037b801241797cbe3bddbae875532d64cd3a058",
+          "revisionTime": "2016-11-17T13:07:09Z"
 		},
 		{
 			"checksumSHA1": "zlpe0MT0wtPGQ/bQ+/PsRr5XHzo=",
@@ -105,7 +105,7 @@
 			"revisionTime": "2016-09-10T22:24:44Z"
 		},
 		{
-			"checksumSHA1": "gPi7fIH7BzYjebIeXKn4vWO+bfI=",
+          "checksumSHA1": "upi0QLM0VapSYkZxhVvFHQ1/VbU=",
 			"path": "github.com/hashicorp/consul/api",
 			"revision": "3193507d9ac34fb600c5c973d0f2111a0d413af6",
 			"revisionTime": "2016-09-26T23:58:32Z"

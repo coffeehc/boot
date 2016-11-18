@@ -6,7 +6,7 @@ type Service interface {
 	Init(configPath string, server web.HttpServer) Error
 	Run() Error
 	Stop() Error
-	GetServiceInfo() ServiceInfo
+	//GetServiceInfo() ServiceInfo
 	GetServiceDiscoveryRegister() (ServiceDiscoveryRegister, Error)
 }
 
@@ -21,14 +21,17 @@ type ServiceInfo interface {
 	GetDescriptor() string
 	//获取 Service tags
 	GetServiceTag() string
+
+	GetScheme() string
 }
 
 type SimpleServiceInfo struct {
-	ServiceName string
-	Version     string
-	Descriptor  string
-	ApiDefine   string
-	Tag         string
+	ServiceName string `yaml:"service_name"`
+	Version     string `yaml:"version"`
+	Descriptor  string `yaml:"descriptor"`
+	ApiDefine   string `yaml:"api_define"`
+	Tag         string `yaml:"tag"`
+	Scheme      string `yaml:"scheme"`
 }
 
 func (this *SimpleServiceInfo) GetApiDefine() string {
@@ -47,12 +50,17 @@ func (this *SimpleServiceInfo) GetServiceTag() string {
 	return this.Tag
 }
 
-func BuildSimpleServiceInfo(serviceName string, version string, tag string, descriptor string, apiDefine string) ServiceInfo {
+func (this *SimpleServiceInfo) GetScheme() string {
+	return this.Scheme
+}
+
+func NewSimpleServiceInfo(serviceName, version, tag, scheme, descriptor, apiDefine string) ServiceInfo {
 	return &SimpleServiceInfo{
 		ServiceName: serviceName,
 		Version:     version,
 		Descriptor:  descriptor,
 		ApiDefine:   apiDefine,
 		Tag:         tag,
+		Scheme:      scheme,
 	}
 }

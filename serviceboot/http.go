@@ -7,16 +7,10 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 )
 
-func NewHttpServer(configPath string, config *web.HttpServerConfig, service base.Service) (web.HttpServer, base.Error) {
+func NewHttpServer(config *web.HttpServerConfig, serviceInfo base.ServiceInfo) (web.HttpServer, base.Error) {
 	httpServer := web.NewHttpServer(config)
-	if service.Init != nil {
-		err := service.Init(configPath, httpServer)
-		if err != nil {
-			return nil, base.NewErrorWrapper(err)
-		}
-	}
 	pprof.RegeditPprof(httpServer)
-	health := newHealth(service.GetServiceInfo())
+	health := newHealth(serviceInfo)
 	err := httpServer.Register("/health", web.GET, health.health)
 	if err != nil {
 		return nil, base.NewErrorWrapper(err)

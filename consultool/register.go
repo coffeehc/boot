@@ -42,8 +42,10 @@ func (this *consulServiceRegister) RegService(serviceInfo base.ServiceInfo, serv
 		EnableTagOverride: true,
 		Checks: api.AgentServiceChecks([]*api.AgentServiceCheck{
 			{
-				HTTP:     fmt.Sprintf("http://%s/health", serviceAddr),
-				Interval: "10s",
+				HTTP:          fmt.Sprintf("%s://%s/health", serviceInfo.GetScheme(), serviceAddr),
+				Interval:      "10s",
+				Status:        "passing",
+				TLSSkipVerify: true,
 			},
 		}),
 	}

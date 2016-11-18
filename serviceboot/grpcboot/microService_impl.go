@@ -9,6 +9,7 @@ import (
 	"github.com/coffeehc/web"
 	"github.com/grpc-ecosystem/go-grpc-prometheus"
 	"google.golang.org/grpc/grpclog"
+	"net"
 )
 
 var GRpcMicroServiceBuilder serviceboot.MicroServiceBuilder = microServiceBuilder
@@ -31,11 +32,25 @@ type GRpcMicroService struct {
 }
 
 func (this *GRpcMicroService) Init() (*serviceboot.ServiceConfig, base.Error) {
-	grpclog.SetLogger(&_logger{})
+	grpclog.SetLogger(&grpcbase.GrpcLogger{})
 	serviceConfig := new(Config)
 	configPath := serviceboot.LoadConfigPath(serviceConfig)
 	this.config = serviceConfig
-	httpServer, err := serviceboot.NewHttpServer(configPath, serviceConfig.GetBaseConfig().GetWebServerConfig(), this.service)
+	err := serviceboot.CheckServiceInfoConfig(this.GetServiceInfo())
+	if err != nil {
+		return nil, err
+	}
+	webServerConfig := serviceConfig.GetBaseConfig().GetWebServerConfig()
+	//构建 TSL
+	if webServerConfig.TLSConfig == nil {
+		webServerConfig.TLSConfig, err = newDefaultTlsConfig()
+		if err != nil {
+			return nil, err
+		}
+	}
+	tcpAddr, _ := net.ResolveTCPAddr("tcp", webServerConfig.ServerAddr)
+	webServerConfig.TLSConfig.ServerName = tcpAddr.IP.String()
+	httpServer, err := serviceboot.NewHttpServer(webServerConfig, this.GetServiceInfo())
 	if err != nil {
 		return nil, err
 	}
@@ -51,6 +66,8 @@ func (this *GRpcMicroService) Init() (*serviceboot.ServiceConfig, base.Error) {
 	if len(this.service.GetGrpcOptions()) > 0 {
 		grpcOptions = append(grpcOptions, this.service.GetGrpcOptions()...)
 	}
+	//TODO ???
+	//grpcOptions = append(grpcOptions,grpc.Creds(credentials.NewServerTLSFromCert(&webServerConfig.TLSConfig.Certificates[0])))
 	grpc.EnableTracing = false
 	if base.IsDevModule() {
 		grpc.EnableTracing = true
@@ -59,7 +76,7 @@ func (this *GRpcMicroService) Init() (*serviceboot.ServiceConfig, base.Error) {
 	this.service.RegisterServer(this.grpcServer)
 	grpc_prometheus.Register(this.grpcServer)
 	grpcFilter := &grpcFilter{this.grpcServer}
-	this.httpServer.AddFirstFilter("/*", grpcFilter.filter)
+	this.httpServer.AddFirstFilter("*", grpcFilter.filter)
 	return serviceConfig.GetBaseConfig(), nil
 }
 
@@ -83,4 +100,8 @@ func (this *GRpcMicroService) Stop() {
 
 func (this *GRpcMicroService) GetService() base.Service {
 	return this.service
+}
+
+func (this *GRpcMicroService) GetServiceInfo() base.ServiceInfo {
+	return this.config.BaseConfig.ServiceInfo
 }

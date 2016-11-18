@@ -1,4 +1,9 @@
 base_config:
+  service_info:
+    service_name: simple_service
+    tag: dev
+    version: 0.0.1
+    scheme: https
   debug:
     enableAccessInfo: true
   disable_service_register: false
