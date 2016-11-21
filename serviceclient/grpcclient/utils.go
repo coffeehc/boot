@@ -1,6 +1,7 @@
 package grpcclient
 
 import (
+	"github.com/coffeehc/logger"
 	"github.com/coffeehc/microserviceboot/loadbalancer"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
@@ -23,6 +24,7 @@ func (this *balancerWapper) Start(target string, config grpc.BalancerConfig) err
 			select {
 			case addrs := <-this.balancer.Notify():
 				if addrs == nil {
+					logger.Debug("return")
 					return
 				}
 				if len(addrs) == 0 {

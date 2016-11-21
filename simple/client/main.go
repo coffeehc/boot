@@ -12,7 +12,7 @@ import (
 
 func main() {
 	logger.InitLogger()
-	serviceInfo := base.NewSimpleServiceInfo("simple_service", "0.0.1", "https", "dev", "", "")
+	serviceInfo := base.NewSimpleServiceInfo("simple_service", "0.0.1", "dev", "https", "", "")
 	var e error
 	consulClient, err := consultool.NewConsulClient(nil)
 	if err != nil {
@@ -47,4 +47,5 @@ func main() {
 		return
 	}
 	logger.Debug("response is %s", response.Message)
+	time.Sleep(time.Millisecond * 300)
 }
