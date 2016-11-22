@@ -3,6 +3,7 @@ package consultool
 import (
 	"fmt"
 
+	"context"
 	"github.com/coffeehc/logger"
 	"github.com/coffeehc/microserviceboot/base"
 	"github.com/hashicorp/consul/api"
@@ -23,7 +24,7 @@ func NewConsulServiceRegister(consulClient *api.Client) (base.ServiceDiscoveryRe
 
 }
 
-func (this *consulServiceRegister) RegService(serviceInfo base.ServiceInfo, serviceAddr string) base.Error {
+func (this *consulServiceRegister) RegService(serviceInfo base.ServiceInfo, serviceAddr string, cxt context.Context) base.Error {
 	if serviceAddr == "" {
 		return base.NewError(-1, "serverAddr is nil")
 	}
@@ -54,5 +55,12 @@ func (this *consulServiceRegister) RegService(serviceInfo base.ServiceInfo, serv
 		logger.Error("注册服务失败:%s", err)
 		return base.NewError(base.ERROR_CODE_BASE_SERVICE_REGISTER_ERROR, err.Error())
 	}
+	context.WithValue(cxt, Context_ConsulClient, this.client)
 	return nil
+}
+
+const Context_ConsulClient = "__consulClient"
+
+func GetConsulClient(cxt context.Context) *api.Client {
+	return cxt.Value(Context_ConsulClient)
 }
