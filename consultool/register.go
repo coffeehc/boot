@@ -61,6 +61,13 @@ func (this *consulServiceRegister) RegService(serviceInfo base.ServiceInfo, serv
 
 const Context_ConsulClient = "__consulClient"
 
-func GetConsulClient(cxt context.Context) *api.Client {
-	return cxt.Value(Context_ConsulClient)
+func GetConsulClient(cxt context.Context) (*api.Client, base.Error) {
+	i := cxt.Value(Context_ConsulClient)
+	if i == nil {
+		return nil, base.NewError(base.ERROR_CODE_BASE_INIT_ERROR, "no create consul client")
+	}
+	if client, ok := i.(*api.Client); ok {
+		return client, nil
+	}
+	return nil, base.NewError(base.ERROR_CODE_BASE_INIT_ERROR, "no create consul client")
 }

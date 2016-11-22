@@ -57,7 +57,7 @@ func (this *MicroService_Rest) Init(cxt context.Context) (*serviceboot.ServiceCo
 		return nil, err
 	}
 	this.httpServer = httpServer
-	serviceboot.ServiceRegister(this.GetService(), this.GetServiceInfo(), serviceConfig)
+	serviceboot.ServiceRegister(this.GetService(), this.GetServiceInfo(), serviceConfig, cxt)
 	err = this.registerEndpoints()
 	if err != nil {
 		return nil, err
