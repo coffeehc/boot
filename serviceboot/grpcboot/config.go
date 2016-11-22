@@ -11,6 +11,10 @@ type Config struct {
 	GrpcConfig *GRpcConfig                `yaml:"grpc_config"`
 }
 
+func (this *Config) GetServiceConfig() *serviceboot.ServiceConfig {
+	return this.BaseConfig
+}
+
 type GRpcConfig struct {
 	MaxMsgSize           int    `yaml:"max_msg_size"`
 	MaxConcurrentStreams uint32 `yaml:"max_concurrent_streams"`

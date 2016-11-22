@@ -1,13 +1,17 @@
 package base
 
-import "github.com/coffeehc/web"
+import (
+	"context"
+	"github.com/coffeehc/web"
+)
 
 type Service interface {
-	Init(configPath string, server web.HttpServer) Error
+	Init(configPath string, server web.HttpServer, cxt context.Context) Error
 	Run() Error
 	Stop() Error
 	//GetServiceInfo() ServiceInfo
 	GetServiceDiscoveryRegister() (ServiceDiscoveryRegister, Error)
+	GetConfig() interface{}
 }
 
 type ServiceInfo interface {

@@ -3,6 +3,7 @@ package grpcboot
 import (
 	"google.golang.org/grpc"
 
+	"context"
 	"github.com/coffeehc/microserviceboot/base"
 	"github.com/coffeehc/microserviceboot/base/grpcbase"
 	"github.com/coffeehc/microserviceboot/serviceboot"
@@ -31,16 +32,16 @@ type GRpcMicroService struct {
 	grpcServer *grpc.Server
 }
 
-func (this *GRpcMicroService) Init() (*serviceboot.ServiceConfig, base.Error) {
+func (this *GRpcMicroService) Init(cxt context.Context) (*serviceboot.ServiceConfig, base.Error) {
 	grpclog.SetLogger(&grpcbase.GrpcLogger{})
-	serviceConfig := new(Config)
-	configPath := serviceboot.LoadConfigPath(serviceConfig)
-	this.config = serviceConfig
+	config := new(Config)
+	configPath := serviceboot.LoadConfig(config)
+	this.config = config
 	err := serviceboot.CheckServiceInfoConfig(this.GetServiceInfo())
 	if err != nil {
 		return nil, err
 	}
-	webServerConfig := serviceConfig.GetBaseConfig().GetWebServerConfig()
+	webServerConfig := config.GetBaseConfig().GetWebServerConfig()
 	//构建 TSL
 	if webServerConfig.TLSConfig == nil {
 		webServerConfig.TLSConfig, err = newDefaultTlsConfig()
@@ -55,8 +56,9 @@ func (this *GRpcMicroService) Init() (*serviceboot.ServiceConfig, base.Error) {
 		return nil, err
 	}
 	this.httpServer = httpServer
+	serviceboot.ServiceRegister(this.GetService(), this.GetServiceInfo(), config.GetBaseConfig())
 	if this.service.Init != nil {
-		err := this.service.Init(configPath, httpServer)
+		err := this.service.Init(configPath, httpServer, cxt)
 		if err != nil {
 			return nil, err
 		}
@@ -77,7 +79,7 @@ func (this *GRpcMicroService) Init() (*serviceboot.ServiceConfig, base.Error) {
 	grpc_prometheus.Register(this.grpcServer)
 	grpcFilter := &grpcFilter{this.grpcServer}
 	this.httpServer.AddFirstFilter("*", grpcFilter.filter)
-	return serviceConfig.GetBaseConfig(), nil
+	return config.GetBaseConfig(), nil
 }
 
 func (this *GRpcMicroService) Start() base.Error {
@@ -103,5 +105,5 @@ func (this *GRpcMicroService) GetService() base.Service {
 }
 
 func (this *GRpcMicroService) GetServiceInfo() base.ServiceInfo {
-	return this.config.BaseConfig.ServiceInfo
+	return this.config.GetServiceConfig().ServiceInfo
 }

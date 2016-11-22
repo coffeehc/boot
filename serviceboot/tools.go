@@ -1,11 +1,12 @@
 package serviceboot
 
 import (
+	"fmt"
 	"github.com/coffeehc/logger"
 	"github.com/coffeehc/microserviceboot/base"
 )
 
-func LoadConfigPath(serviceConfig interface{}) string {
+func LoadConfig(serviceConfig ServiceConfigration) string {
 	*configPath = base.GetDefaultConfigPath(*configPath)
 	err := base.LoadConfig(*configPath, serviceConfig)
 	if err != nil {
@@ -29,4 +30,21 @@ func CheckServiceInfoConfig(serviceInfo base.ServiceInfo) base.Error {
 		return base.NewError(-1, "没有配置 ServiceVersion")
 	}
 	return nil
+}
+
+func ServiceRegister(service base.Service, serviceInfo base.ServiceInfo, serviceConfig *ServiceConfig) {
+	serviceDiscoveryRegister, err := service.GetServiceDiscoveryRegister()
+	if err != nil {
+		launchError(fmt.Errorf("获取没有指定serviceDiscoveryRegister失败,注册服务[%s]失败", serviceInfo.GetServiceName()))
+	}
+	if !serviceConfig.DisableServiceRegister {
+		if serviceDiscoveryRegister == nil {
+			launchError(fmt.Errorf("没有指定serviceDiscoveryRegister,注册服务[%s]失败", serviceInfo.GetServiceName()))
+		}
+		registerError := serviceDiscoveryRegister.RegService(serviceInfo, serviceConfig.GetWebServerConfig().ServerAddr)
+		if registerError != nil {
+			launchError(fmt.Errorf("注册服务[%s]失败,%s", serviceInfo.GetServiceName(), registerError.Error()))
+		}
+		logger.Info("注册服务[%s]成功", serviceInfo.GetServiceName())
+	}
 }

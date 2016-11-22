@@ -11,6 +11,10 @@ import (
 
 var configPath = flag.String("config", "", "配置文件路径")
 
+type ServiceConfigration interface {
+	GetServiceConfig() *ServiceConfig
+}
+
 type ServiceConfig struct {
 	ServiceInfo            *base.SimpleServiceInfo `yaml:"service_info"`
 	Debug                  *DebugConfig            `yaml:"debug"`

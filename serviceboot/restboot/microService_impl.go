@@ -1,6 +1,7 @@
 package restboot
 
 import (
+	"context"
 	"fmt"
 	"github.com/coffeehc/logger"
 	"github.com/coffeehc/microserviceboot/base"
@@ -12,7 +13,7 @@ import (
 var RestMicroServiceBuilder serviceboot.MicroServiceBuilder = microServiceBuild
 
 type MicroService_Rest struct {
-	config     *serviceboot.ServiceConfig
+	config     *Config
 	httpServer web.HttpServer
 	service    restbase.RestService
 }
@@ -28,29 +29,15 @@ func microServiceBuild(service base.Service) (serviceboot.MicroService, base.Err
 }
 
 func (this *MicroService_Rest) GetServiceInfo() base.ServiceInfo {
-	return this.config.ServiceInfo
+	return this.config.GetServiceConfig().ServiceInfo
 }
 
-func (this *MicroService_Rest) Init() (*serviceboot.ServiceConfig, base.Error) {
-	serviceConfig := new(serviceboot.ServiceConfig)
-	configPath := serviceboot.LoadConfigPath(serviceConfig)
-	this.config = serviceConfig
+func (this *MicroService_Rest) Init(cxt context.Context) (*serviceboot.ServiceConfig, base.Error) {
+	config := new(Config)
+	configPath := serviceboot.LoadConfig(config)
+	this.config = config
+	serviceConfig := config.GetServiceConfig()
 	err := serviceboot.CheckServiceInfoConfig(this.GetServiceInfo())
-	if err != nil {
-		return nil, err
-	}
-	httpServer, err := serviceboot.NewHttpServer(serviceConfig.GetWebServerConfig(), this.GetServiceInfo())
-	if err != nil {
-		return nil, err
-	}
-	this.httpServer = httpServer
-	if this.service.Init != nil {
-		err := this.service.Init(configPath, httpServer)
-		if err != nil {
-			return nil, err
-		}
-	}
-	err = this.registerEndpoints()
 	if err != nil {
 		return nil, err
 	}
@@ -65,7 +52,22 @@ func (this *MicroService_Rest) Init() (*serviceboot.ServiceConfig, base.Error) {
 			this.httpServer.AddFirstFilter("/*", web.SimpleAccessLogFilter)
 		}
 	}
-
+	httpServer, err := serviceboot.NewHttpServer(serviceConfig.GetWebServerConfig(), this.GetServiceInfo())
+	if err != nil {
+		return nil, err
+	}
+	this.httpServer = httpServer
+	serviceboot.ServiceRegister(this.GetService(), this.GetServiceInfo(), serviceConfig)
+	err = this.registerEndpoints()
+	if err != nil {
+		return nil, err
+	}
+	if this.service.Init != nil {
+		err := this.service.Init(configPath, httpServer, cxt)
+		if err != nil {
+			return nil, err
+		}
+	}
 	return serviceConfig, nil
 }
 
