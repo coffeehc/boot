@@ -10,8 +10,7 @@ type Service interface {
 	Run() Error
 	Stop() Error
 	//GetServiceInfo() ServiceInfo
-	GetServiceDiscoveryRegister() (ServiceDiscoveryRegister, Error)
-	GetConfig() interface{}
+	GetServiceDiscoveryRegister(configPath string) (ServiceDiscoveryRegister, Error)
 }
 
 type ServiceInfo interface {

@@ -7,14 +7,17 @@ import (
 	"github.com/coffeehc/microserviceboot/base"
 )
 
-func LoadConfig(serviceConfig ServiceConfigration) string {
+func LoadConfig(serviceConfig ServiceConfigration) (string, base.Error) {
 	*configPath = base.GetDefaultConfigPath(*configPath)
 	err := base.LoadConfig(*configPath, serviceConfig)
 	if err != nil {
-		logger.Warn("加载服务器配置[%s]失败,%s", *configPath, err)
+		return "", base.NewError(base.ERROR_CODE_BASE_CONFIG_ERROR, fmt.Sprintf("加载服务器配置[%s]失败,%s", *configPath, err))
 	}
 	logger.Debug("serviceboot Config is %#v", serviceConfig)
-	return *configPath
+	if serviceConfig.GetServiceConfig().ServiceInfo == nil {
+		return "", base.NewError(base.ERROR_CODE_BASE_CONFIG_ERROR, "没有配置ServiceInfo")
+	}
+	return *configPath, nil
 }
 
 func CheckServiceInfoConfig(serviceInfo base.ServiceInfo) base.Error {
@@ -33,8 +36,8 @@ func CheckServiceInfoConfig(serviceInfo base.ServiceInfo) base.Error {
 	return nil
 }
 
-func ServiceRegister(service base.Service, serviceInfo base.ServiceInfo, serviceConfig *ServiceConfig, cxt context.Context) {
-	serviceDiscoveryRegister, err := service.GetServiceDiscoveryRegister()
+func ServiceRegister(configPath string, service base.Service, serviceInfo base.ServiceInfo, serviceConfig *ServiceConfig, cxt context.Context) {
+	serviceDiscoveryRegister, err := service.GetServiceDiscoveryRegister(configPath)
 	if err != nil {
 		launchError(fmt.Errorf("获取没有指定serviceDiscoveryRegister失败,注册服务[%s]失败", serviceInfo.GetServiceName()))
 	}

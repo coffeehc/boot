@@ -35,9 +35,12 @@ type GRpcMicroService struct {
 func (this *GRpcMicroService) Init(cxt context.Context) (*serviceboot.ServiceConfig, base.Error) {
 	grpclog.SetLogger(&grpcbase.GrpcLogger{})
 	config := new(Config)
-	configPath := serviceboot.LoadConfig(config)
+	configPath, err := serviceboot.LoadConfig(config)
+	if err != nil {
+		return nil, err
+	}
 	this.config = config
-	err := serviceboot.CheckServiceInfoConfig(this.GetServiceInfo())
+	err = serviceboot.CheckServiceInfoConfig(this.GetServiceInfo())
 	if err != nil {
 		return nil, err
 	}
@@ -56,7 +59,7 @@ func (this *GRpcMicroService) Init(cxt context.Context) (*serviceboot.ServiceCon
 		return nil, err
 	}
 	this.httpServer = httpServer
-	serviceboot.ServiceRegister(this.GetService(), this.GetServiceInfo(), config.GetBaseConfig(), cxt)
+	serviceboot.ServiceRegister(configPath, this.GetService(), this.GetServiceInfo(), config.GetBaseConfig(), cxt)
 	if this.service.Init != nil {
 		err := this.service.Init(configPath, httpServer, cxt)
 		if err != nil {

@@ -18,6 +18,9 @@ type consulServiceRegister struct {
 }
 
 func NewConsulServiceRegister(consulClient *api.Client) (base.ServiceDiscoveryRegister, base.Error) {
+	if consulClient == nil {
+		return nil, base.NewError(base.ERROR_CODE_BASE_INIT_ERROR, "没有指定 consulClient")
+	}
 	return &consulServiceRegister{
 		client: consulClient,
 	}, nil

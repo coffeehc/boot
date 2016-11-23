@@ -39,7 +39,7 @@ func ServiceLaunch(service base.Service, serviceBuilder MicroServiceBuilder, cxt
 	logger.Info("Service initing")
 	config, initErr := microService.Init(cxt)
 	if initErr != nil {
-		log.Printf("初始化微服务出错:%s\n", err.Error())
+		log.Printf("初始化微服务出错:%s\n", initErr.Error())
 		return
 	}
 	logger.Info("Service inited")

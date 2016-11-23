@@ -34,10 +34,13 @@ func (this *MicroService_Rest) GetServiceInfo() base.ServiceInfo {
 
 func (this *MicroService_Rest) Init(cxt context.Context) (*serviceboot.ServiceConfig, base.Error) {
 	config := new(Config)
-	configPath := serviceboot.LoadConfig(config)
+	configPath, err := serviceboot.LoadConfig(config)
+	if err != nil {
+		return nil, err
+	}
 	this.config = config
 	serviceConfig := config.GetServiceConfig()
-	err := serviceboot.CheckServiceInfoConfig(this.GetServiceInfo())
+	err = serviceboot.CheckServiceInfoConfig(this.GetServiceInfo())
 	if err != nil {
 		return nil, err
 	}
@@ -57,7 +60,7 @@ func (this *MicroService_Rest) Init(cxt context.Context) (*serviceboot.ServiceCo
 		return nil, err
 	}
 	this.httpServer = httpServer
-	serviceboot.ServiceRegister(this.GetService(), this.GetServiceInfo(), serviceConfig, cxt)
+	serviceboot.ServiceRegister(configPath, this.GetService(), this.GetServiceInfo(), serviceConfig, cxt)
 	err = this.registerEndpoints()
 	if err != nil {
 		return nil, err
