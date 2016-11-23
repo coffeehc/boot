@@ -16,7 +16,7 @@ func init() {
 }
 
 type GrpcClient interface {
-	NewClientConn(serviceInfo base.ServiceInfo, balancer loadbalancer.Balancer) (*grpc.ClientConn, base.Error)
+	NewClientConn(serviceInfo base.ServiceInfo, balancer loadbalancer.Balancer, timeout time.Duration) (*grpc.ClientConn, base.Error)
 }
 
 type _GrpcClient struct {
@@ -26,9 +26,9 @@ func NewGrpcClient() GrpcClient {
 	return &_GrpcClient{}
 }
 
-func (this *_GrpcClient) NewClientConn(serviceInfo base.ServiceInfo, balancer loadbalancer.Balancer) (*grpc.ClientConn, base.Error) {
+func (this *_GrpcClient) NewClientConn(serviceInfo base.ServiceInfo, balancer loadbalancer.Balancer, timeout time.Duration) (*grpc.ClientConn, base.Error) {
 	opts := []grpc.DialOption{
-		grpc.WithTimeout(time.Second * 3),
+		grpc.WithTimeout(timeout),
 		grpc.WithBackoffConfig(grpc.BackoffConfig{
 			MaxDelay: 5 * time.Second,
 		}),

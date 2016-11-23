@@ -5,8 +5,10 @@ import (
 	"github.com/coffeehc/microserviceboot/base"
 	"github.com/hashicorp/consul/api"
 	"google.golang.org/grpc/naming"
+	"math/rand"
 	"net"
 	"strconv"
+	"time"
 )
 
 type ConsulResolver struct {
@@ -81,18 +83,31 @@ func (r *ConsulResolver) updater(instances []string, lastIndex uint64) {
 	var newInstances []string
 
 	// TODO Cache the updates for a while, so that we don't overwhelm Consul.
+	sleep := int64(time.Second * 30)
 	for {
 		select {
 		case <-r.quitc:
 			break
 		default:
-			newInstances, lastIndex, err = r.getInstances(lastIndex)
-			if err != nil {
-				logger.Warn("lb: error retrieving instances from Consul: %v", err)
-				continue
-			}
-			r.updatesc <- r.makeUpdates(oldInstances, newInstances)
-			oldInstances = newInstances
+			func() {
+				defer func() {
+					if err := recover(); err != nil {
+						logger.Warn("update addrs error :%s", err)
+					}
+				}()
+				newInstances, lastIndex, err = r.getInstances(lastIndex)
+				if err != nil {
+					logger.Warn("lb: error retrieving instances from Consul: %v", err)
+					time.Sleep(time.Duration(rand.Int63n(sleep)))
+					return
+				}
+				updates := r.makeUpdates(oldInstances, newInstances)
+				if updates == nil || len(updates) == 0 {
+					return
+				}
+				r.updatesc <- updates
+				oldInstances = newInstances
+			}()
 		}
 	}
 }
@@ -130,18 +145,18 @@ func (r *ConsulResolver) makeUpdates(oldInstances, newInstances []string) []*nam
 	for _, instance := range newInstances {
 		newAddr[instance] = struct{}{}
 	}
-
 	var updates []*naming.Update
 	for addr := range newAddr {
 		if _, ok := oldAddr[addr]; !ok {
+			logger.Debug("add addr %s", addr)
 			updates = append(updates, &naming.Update{Op: naming.Add, Addr: addr})
 		}
 	}
 	for addr := range oldAddr {
 		if _, ok := newAddr[addr]; !ok {
+			logger.Debug("delete addr %s", addr)
 			updates = append(updates, &naming.Update{Op: naming.Delete, Addr: addr})
 		}
 	}
-
 	return updates
 }
