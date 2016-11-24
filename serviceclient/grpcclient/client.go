@@ -1,6 +1,7 @@
 package grpcclient
 
 import (
+	"github.com/coffeehc/logger"
 	"github.com/coffeehc/microserviceboot/base"
 	"google.golang.org/grpc"
 )
@@ -15,14 +16,16 @@ func (this *ServiceClientBase) Init(serviceInfo base.ServiceInfo, clientConnFact
 	this.clientConnFactory = clientConnFactory
 }
 
-func (this *ServiceClientBase) ListenConn(newClient func(conn *grpc.ClientConn)) {
+func (this *ServiceClientBase) ListenConn(newClient func(conn *grpc.ClientConn)) base.Error {
 	clientConn, done, err := this.clientConnFactory.GetClientConn(this.serviceInfo, 0)
 	if err != nil {
-		return nil, err
+		logger.Warn("grpc ClientConn is Close,%s", err)
+		return err
 	}
 	newClient(clientConn)
 	go func() {
 		<-done
-		this.ListenConn()
+		this.ListenConn(newClient)
 	}()
+	return nil
 }

@@ -30,7 +30,7 @@ type _ServiceClient struct {
 func (this *_ServiceClient) GetClientConn(serviceInfo base.ServiceInfo, timeout time.Duration) (*grpc.ClientConn, <-chan struct{}, base.Error) {
 	balancer, err := this.builder.NewBalancer(serviceInfo)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	cxt := context.Background()
 	clientConn, err := this.grpcClient.NewClientConn(cxt, serviceInfo, balancer, timeout)
