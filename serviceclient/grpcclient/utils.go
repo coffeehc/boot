@@ -1,7 +1,6 @@
 package grpcclient
 
 import (
-	"github.com/coffeehc/logger"
 	"github.com/coffeehc/microserviceboot/loadbalancer"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
@@ -13,34 +12,24 @@ type balancerWapper struct {
 }
 
 func (this *balancerWapper) Start(target string, config grpc.BalancerConfig) error {
+	go func() {
+		for addrs := range this.balancer.Notify() {
+			rpcAddrs := make([]grpc.Address, len(addrs))
+			for i, addr := range addrs {
+				rpcAddrs[i] = grpc.Address{
+					Addr:     addr.Addr,
+					Metadata: addr.Metadata,
+				}
+			}
+			this.addressCache <- rpcAddrs
+		}
+	}()
 	err := this.balancer.Start(target, loadbalancer.BalancerConfig{
 		DialCreds: config.DialCreds,
 	})
 	if err != nil {
 		return err
 	}
-	go func() {
-		for {
-			select {
-			case addrs := <-this.balancer.Notify():
-				if addrs == nil {
-					logger.Debug("return")
-					return
-				}
-				if len(addrs) == 0 {
-					break
-				}
-				rpcAddrs := make([]grpc.Address, len(addrs))
-				for i, addr := range addrs {
-					rpcAddrs[i] = grpc.Address{
-						Addr:     addr.Addr,
-						Metadata: addr.Metadata,
-					}
-				}
-				this.addressCache <- rpcAddrs
-			}
-		}
-	}()
 	return nil
 
 }

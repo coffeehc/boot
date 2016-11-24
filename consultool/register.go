@@ -33,16 +33,16 @@ func (this *consulServiceRegister) RegService(serviceInfo base.ServiceInfo, serv
 	}
 	this.serviceId = fmt.Sprintf("%s-%s", serviceInfo.GetServiceName(), serviceAddr)
 	this.checkId = fmt.Sprintf("service:%s", this.serviceId)
-	addr, port, err := net.SplitHostPort(serviceAddr)
+	_, port, err := net.SplitHostPort(serviceAddr)
 	if err != nil {
 		return base.NewError(-1, "serviceAddr is not a tcp addr")
 	}
 	p, _ := strconv.Atoi(port)
 	registration := &api.AgentServiceRegistration{
-		Name:              serviceInfo.GetServiceName(),
-		Tags:              []string{serviceInfo.GetServiceTag()},
-		Port:              p,
-		Address:           addr,
+		Name: serviceInfo.GetServiceName(),
+		Tags: []string{serviceInfo.GetServiceTag()},
+		Port: p,
+		//Address:           addr, //http 获取节点的情况下,或出现问题
 		EnableTagOverride: true,
 		Checks: api.AgentServiceChecks([]*api.AgentServiceCheck{
 			{

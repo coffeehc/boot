@@ -148,13 +148,11 @@ func (r *ConsulResolver) makeUpdates(oldInstances, newInstances []string) []*nam
 	var updates []*naming.Update
 	for addr := range newAddr {
 		if _, ok := oldAddr[addr]; !ok {
-			logger.Debug("add addr %s", addr)
 			updates = append(updates, &naming.Update{Op: naming.Add, Addr: addr})
 		}
 	}
 	for addr := range oldAddr {
 		if _, ok := newAddr[addr]; !ok {
-			logger.Debug("delete addr %s", addr)
 			updates = append(updates, &naming.Update{Op: naming.Delete, Addr: addr})
 		}
 	}

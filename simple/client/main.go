@@ -29,7 +29,7 @@ func main() {
 		return
 	}
 	client := grpcclient.NewGrpcClient()
-	clientConn, err := client.NewClientConn(serviceInfo, balanacer, time.Second*30)
+	clientConn, err := client.NewClientConn(context.Background(), serviceInfo, balanacer, time.Second*30)
 	if err != nil {
 		e = err
 		logger.Error("%s", e)
