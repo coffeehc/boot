@@ -48,7 +48,7 @@ func (lb *RoundRobinClb) GetAddress(name string) (dns.Address, error) {
 		return add, fmt.Errorf("no SRV records found")
 	}
 	lb.muext.Lock()
-	if len(srvs)-1 < lb.i {
+	if len(srvs) - 1 < lb.i {
 		lb.i = 0
 	}
 	//	log.Printf("%d/%d / %+v", lb.i, len(srvs), srvs)

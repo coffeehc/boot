@@ -3,8 +3,8 @@ package ttlcache
 import (
 	"github.com/benschw/dns-clb-go/dns"
 	"net"
-	"sync"
 	"time"
+	"sync"
 )
 
 func NewTtlCache(lib dns.Lookup, ttl int) *TtlCache {
@@ -22,7 +22,7 @@ type TtlCache struct {
 	lastUpdate int32
 	srvs       []net.SRV
 	as         map[string]string
-	rwmutex    *sync.RWMutex
+	rwmutex *sync.RWMutex
 }
 
 func (l *TtlCache) LookupSRV(name string) ([]net.SRV, error) {
