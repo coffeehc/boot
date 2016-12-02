@@ -83,7 +83,7 @@ func (r *ConsulResolver) updater(instances []string, lastIndex uint64) {
 	var newInstances []string
 
 	// TODO Cache the updates for a while, so that we don't overwhelm Consul.
-	sleep := int64(time.Second * 30)
+	sleep := int64(time.Second * 10)
 	for {
 		select {
 		case <-r.quitc:

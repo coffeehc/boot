@@ -93,6 +93,7 @@ func (rr *roundRobin) watchAddrUpdates() error {
 		}
 		switch update.Op {
 		case naming.Add:
+			logger.Debug("add addrs %s",update.Addr)
 			var exist bool
 			for _, v := range rr.addrs {
 				if addr == v.addr {
@@ -106,6 +107,7 @@ func (rr *roundRobin) watchAddrUpdates() error {
 			}
 			rr.addrs = append(rr.addrs, &addrInfo{addr: addr})
 		case naming.Delete:
+			logger.Debug("delete addrs %s",update.Addr)
 			for i, v := range rr.addrs {
 				if addr == v.addr {
 					copy(rr.addrs[i:], rr.addrs[i+1:])
