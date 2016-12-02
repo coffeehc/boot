@@ -90,7 +90,7 @@ func (this *GRpcMicroService) Start() base.Error {
 	errSign := this.httpServer.Start()
 	go func() {
 		err := <-errSign
-		if err != nil {
+		if this.httpServer != nil && err != nil {
 			panic(base.NewError(base.ERROR_CODE_BASE_INIT_ERROR, err.Error()))
 		}
 	}()
@@ -99,7 +99,9 @@ func (this *GRpcMicroService) Start() base.Error {
 
 func (this *GRpcMicroService) Stop() {
 	if this.httpServer != nil {
-		this.httpServer.Stop()
+		httpServer := this.httpServer
+		this.httpServer = nil
+		httpServer.Stop()
 	}
 }
 
