@@ -2,13 +2,14 @@ package serviceboot
 
 import (
 	"os"
-	"os/signal"
-	"syscall"
 	"time"
 
 	"fmt"
 	"log"
 
+	"context"
+	"flag"
+	"github.com/coffeehc/commons"
 	"github.com/coffeehc/logger"
 	"github.com/coffeehc/microserviceboot/base"
 )
@@ -16,32 +17,48 @@ import (
 /**
  *	Service 启动
  */
-func ServiceLauncher(service base.Service) {
+func ServiceLaunch(service base.Service, serviceBuilder MicroServiceBuilder, cxt context.Context) {
 	log.SetFlags(log.Ldate | log.Ltime | log.Llongfile)
 	logger.InitLogger()
 	defer logger.WaitToClose()
+	if flag.Lookup("help") != nil {
+		flag.PrintDefaults()
+		os.Exit(0)
+	}
 	startTime := time.Now()
 	if service == nil {
 		logger.Error("service is nil")
 		return
 	}
-	microService, err := newMicroService(service)
+
+	microService, err := serviceBuilder(service)
 	if err != nil {
 		log.Printf("初始化微服务出错:%s\n", err.Error())
 		return
 	}
-	err = microService.init()
-	if err != nil {
-		log.Printf("初始化微服务出错:%s\n", err.Error())
+	logger.Info("Service initing")
+	config, initErr := microService.Init(cxt)
+	if initErr != nil {
+		log.Printf("初始化微服务出错:%s\n", initErr.Error())
 		return
 	}
+	logger.Info("Service inited")
+	serviceInfo := microService.GetServiceInfo()
+	if serviceInfo == nil {
+		logger.Error("没有指定 ServiceInfo")
+		return
+	}
+	logger.Info("ServiceName: %s", serviceInfo.GetServiceName())
+	logger.Info("Version: %s", serviceInfo.GetVersion())
+	logger.Info("Descriptor: %s", serviceInfo.GetDescriptor())
+	logger.Info("Service starting")
 	err = startService(service)
+	defer microService.Stop()
 	defer func(service base.Service) {
 		if service != nil && service.Stop != nil {
 			stopErr := service.Stop()
 			if stopErr != nil {
 				log.Printf("关闭服务失败,%s\n", stopErr)
-				os.Exit(-1)
 			}
 		}
 	}(service)
@@ -49,19 +66,20 @@ func ServiceLauncher(service base.Service) {
 		log.Printf("start service error,%s\n", err)
 		return
 	}
-	err = microService.start()
+	err = microService.Start()
 	if err != nil {
 		logger.Error("service start fail. %s", err)
 		time.Sleep(time.Second)
 		os.Exit(-1)
 	}
-	defer base.DebugPanic(true)
+	logger.Info("核心服务启动成功,服务地址:%s", config.GetWebServerConfig().ServerAddr)
 	defer func() {
-		fmt.Printf("服务[%s]关闭\n", service.GetServiceInfo().GetServiceName())
+		fmt.Printf("服务[%s]关闭\n", serviceInfo.GetServiceName())
 	}()
 	logger.Info("Service started [%s]", time.Since(startTime))
-	waitStop()
+	commons.WaitStop()
 }
+
 func startService(service base.Service) (err base.Error) {
 	defer func() {
 		if err1 := recover(); err1 != nil {
@@ -86,13 +104,8 @@ func startService(service base.Service) (err base.Error) {
 	return
 }
 
-/*
-	wait,一般是可执行函数的最后用于阻止程序退出
-*/
-func waitStop() {
-	var sigChan = make(chan os.Signal, 3)
-	signal.Notify(sigChan, os.Interrupt, syscall.SIGTERM)
-	sig := <-sigChan
-	logger.Debug("接收到指令:%s,立即关闭程序", sig)
-	fmt.Printf("接收到指令:%s,立即关闭程序", sig)
+func launchError(err error) {
+	logger.Error("启动失败:%s", err.Error())
+	time.Sleep(500 * time.Millisecond)
+	os.Exit(-1)
 }

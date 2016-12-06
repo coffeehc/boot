@@ -1,19 +1,16 @@
 package base
 
 import (
-	"io/ioutil"
-
-	"github.com/coffeehc/logger"
+	"context"
 	"github.com/coffeehc/web"
 )
 
 type Service interface {
-	Init(configPath string, server web.HttpServer) Error
+	Init(configPath string, server web.HttpServer, cxt context.Context) Error
 	Run() Error
 	Stop() Error
-	GetServiceInfo() ServiceInfo
-	GetEndPoints() []EndPoint
-	GetServiceDiscoveryRegister() ServiceDiscoveryRegister
+	//GetServiceInfo() ServiceInfo
+	GetServiceDiscoveryRegister(configPath string) (ServiceDiscoveryRegister, Error)
 }
 
 type ServiceInfo interface {
@@ -26,51 +23,47 @@ type ServiceInfo interface {
 	//获取服务描述
 	GetDescriptor() string
 	//获取 Service tags
-	GetServiceTags() []string
+	GetServiceTag() string
+
+	GetScheme() string
 }
 
-type LoadingServiceInfo struct {
-	ApiDeifneFile string `yaml:"apiDeifneFile"`
-	apiDefine     string
-	ServiceName   string   `yaml:"serviceName"`
-	Version       string   `yaml:"version"`
-	Descriptor    string   `yaml:"descriptor"`
-	Tags          []string `yaml:"tags"`
-	ServerPort    int      `yaml:"serverPort"`
-	Scheme        string   `yaml:"scheme"`
-	CartFile      string   `yaml:"cartFile"`
-	KeyFile       string   `yaml:"keyFile"`
-	DevModule     bool     `yaml:"devModule"`
+type SimpleServiceInfo struct {
+	ServiceName string `yaml:"service_name"`
+	Version     string `yaml:"version"`
+	Descriptor  string `yaml:"descriptor"`
+	ApiDefine   string `yaml:"api_define"`
+	Tag         string `yaml:"tag"`
+	Scheme      string `yaml:"scheme"`
 }
 
-func (this *LoadingServiceInfo) GetApiDefine() string {
-	if this.apiDefine == "" {
-		data, err := ioutil.ReadFile(this.ApiDeifneFile)
-		if err == nil {
-			this.apiDefine = string(data)
-		} else {
-			logger.Error("read file error :%s", err)
-			this.apiDefine = "no define"
-		}
-	}
-	return this.apiDefine
+func (this *SimpleServiceInfo) GetApiDefine() string {
+	return this.ApiDefine
 }
-
-func (this *LoadingServiceInfo) GetServiceName() string {
+func (this *SimpleServiceInfo) GetServiceName() string {
 	return this.ServiceName
 }
-
-func (this *LoadingServiceInfo) GetVersion() string {
+func (this *SimpleServiceInfo) GetVersion() string {
 	return this.Version
 }
-
-func (this *LoadingServiceInfo) GetDescriptor() string {
-	if this.Descriptor == "" {
-		this.Descriptor = this.ServiceName
-	}
+func (this *SimpleServiceInfo) GetDescriptor() string {
 	return this.Descriptor
 }
+func (this *SimpleServiceInfo) GetServiceTag() string {
+	return this.Tag
+}
 
-func (this *LoadingServiceInfo) GetServiceTags() []string {
-	return this.Tags
+func (this *SimpleServiceInfo) GetScheme() string {
+	return this.Scheme
+}
+
+func NewSimpleServiceInfo(serviceName, version, tag, scheme, descriptor, apiDefine string) ServiceInfo {
+	return &SimpleServiceInfo{
+		ServiceName: serviceName,
+		Version:     version,
+		Descriptor:  descriptor,
+		ApiDefine:   apiDefine,
+		Tag:         tag,
+		Scheme:      scheme,
+	}
 }

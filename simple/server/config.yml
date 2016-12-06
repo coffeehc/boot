@@ -1,0 +1,16 @@
+base_config:
+  service_info:
+    service_name: simple_service
+    tag: dev
+    version: 0.0.1
+    scheme: https
+  debug:
+    enableAccessInfo: true
+  disable_service_register: false
+  web_server_config:
+    server_addr: 127.0.0.1:8888
+    read_timeout: 30
+    write_timeout: 30
+grpc_config:
+  max_msg_size: 1024
+  max_concurrent_streams: 10000

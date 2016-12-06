@@ -1,84 +1,54 @@
 package serviceboot
 
 import (
+	"context"
 	"fmt"
-	"net/http"
-
-	"encoding/base64"
-	"encoding/json"
-	"io/ioutil"
-
 	"github.com/coffeehc/logger"
 	"github.com/coffeehc/microserviceboot/base"
-	"github.com/coffeehc/web"
-	"github.com/golang/protobuf/proto"
 )
 
-func ErrorRecover(reply web.Reply) {
-	if err := recover(); err != nil {
-		logger.Error("处理请求,发生错误:%s", err)
-		var errorResponse *base.ErrorResponse
-		switch e := err.(type) {
-		case *base.ErrorResponse:
-			errorResponse = e
-		case base.ErrorResponse:
-			errorResponse = &e
-		case base.BaseError:
-			errorResponse = base.NewErrorResponse(http.StatusBadRequest, e.GetErrorCode(), e.Error(), "")
-		case *base.BaseError:
-			errorResponse = base.NewErrorResponse(http.StatusBadRequest, e.GetErrorCode(), e.Error(), "")
-		case base.Error:
-			errorResponse = base.NewErrorResponse(http.StatusBadRequest, e.GetErrorCode(), e.Error(), "")
-		case string:
-			errorResponse = base.NewErrorResponse(http.StatusInternalServerError, base.ERROR_CODE_BASE_SYSTEM_ERROR, e, "")
-		case error:
-			errorResponse = base.NewErrorResponse(http.StatusInternalServerError, base.ERROR_CODE_BASE_SYSTEM_ERROR, e.Error(), "")
-		default:
-			errorResponse = base.NewErrorResponse(http.StatusInternalServerError, base.ERROR_CODE_BASE_SYSTEM_ERROR, fmt.Sprintf("%#v", err), "")
+func LoadConfig(serviceConfig ServiceConfigration) (string, base.Error) {
+	*configPath = base.GetDefaultConfigPath(*configPath)
+	err := base.LoadConfig(*configPath, serviceConfig)
+	if err != nil {
+		return "", base.NewError(base.ERROR_CODE_BASE_CONFIG_ERROR, fmt.Sprintf("加载服务器配置[%s]失败,%s", *configPath, err))
+	}
+	logger.Debug("serviceboot Config is %#v", serviceConfig)
+	if serviceConfig.GetServiceConfig().ServiceInfo == nil {
+		return "", base.NewError(base.ERROR_CODE_BASE_CONFIG_ERROR, "没有配置ServiceInfo")
+	}
+	return *configPath, nil
+}
+
+func CheckServiceInfoConfig(serviceInfo base.ServiceInfo) base.Error {
+	if serviceInfo == nil {
+		return base.NewError(-1, "没有配置 ServiceInfo")
+	}
+	if serviceInfo.GetServiceName() == "" {
+		return base.NewError(-1, "没有配置 ServiceName")
+	}
+	if serviceInfo.GetServiceTag() == "" {
+		return base.NewError(-1, "没有配置 ServiceTag")
+	}
+	if serviceInfo.GetVersion() == "" {
+		return base.NewError(-1, "没有配置 ServiceVersion")
+	}
+	return nil
+}
+
+func ServiceRegister(configPath string, service base.Service, serviceInfo base.ServiceInfo, serviceConfig *ServiceConfig, cxt context.Context) {
+	serviceDiscoveryRegister, err := service.GetServiceDiscoveryRegister(configPath)
+	if err != nil {
+		launchError(fmt.Errorf("获取没有指定serviceDiscoveryRegister失败,注册服务[%s]失败", serviceInfo.GetServiceName()))
+	}
+	if !serviceConfig.DisableServiceRegister {
+		if serviceDiscoveryRegister == nil {
+			launchError(fmt.Errorf("没有指定serviceDiscoveryRegister,注册服务[%s]失败", serviceInfo.GetServiceName()))
 		}
-		//暂时统一按照400处理
-		reply.SetStatusCode(errorResponse.GetHttpCode()).With(errorResponse).As(web.Default_Render_Json)
+		registerError := serviceDiscoveryRegister.RegService(serviceInfo, serviceConfig.GetWebServerConfig().ServerAddr, cxt)
+		if registerError != nil {
+			launchError(fmt.Errorf("注册服务[%s]失败,%s", serviceInfo.GetServiceName(), registerError.Error()))
+		}
+		logger.Info("注册服务[%s]成功", serviceInfo.GetServiceName())
 	}
-}
-
-//将 request 的 Json内容解析为 对象
-func UnmarshalWhitJson(request *http.Request, data interface{}) {
-	dataBytes, err := ioutil.ReadAll(request.Body)
-	if err != nil {
-		panic(err)
-	}
-	err = json.Unmarshal(dataBytes, data)
-	if err != nil {
-		panic(err)
-	}
-}
-
-func UnmarshalWhitProtobuf(request *http.Request, data proto.Message) {
-	dataBytes, err := ioutil.ReadAll(request.Body)
-	if err != nil {
-		panic(err)
-	}
-	err = proto.Unmarshal(dataBytes, data)
-	if err != nil {
-		panic(err)
-	}
-}
-
-//如果 err 不为空,直接 Panic
-func PanicErr(err error) {
-	if err != nil {
-		panic(err)
-	}
-}
-
-func ParsePathParamToBinary(pathFragments map[string]string, name string) []byte {
-	str, ok := pathFragments[name]
-	if !ok {
-		panic(base.NewError(base.ERROR_CODE_BASE_INVALID_PARAM, fmt.Sprintf("没有指定%s值", name)))
-	}
-	data, err := base64.RawURLEncoding.DecodeString(str)
-	if err != nil {
-		panic(base.NewError(base.ERROR_CODE_BASE_DECODE_ERROR, fmt.Sprintf("无法解析%s", name)))
-	}
-	return data
 }
