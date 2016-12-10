@@ -38,7 +38,7 @@ func NewConsulResolver(client *api.Client, service, tag string) (*ConsulResolver
 	// Retrieve instances immediately
 	instances, index, err := r.getInstances(0)
 	if err != nil {
-		return nil, base.NewErrorWrapper(err)
+		return nil, base.NewErrorWrapper("consul loadbalance",err)
 	}
 	r.updatesc <- r.makeUpdates(nil, instances)
 

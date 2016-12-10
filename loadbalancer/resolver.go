@@ -19,7 +19,7 @@ type SimpleResolver struct {
 
 func NewSimpleResolver(addrs []string) (*SimpleResolver, base.Error) {
 	if addrs == nil || len(addrs) == 0 {
-		return nil, base.NewError(-1, "addrs is nil")
+		return nil, base.NewError(-1,err_scope_balance, "addrs is nil")
 	}
 	resolver := &SimpleResolver{
 		updatesc: make(chan []*naming.Update, 1),

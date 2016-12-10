@@ -11,6 +11,8 @@ import (
 	"sync"
 )
 
+const err_scope_balance  = "loadbalnace"
+
 var ErrClientConnClosing = errors.New("the client connection is closing")
 
 type Address struct {
@@ -232,7 +234,7 @@ func (rr *roundRobin) Get(ctx context.Context, opts BalancerGetOptions) (addr Ad
 	if !opts.BlockingWait {
 		if len(rr.addrs) == 0 {
 			rr.mu.Unlock()
-			err = base.NewError(-1, "there is no address available")
+			err = base.NewError(-1,err_scope_balance, "there is no address available")
 			return
 		}
 		// Returns the next addr on rr.addrs for failfast RPCs.

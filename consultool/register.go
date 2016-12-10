@@ -11,6 +11,8 @@ import (
 	"strconv"
 )
 
+const err_scope_consul_register  = "consul register"
+
 type consulServiceRegister struct {
 	client    *api.Client
 	serviceId string
@@ -19,7 +21,7 @@ type consulServiceRegister struct {
 
 func NewConsulServiceRegister(consulClient *api.Client) (base.ServiceDiscoveryRegister, base.Error) {
 	if consulClient == nil {
-		return nil, base.NewError(base.ERROR_CODE_BASE_INIT_ERROR, "没有指定 consulClient")
+		return nil, base.NewError(base.ERROR_CODE_BASE_INIT_ERROR,err_scope_consul_register, "没有指定 consulClient")
 	}
 	return &consulServiceRegister{
 		client: consulClient,
@@ -29,13 +31,13 @@ func NewConsulServiceRegister(consulClient *api.Client) (base.ServiceDiscoveryRe
 
 func (this *consulServiceRegister) RegService(serviceInfo base.ServiceInfo, serviceAddr string, cxt context.Context) base.Error {
 	if serviceAddr == "" {
-		return base.NewError(-1, "serverAddr is nil")
+		return base.NewError(-1,err_scope_consul_register, "serverAddr is nil")
 	}
 	this.serviceId = fmt.Sprintf("%s-%s", serviceInfo.GetServiceName(), serviceAddr)
 	this.checkId = fmt.Sprintf("service:%s", this.serviceId)
 	_, port, err := net.SplitHostPort(serviceAddr)
 	if err != nil {
-		return base.NewError(-1, "serviceAddr is not a tcp addr")
+		return base.NewError(-1,err_scope_consul_register, "serviceAddr is not a tcp addr")
 	}
 	p, _ := strconv.Atoi(port)
 	registration := &api.AgentServiceRegistration{
@@ -56,7 +58,7 @@ func (this *consulServiceRegister) RegService(serviceInfo base.ServiceInfo, serv
 	err = this.client.Agent().ServiceRegister(registration)
 	if err != nil {
 		logger.Error("注册服务失败:%s", err)
-		return base.NewError(base.ERROR_CODE_BASE_SERVICE_REGISTER_ERROR, err.Error())
+		return base.NewError(base.ERROR_CODE_BASE_SERVICE_REGISTER_ERROR,err_scope_consul_register, err.Error())
 	}
 	context.WithValue(cxt, Context_ConsulClient, this.client)
 	return nil
@@ -67,10 +69,10 @@ const Context_ConsulClient = "__consulClient"
 func GetConsulClient(cxt context.Context) (*api.Client, base.Error) {
 	i := cxt.Value(Context_ConsulClient)
 	if i == nil {
-		return nil, base.NewError(base.ERROR_CODE_BASE_INIT_ERROR, "no create consul client")
+		return nil, base.NewError(base.ERROR_CODE_BASE_INIT_ERROR,err_scope_consul_register, "no create consul client")
 	}
 	if client, ok := i.(*api.Client); ok {
 		return client, nil
 	}
-	return nil, base.NewError(base.ERROR_CODE_BASE_INIT_ERROR, "no create consul client")
+	return nil, base.NewError(base.ERROR_CODE_BASE_INIT_ERROR,err_scope_consul_register, "no create consul client")
 }

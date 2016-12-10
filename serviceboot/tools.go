@@ -11,27 +11,28 @@ func LoadConfig(serviceConfig ServiceConfigration) (string, base.Error) {
 	*configPath = base.GetDefaultConfigPath(*configPath)
 	err := base.LoadConfig(*configPath, serviceConfig)
 	if err != nil {
-		return "", base.NewError(base.ERROR_CODE_BASE_CONFIG_ERROR, fmt.Sprintf("加载服务器配置[%s]失败,%s", *configPath, err))
+		return "", err
 	}
 	logger.Debug("serviceboot Config is %#v", serviceConfig)
 	if serviceConfig.GetServiceConfig().ServiceInfo == nil {
-		return "", base.NewError(base.ERROR_CODE_BASE_CONFIG_ERROR, "没有配置ServiceInfo")
+		return "", base.NewError(base.ERROR_CODE_BASE_CONFIG_ERROR,base.ERR_SCOPE_LOADCONFIG, "没有配置ServiceInfo")
 	}
 	return *configPath, nil
 }
 
 func CheckServiceInfoConfig(serviceInfo base.ServiceInfo) base.Error {
+	const errorScope  = "checkServiceInfo"
 	if serviceInfo == nil {
-		return base.NewError(-1, "没有配置 ServiceInfo")
+		return base.NewError(-1,errorScope, "没有配置 ServiceInfo")
 	}
 	if serviceInfo.GetServiceName() == "" {
-		return base.NewError(-1, "没有配置 ServiceName")
+		return base.NewError(-1,errorScope, "没有配置 ServiceName")
 	}
 	if serviceInfo.GetServiceTag() == "" {
-		return base.NewError(-1, "没有配置 ServiceTag")
+		return base.NewError(-1,errorScope, "没有配置 ServiceTag")
 	}
 	if serviceInfo.GetVersion() == "" {
-		return base.NewError(-1, "没有配置 ServiceVersion")
+		return base.NewError(-1,errorScope, "没有配置 ServiceVersion")
 	}
 	return nil
 }

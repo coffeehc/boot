@@ -8,14 +8,20 @@ import (
 type Error interface {
 	Error() string
 	GetErrorCode() int64
+	Scope() string
 }
 
 type _ErrorWrapper struct {
-	err error
+	scope string
+	err   error
 }
 
-func NewErrorWrapper(err error) Error {
-	return &_ErrorWrapper{err: err}
+func NewErrorWrapper(scope string, err error) Error {
+	return &_ErrorWrapper{scope:scope,err: err}
+}
+
+func (err _ErrorWrapper)Scope() string {
+	return err.scope
 }
 
 func (err _ErrorWrapper) Error() string {
@@ -26,21 +32,26 @@ func (_ErrorWrapper) GetErrorCode() int64 {
 }
 
 type BaseError struct {
+	scope     string
 	debugCode int64
 	msg       string
 }
 
+func (err BaseError)Scope() string {
+	return err.scope
+}
+
 func (err BaseError) Error() string {
-	return fmt.Sprintf("%d:%s", err.debugCode, err.msg)
+	return fmt.Sprintf("[%s] %d:%s",err.scope,err.debugCode, err.msg)
 }
 
 func (err BaseError) GetErrorCode() int64 {
 	return err.debugCode
 }
 
-//默认第一个为 httpCode, 第二个为debugCode
-func NewError(debugCode int64, errMsg string) Error {
+func NewError(debugCode int64, scope string, errMsg string) Error {
 	return &BaseError{
+		scope:scope,
 		msg:       errMsg,
 		debugCode: debugCode,
 	}
@@ -53,8 +64,12 @@ type ErrorResponse struct {
 	InformationLink string `json:"information_link"`
 }
 
+func (err ErrorResponse)Scope() string  {
+	return "http.response"
+}
+
 func (err ErrorResponse) Error() string {
-	return fmt.Sprintf("%d:%d:%s", err.HttpCode, err.ErrorCode, err.Message)
+	return fmt.Sprintf("[http.response] %d:%d:%s", err.HttpCode, err.ErrorCode, err.Message)
 }
 
 func (err ErrorResponse) GetErrorCode() int64 {

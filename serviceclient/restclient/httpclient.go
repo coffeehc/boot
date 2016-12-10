@@ -14,6 +14,8 @@ import (
 	"github.com/coffeehc/microserviceboot/base/restbase"
 )
 
+const err_scope_httpclient  =  "httpclient"
+
 func init() {
 	hystrix.DefaultMaxConcurrent = 2000
 	hystrix.DefaultVolumeThreshold = 4000
@@ -56,11 +58,11 @@ func (this *_HttpClientWithBase) Do(cxt context.Context, req Request) (Response,
 	if request, ok := req.(*_Request); ok {
 		response, err := this.client.Do(request.request)
 		if err != nil {
-			return nil, base.NewErrorWrapper(err)
+			return nil, base.NewErrorWrapper(err_scope_httpclient,err)
 		}
 		return buildResponse(response), nil
 	} else {
-		return nil, base.NewError(-1, "not support Resqust implement")
+		return nil, base.NewError(-1,err_scope_httpclient, "not support Resqust implement")
 	}
 }
 
@@ -89,7 +91,7 @@ func buildTransport(config *HttpClientConfiguration) *http.Transport {
 func newHttpClientByHostAddress(baseUrl string, config *HttpClientConfiguration, cxt context.Context) (HttpClient, base.Error) {
 	_url, err := url.Parse(baseUrl)
 	if err != nil {
-		return nil, base.NewErrorWrapper(err)
+		return nil, base.NewErrorWrapper(err_scope_httpclient,err)
 	}
 	logger.Debug("client host is %s", _url.Host)
 	logger.Debug("client baseUrl is %s", baseUrl)
@@ -111,7 +113,7 @@ func newHttpClientByConsul(serviceInfo base.ServiceInfo, serviceClientDNSConfig 
 	logger.Info("dnsAddress is [%s]", serviceClientDNSConfig.GetNameServer())
 	ip, port, err := net.SplitHostPort(serviceClientDNSConfig.GetNameServer())
 	if err != nil {
-		return nil, base.NewError(base.ERROR_CODE_BASE_INIT_ERROR, err.Error())
+		return nil, base.NewError(base.ERROR_CODE_BASE_INIT_ERROR,err_scope_httpclient, err.Error())
 	}
 	loadBalancer := newLoadBalancer(ip, port, serviceClientDNSConfig.GetLoadBalanceType())
 	host := buildServiceDomain(serviceInfo.GetServiceName(), serviceClientDNSConfig)
