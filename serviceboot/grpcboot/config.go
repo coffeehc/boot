@@ -4,6 +4,7 @@ import (
 	"github.com/coffeehc/microserviceboot/serviceboot"
 	"github.com/grpc-ecosystem/go-grpc-prometheus"
 	"google.golang.org/grpc"
+	"github.com/coffeehc/microserviceboot/base"
 )
 
 type Config struct {
@@ -21,11 +22,17 @@ type GRpcConfig struct {
 }
 
 func (this *GRpcConfig) GetGrpcOptions() []grpc.ServerOption {
+	grpc.EnableTracing = false
+	if base.IsDevModule() {
+		grpc.EnableTracing = true
+		AppendUnartServerInterceptor("logger",loggingInterceptor)
+	}
+	AppendUnartServerInterceptor("prometheus",grpc_prometheus.UnaryServerInterceptor)
 	return []grpc.ServerOption{
 		grpc.MaxConcurrentStreams(this.MaxConcurrentStreams),
 		grpc.MaxMsgSize(this.MaxMsgSize),
 		grpc.StreamInterceptor(grpc_prometheus.StreamServerInterceptor),
-		grpc.UnaryInterceptor(grpc_prometheus.UnaryServerInterceptor),
+		grpc.UnaryInterceptor(_unartServerInterceptor.Interceptor),
 	}
 }
 

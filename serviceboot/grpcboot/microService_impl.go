@@ -60,24 +60,18 @@ func (this *GRpcMicroService) Init(cxt context.Context) (*serviceboot.ServiceCon
 	}
 	this.httpServer = httpServer
 	serviceboot.ServiceRegister(configPath, this.GetService(), this.GetServiceInfo(), config.GetBaseConfig(), cxt)
+	grpcServerConfig := this.config.GetGRpcServerConfig()
+	grpcOptions := grpcServerConfig.GetGrpcOptions()
+	if len(this.service.GetGrpcOptions()) > 0 {
+		grpcOptions = append(grpcOptions, this.service.GetGrpcOptions()...)
+	}
+	this.grpcServer = grpc.NewServer(grpcOptions...)
 	if this.service.Init != nil {
 		err := this.service.Init(configPath, httpServer, cxt)
 		if err != nil {
 			return nil, err
 		}
 	}
-	grpcServerConfig := this.config.GetGRpcServerConfig()
-	grpcOptions := grpcServerConfig.GetGrpcOptions()
-	if len(this.service.GetGrpcOptions()) > 0 {
-		grpcOptions = append(grpcOptions, this.service.GetGrpcOptions()...)
-	}
-	//TODO ???
-	//grpcOptions = append(grpcOptions,grpc.Creds(credentials.NewServerTLSFromCert(&webServerConfig.TLSConfig.Certificates[0])))
-	grpc.EnableTracing = false
-	if base.IsDevModule() {
-		grpc.EnableTracing = true
-	}
-	this.grpcServer = grpc.NewServer(grpcOptions...)
 	this.service.RegisterServer(this.grpcServer)
 	grpc_prometheus.Register(this.grpcServer)
 	grpcFilter := &grpcFilter{this.grpcServer}
