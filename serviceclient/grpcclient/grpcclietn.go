@@ -12,7 +12,7 @@ import (
 	"time"
 )
 
-const err_scope_grpcClient  = "grpcClient"
+const err_scope_grpcClient = "grpcClient"
 
 func init() {
 	grpclog.SetLogger(&grpcbase.GrpcLogger{})
@@ -45,7 +45,7 @@ func (this *_GrpcClient) NewClientConn(cxt context.Context, serviceInfo base.Ser
 	}
 	clientConn, err := grpc.DialContext(cxt, serviceInfo.GetServiceName(), opts...)
 	if err != nil {
-		return nil, base.NewErrorWrapper(err_scope_grpcClient,err)
+		return nil, base.NewErrorWrapper(err_scope_grpcClient, err)
 	}
 	return clientConn, nil
 }

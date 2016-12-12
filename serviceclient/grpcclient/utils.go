@@ -1,10 +1,10 @@
 package grpcclient
 
 import (
+	"github.com/coffeehc/logger"
 	"github.com/coffeehc/microserviceboot/loadbalancer"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
-	"github.com/coffeehc/logger"
 )
 
 type balancerWapper struct {
@@ -21,7 +21,7 @@ func (this *balancerWapper) Start(target string, config grpc.BalancerConfig) err
 					Addr:     addr.Addr,
 					Metadata: addr.Metadata,
 				}
-				logger.Debug("Notify addr %s",addr.Addr)
+				logger.Debug("Notify addr %s", addr.Addr)
 			}
 			this.addressCache <- rpcAddrs
 		}

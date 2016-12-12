@@ -11,7 +11,7 @@ import (
 	"net/url"
 )
 
-const err_scope_rest_response  = "rest response"
+const err_scope_rest_response = "rest response"
 
 type Response interface {
 	GetStatusCode() int
@@ -47,11 +47,11 @@ func ResponseFormBodyDecoder(body io.ReadCloser, target interface{}) base.Error 
 	if vs, ok := target.(url.Values); ok {
 		data, err := ioutil.ReadAll(body)
 		if err != nil {
-			return base.NewErrorWrapper(err_scope_rest_response,err)
+			return base.NewErrorWrapper(err_scope_rest_response, err)
 		}
 		values, err1 := url.ParseQuery(string(data))
 		if err1 != nil {
-			return base.NewErrorWrapper(err_scope_rest_response,err1)
+			return base.NewErrorWrapper(err_scope_rest_response, err1)
 		}
 		for k, vss := range values {
 			for _, v := range vss {
@@ -60,32 +60,32 @@ func ResponseFormBodyDecoder(body io.ReadCloser, target interface{}) base.Error 
 		}
 		return nil
 	}
-	return base.NewError(-1,err_scope_rest_response, "target type is not url.Value")
+	return base.NewError(-1, err_scope_rest_response, "target type is not url.Value")
 }
 
 func ResponsePBBodyDecoder(body io.ReadCloser, target interface{}) base.Error {
 	data, err := ioutil.ReadAll(body)
 	if err != nil {
-		return base.NewErrorWrapper(err_scope_rest_response,err)
+		return base.NewErrorWrapper(err_scope_rest_response, err)
 	}
 	if message, ok := target.(proto.Message); ok {
 		err = proto.Unmarshal(data, message)
 		if err != nil {
-			return base.NewErrorWrapper(err_scope_rest_response,err)
+			return base.NewErrorWrapper(err_scope_rest_response, err)
 		}
 		return nil
 	}
-	return base.NewError(-1,err_scope_rest_response, "target type is not proto.Message")
+	return base.NewError(-1, err_scope_rest_response, "target type is not proto.Message")
 }
 
 func ResponseJsonBodyDecoder(body io.ReadCloser, target interface{}) base.Error {
 	data, err := ioutil.ReadAll(body)
 	if err != nil {
-		return base.NewErrorWrapper(err_scope_rest_response,err)
+		return base.NewErrorWrapper(err_scope_rest_response, err)
 	}
 	err = json.Unmarshal(data, target)
 	if err != nil {
-		return base.NewErrorWrapper(err_scope_rest_response,err)
+		return base.NewErrorWrapper(err_scope_rest_response, err)
 	}
 	return nil
 }

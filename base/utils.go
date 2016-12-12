@@ -10,7 +10,7 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
-const ERR_SCOPE_LOADCONFIG  = "loadConfig"
+const ERR_SCOPE_LOADCONFIG = "loadConfig"
 
 func GetDefaultConfigPath(configPath string) string {
 	if configPath == "" {
@@ -38,11 +38,11 @@ func LoadConfig(configPath string, config interface{}) Error {
 	logger.Debug("load config file %s", configPath)
 	data, err := ioutil.ReadFile(configPath)
 	if err != nil {
-		return NewError(ERROR_CODE_BASE_CONFIG_ERROR,ERR_SCOPE_LOADCONFIG, err.Error())
+		return NewError(ERRCODE_BASE_SYSTEM_CONFIG_ERROR, ERR_SCOPE_LOADCONFIG, err.Error())
 	}
 	err = yaml.Unmarshal(data, config)
 	if err != nil {
-		return NewError(ERROR_CODE_BASE_CONFIG_ERROR,ERR_SCOPE_LOADCONFIG, err.Error())
+		return NewError(ERRCODE_BASE_SYSTEM_CONFIG_ERROR, ERR_SCOPE_LOADCONFIG, err.Error())
 	}
 	return nil
 }

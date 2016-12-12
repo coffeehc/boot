@@ -17,10 +17,10 @@ type _ErrorWrapper struct {
 }
 
 func NewErrorWrapper(scope string, err error) Error {
-	return &_ErrorWrapper{scope:scope,err: err}
+	return &_ErrorWrapper{scope: scope, err: err}
 }
 
-func (err _ErrorWrapper)Scope() string {
+func (err _ErrorWrapper) Scope() string {
 	return err.scope
 }
 
@@ -28,7 +28,7 @@ func (err _ErrorWrapper) Error() string {
 	return err.err.Error()
 }
 func (_ErrorWrapper) GetErrorCode() int64 {
-	return ERROR_CODE_BASE_SYSTEM_ERROR
+	return ERRCODE_BASE_SYSTEM_UNKNOWN
 }
 
 type BaseError struct {
@@ -37,12 +37,12 @@ type BaseError struct {
 	msg       string
 }
 
-func (err BaseError)Scope() string {
+func (err BaseError) Scope() string {
 	return err.scope
 }
 
 func (err BaseError) Error() string {
-	return fmt.Sprintf("[%s] %d:%s",err.scope,err.debugCode, err.msg)
+	return fmt.Sprintf("[%s] %d:%s", err.scope, err.debugCode, err.msg)
 }
 
 func (err BaseError) GetErrorCode() int64 {
@@ -51,7 +51,7 @@ func (err BaseError) GetErrorCode() int64 {
 
 func NewError(debugCode int64, scope string, errMsg string) Error {
 	return &BaseError{
-		scope:scope,
+		scope:     scope,
 		msg:       errMsg,
 		debugCode: debugCode,
 	}
@@ -64,7 +64,7 @@ type ErrorResponse struct {
 	InformationLink string `json:"information_link"`
 }
 
-func (err ErrorResponse)Scope() string  {
+func (err ErrorResponse) Scope() string {
 	return "http.response"
 }
 

@@ -1,16 +1,16 @@
 package commons
 
 import (
-	"encoding/base64"
-	"github.com/coffeehc/logger"
-	"os/exec"
-	"os"
-	"path/filepath"
 	"crypto/rand"
-	"net"
-	"syscall"
+	"encoding/base64"
 	"fmt"
+	"github.com/coffeehc/logger"
+	"net"
+	"os"
+	"os/exec"
 	"os/signal"
+	"path/filepath"
+	"syscall"
 )
 
 func GetRand(size int) string {

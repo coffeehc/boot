@@ -11,7 +11,7 @@ import (
 	"sync"
 )
 
-const err_scope_balance  = "loadbalnace"
+const err_scope_balance = "loadbalnace"
 
 var ErrClientConnClosing = errors.New("the client connection is closing")
 
@@ -95,7 +95,7 @@ func (rr *roundRobin) watchAddrUpdates() error {
 		}
 		switch update.Op {
 		case naming.Add:
-			logger.Debug("add addrs %s",update.Addr)
+			logger.Debug("add addrs %s", update.Addr)
 			var exist bool
 			for _, v := range rr.addrs {
 				if addr == v.addr {
@@ -109,7 +109,7 @@ func (rr *roundRobin) watchAddrUpdates() error {
 			}
 			rr.addrs = append(rr.addrs, &addrInfo{addr: addr})
 		case naming.Delete:
-			logger.Debug("delete addrs %s",update.Addr)
+			logger.Debug("delete addrs %s", update.Addr)
 			for i, v := range rr.addrs {
 				if addr == v.addr {
 					copy(rr.addrs[i:], rr.addrs[i+1:])
@@ -234,7 +234,7 @@ func (rr *roundRobin) Get(ctx context.Context, opts BalancerGetOptions) (addr Ad
 	if !opts.BlockingWait {
 		if len(rr.addrs) == 0 {
 			rr.mu.Unlock()
-			err = base.NewError(-1,err_scope_balance, "there is no address available")
+			err = base.NewError(-1, err_scope_balance, "there is no address available")
 			return
 		}
 		// Returns the next addr on rr.addrs for failfast RPCs.

@@ -21,7 +21,7 @@ type MicroService_Rest struct {
 func microServiceBuild(service base.Service) (serviceboot.MicroService, base.Error) {
 	restService, ok := service.(restbase.RestService)
 	if !ok {
-		return nil, base.NewError(-1,"RestMicroService build", "service 不是Rest 服务")
+		return nil, base.NewError(-1, "RestMicroService build", "service 不是Rest 服务")
 	}
 	return &MicroService_Rest{
 		service: restService,
@@ -79,7 +79,7 @@ func (this *MicroService_Rest) Start() base.Error {
 	go func() {
 		err := <-errSign
 		if err != nil {
-			panic(base.NewError(base.ERROR_CODE_BASE_INIT_ERROR,"RestMicroService Start", err.Error()))
+			panic(base.NewError(base.ERRCODE_BASE_SYSTEM_INIT_ERROR, "RestMicroService Start", err.Error()))
 		}
 	}()
 	return nil
@@ -106,7 +106,7 @@ func (this *MicroService_Rest) registerEndpoint(endPoint restbase.EndPoint) base
 	logger.Debug("register endpoint [%s] %s %s", metadata.Method, metadata.Path, metadata.Description)
 	err := this.httpServer.Register(metadata.Path, metadata.Method, endPoint.HandlerFunc)
 	if err != nil {
-		return base.NewError(base.ERROR_CODE_BASE_INIT_ERROR,"RestMicroService register" , err.Error())
+		return base.NewError(base.ERRCODE_BASE_SYSTEM_INIT_ERROR, "RestMicroService register", err.Error())
 	}
 	return nil
 }

@@ -13,7 +13,7 @@ import (
 	"github.com/golang/protobuf/proto"
 )
 
-const err_scope_rest_request  = "rest request"
+const err_scope_rest_request = "rest request"
 
 type Request interface {
 	GetCommand() string
@@ -43,7 +43,7 @@ func (this *_Request) GetCommand() string {
 func (this *_Request) Init(baseUrl string, endpointMeta *restbase.EndPointMeta) base.Error {
 	_url, err := url.Parse(baseUrl + endpointMeta.Path)
 	if err != nil {
-		return base.NewErrorWrapper(err_scope_rest_request,err)
+		return base.NewErrorWrapper(err_scope_rest_request, err)
 	}
 	_url.Opaque = "rest"
 	this.request.URL = _url
@@ -77,7 +77,7 @@ type RequestBodyEncoder func(data interface{}, request *http.Request) base.Error
 func RequestFormBodyEncoder(data interface{}, request *http.Request) base.Error {
 	values, ok := data.(url.Values)
 	if !ok {
-		return base.NewError(base.ERROR_CODE_BASE_ENCODE_ERROR,err_scope_rest_request, "request body 参数不是 url.Values类型")
+		return base.NewError(base.ERRCODE_BASE_SYSTEM_TYPE_CONV_ERROR, err_scope_rest_request, "request body 参数不是 url.Values类型")
 	}
 	request.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	request.Body = ioutil.NopCloser(strings.NewReader(values.Encode()))
@@ -88,7 +88,7 @@ func RequestJsonBodyEncoder(data interface{}, request *http.Request) base.Error 
 	request.Header.Set("Content-Type", "application/json")
 	d, err := json.Marshal(data)
 	if err != nil {
-		return base.NewError(base.ERROR_CODE_BASE_ENCODE_ERROR,err_scope_rest_request, err.Error())
+		return base.NewError(base.ERRCODE_BASE_SYSTEM_MARSHAL_ERROR, err_scope_rest_request, err.Error())
 	}
 	request.Body = ioutil.NopCloser(bytes.NewReader(d))
 	return nil
@@ -97,12 +97,12 @@ func RequestJsonBodyEncoder(data interface{}, request *http.Request) base.Error 
 func RequestPBBodyEncoder(data interface{}, request *http.Request) base.Error {
 	message, ok := data.(proto.Message)
 	if !ok {
-		return base.NewError(-1,err_scope_rest_request, "data not implement proto.Message")
+		return base.NewError(-1, err_scope_rest_request, "data not implement proto.Message")
 	}
 	request.Header.Set("Content-Type", "application/x-protobuf")
 	d, err := proto.Marshal(message)
 	if err != nil {
-		return base.NewError(base.ERROR_CODE_BASE_ENCODE_ERROR,err_scope_rest_request, err.Error())
+		return base.NewError(base.ERRCODE_BASE_SYSTEM_MARSHAL_ERROR, err_scope_rest_request, err.Error())
 	}
 	request.Body = ioutil.NopCloser(bytes.NewReader(d))
 	return nil

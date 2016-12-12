@@ -18,7 +18,7 @@ var GRpcMicroServiceBuilder serviceboot.MicroServiceBuilder = microServiceBuilde
 func microServiceBuilder(service base.Service) (serviceboot.MicroService, base.Error) {
 	grpcService, ok := service.(grpcbase.GRpcService)
 	if !ok {
-		return nil, base.NewError(-1,"GrpcMicroService build", "service 不是Rest 服务")
+		return nil, base.NewError(-1, "GrpcMicroService build", "service 不是Rest 服务")
 	}
 	return &GRpcMicroService{
 		service: grpcService,
@@ -91,7 +91,7 @@ func (this *GRpcMicroService) Start() base.Error {
 	go func() {
 		err := <-errSign
 		if this.httpServer != nil && err != nil {
-			panic(base.NewError(base.ERROR_CODE_BASE_INIT_ERROR,"GrpcMicroService start" , err.Error()))
+			panic(base.NewError(base.ERRCODE_BASE_SYSTEM_INIT_ERROR, "GrpcMicroService start", err.Error()))
 		}
 	}()
 	return nil

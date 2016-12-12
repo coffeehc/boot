@@ -1,6 +1,5 @@
 package commons
 
-
 const (
 	key_const  = 2862933555777941757
 	jump_const = float64(1 << 31)

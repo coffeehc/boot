@@ -12,7 +12,7 @@ import (
 	"net/http"
 )
 
-const err_scope_rest  = "rest"
+const err_scope_rest = "rest"
 
 func ErrorRecover(reply web.Reply) {
 	if err := recover(); err != nil {
@@ -30,11 +30,11 @@ func ErrorRecover(reply web.Reply) {
 		case base.Error:
 			errorResponse = base.NewErrorResponse(http.StatusBadRequest, e.GetErrorCode(), e.Error(), "")
 		case string:
-			errorResponse = base.NewErrorResponse(http.StatusInternalServerError, base.ERROR_CODE_BASE_SYSTEM_ERROR, e, "")
+			errorResponse = base.NewErrorResponse(http.StatusInternalServerError, base.ERRCODE_BASE_RPC_UNKNOWN, e, "")
 		case error:
-			errorResponse = base.NewErrorResponse(http.StatusInternalServerError, base.ERROR_CODE_BASE_SYSTEM_ERROR, e.Error(), "")
+			errorResponse = base.NewErrorResponse(http.StatusInternalServerError, base.ERRCODE_BASE_RPC_UNKNOWN, e.Error(), "")
 		default:
-			errorResponse = base.NewErrorResponse(http.StatusInternalServerError, base.ERROR_CODE_BASE_SYSTEM_ERROR, fmt.Sprintf("%#v", err), "")
+			errorResponse = base.NewErrorResponse(http.StatusInternalServerError, base.ERRCODE_BASE_RPC_UNKNOWN, fmt.Sprintf("%#v", err), "")
 		}
 		//暂时统一按照400处理
 		reply.SetStatusCode(errorResponse.GetHttpCode()).With(errorResponse).As(web.Default_Render_Json)
@@ -74,11 +74,11 @@ func PanicErr(err error) {
 func ParsePathParamToBinary(pathFragments map[string]string, name string) []byte {
 	str, ok := pathFragments[name]
 	if !ok {
-		panic(base.NewError(base.ERROR_CODE_BASE_INVALID_PARAM,err_scope_rest, fmt.Sprintf("没有指定%s值", name)))
+		panic(base.NewError(base.ERRCODE_BASE_RPC_INVALID_ARGUMENT, err_scope_rest, fmt.Sprintf("没有指定%s值", name)))
 	}
 	data, err := base64.RawURLEncoding.DecodeString(str)
 	if err != nil {
-		panic(base.NewError(base.ERROR_CODE_BASE_DECODE_ERROR,err_scope_rest, fmt.Sprintf("无法解析%s", name)))
+		panic(base.NewError(base.ERRCODE_BASE_RPC_INVALID_ARGUMENT, err_scope_rest, fmt.Sprintf("无法解析%s", name)))
 	}
 	return data
 }

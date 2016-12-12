@@ -31,7 +31,7 @@ func newDefaultTlsConfig() (*tls.Config, base.Error) {
 	pub := &priv.PublicKey
 	ca_b, err := x509.CreateCertificate(rand.Reader, ca, ca, pub, priv)
 	if err != nil {
-		return nil, base.NewErrorWrapper("tslconfig",err)
+		return nil, base.NewErrorWrapper("tslconfig", err)
 	}
 	cca, _ := x509.ParseCertificate(ca_b)
 	pool := x509.NewCertPool()
