@@ -67,3 +67,12 @@ func BalancerWapper(balancer loadbalancer.Balancer) grpc.Balancer {
 		addressCache: make(chan []grpc.Address, 1),
 	}
 }
+
+
+type reconnectionError struct{
+	err error
+}
+
+func (e *reconnectionError) Error() string   { return "reconnectionError:"+e.err.Error() }
+func (e *reconnectionError) Timeout() bool   { return true }
+func (e *reconnectionError) Temporary() bool { return true }

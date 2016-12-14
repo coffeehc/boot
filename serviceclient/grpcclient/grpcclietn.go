@@ -10,6 +10,8 @@ import (
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/grpclog"
 	"time"
+	"net"
+	"github.com/coffeehc/logger"
 )
 
 const err_scope_grpcClient = "grpcClient"
@@ -41,6 +43,13 @@ func (this *_GrpcClient) NewClientConn(cxt context.Context, serviceInfo base.Ser
 		})),
 		grpc.WithCompressor(grpc.NewGZIPCompressor()),
 		grpc.WithDecompressor(grpc.NewGZIPDecompressor()),
+		grpc.WithDialer(func(addr string, timeout time.Duration) (net.Conn, error){
+			conn,err:=net.Dial("tcp",addr)
+			if err!=nil{
+				return nil,&reconnectionError{err:err}
+			}
+			return conn,nil
+		}),//这个非常重要,用于连接重试,否则很大概率在网络抖动或依赖服务重启的时候,试一次不同就再也不尝试,变成一个死链接
 	}
 	if timeout > 0 {
 		opts = append(opts, grpc.WithTimeout(timeout))
