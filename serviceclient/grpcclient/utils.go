@@ -13,6 +13,12 @@ type balancerWapper struct {
 }
 
 func (this *balancerWapper) Start(target string, config grpc.BalancerConfig) error {
+	err := this.balancer.Start(target, loadbalancer.BalancerConfig{
+		DialCreds: config.DialCreds,
+	})
+	if err != nil {
+		return err
+	}
 	go func() {
 		for addrs := range this.balancer.Notify() {
 			rpcAddrs := make([]grpc.Address, len(addrs))
@@ -26,12 +32,6 @@ func (this *balancerWapper) Start(target string, config grpc.BalancerConfig) err
 			this.addressCache <- rpcAddrs
 		}
 	}()
-	err := this.balancer.Start(target, loadbalancer.BalancerConfig{
-		DialCreds: config.DialCreds,
-	})
-	if err != nil {
-		return err
-	}
 	return nil
 
 }
@@ -57,6 +57,7 @@ func (this *balancerWapper) Notify() <-chan []grpc.Address {
 	return this.addressCache
 }
 func (this *balancerWapper) Close() error {
+	close(this.addressCache)
 	return this.balancer.Close()
 }
 

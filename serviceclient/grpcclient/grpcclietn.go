@@ -35,10 +35,12 @@ func (this *_GrpcClient) NewClientConn(cxt context.Context, serviceInfo base.Ser
 		//	MaxDelay: time.Second,
 		//}),
 		grpc.WithBalancer(BalancerWapper(balancer)),
-		//grpc.WithBlock(),
+		grpc.WithBlock(),
 		grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
 			InsecureSkipVerify: true,
 		})),
+		grpc.WithCompressor(grpc.NewGZIPCompressor()),
+		grpc.WithDecompressor(grpc.NewGZIPDecompressor()),
 	}
 	if timeout > 0 {
 		opts = append(opts, grpc.WithTimeout(timeout))

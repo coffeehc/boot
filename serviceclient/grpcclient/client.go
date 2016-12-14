@@ -5,7 +5,6 @@ import (
 	"github.com/coffeehc/microserviceboot/base"
 	"google.golang.org/grpc"
 	"golang.org/x/net/context"
-	"time"
 )
 
 type ServiceClientBase struct {
@@ -19,16 +18,9 @@ func (this *ServiceClientBase) Init(serviceInfo base.ServiceInfo, clientConnFact
 	this.clientConnFactory = clientConnFactory
 }
 
-func (this *ServiceClientBase) ListenConn(newClient func(conn *grpc.ClientConn)) base.Error {
-	cxt,cancel:=context.WithCancel(context.Background())
-	clientConn, err := this.clientConnFactory.GetClientConn(cxt,this.serviceInfo, 0)
-	go func() {
-		<-cxt.Done()
-		time.Sleep(time.Second)
-		this.ListenConn(newClient)
-	}()
+func (this *ServiceClientBase) ListenConn(newClient func(conn *grpc.ClientConn)) base.Error{
+	clientConn, err := this.clientConnFactory.GetClientConn(context.Background(),this.serviceInfo, 0)
 	if err != nil {
-		cancel()
 		logger.Warn("grpc ClientConn is Close,%s", err)
 		return err
 	}

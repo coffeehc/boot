@@ -25,7 +25,7 @@ func (err _ErrorWrapper) Scope() string {
 }
 
 func (err _ErrorWrapper) Error() string {
-	return err.err.Error()
+	return fmt.Sprintf("[%s] %d:%s", err.scope, ERRCODE_BASE_SYSTEM_UNKNOWN, err.err.Error())
 }
 func (_ErrorWrapper) GetErrorCode() int64 {
 	return ERRCODE_BASE_SYSTEM_UNKNOWN

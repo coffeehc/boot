@@ -33,6 +33,8 @@ func (this *GRpcConfig) GetGrpcOptions() []grpc.ServerOption {
 		grpc.MaxMsgSize(this.MaxMsgSize),
 		grpc.StreamInterceptor(grpc_prometheus.StreamServerInterceptor),
 		grpc.UnaryInterceptor(_unartServerInterceptor.Interceptor),
+		grpc.RPCCompressor(grpc.NewGZIPCompressor()),
+		grpc.RPCDecompressor(grpc.NewGZIPDecompressor()),
 	}
 }
 

@@ -129,7 +129,9 @@ func (rr *roundRobin) watchAddrUpdates() error {
 	if rr.done {
 		return ErrClientConnClosing
 	}
-	rr.addrCh <- open
+	if len(open) > 0{
+		rr.addrCh <- open
+	}
 	return nil
 }
 

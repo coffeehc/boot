@@ -117,6 +117,7 @@ func (r *ConsulResolver) updater(instances []string, lastIndex uint64) {
 func (r *ConsulResolver) getInstances(lastIndex uint64) ([]string, uint64, error) {
 	services, meta, err := r.c.Health().Service(r.service, r.tag, r.passingOnly, &api.QueryOptions{
 		WaitIndex: lastIndex,
+		WaitTime:time.Second,
 	})
 	if err != nil {
 		return nil, lastIndex, err
