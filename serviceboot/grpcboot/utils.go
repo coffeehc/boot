@@ -10,9 +10,10 @@ import (
 
 func loggingInterceptor(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp interface{}, err error) {
 	start := time.Now()
-	logger.Debug("calling %s", info.FullMethod)
+	defer func() {
+		logger.Debug("finished %s, took=%s, err=%v", info.FullMethod, time.Since(start), err)
+	}()
 	resp, err = handler(ctx, req)
-	logger.Debug("finished %s, took=%s, err=%v", info.FullMethod, time.Since(start), err)
 	return resp, err
 }
 

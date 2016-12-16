@@ -11,7 +11,6 @@ import (
 	"google.golang.org/grpc/grpclog"
 	"time"
 	"net"
-	"github.com/coffeehc/logger"
 )
 
 const err_scope_grpcClient = "grpcClient"

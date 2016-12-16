@@ -36,14 +36,24 @@ func NewConsulResolver(client *api.Client, service, tag string) (*ConsulResolver
 	}
 
 	// Retrieve instances immediately
-	instances, index, err := r.getInstances(0)
-	if err != nil {
-		return nil, base.NewErrorWrapper("consul loadbalance", err)
-	}
+	var instancesCh chan []string
+	go func() {
+		sleep := int64(time.Second * 10)
+		for{
+			instances, _, err := r.getInstances(0)
+			if err != nil {
+				logger.Warn("lb: error retrieving instances from Consul: %v", err)
+				time.Sleep(time.Duration(rand.Int63n(sleep)))
+				continue
+			}
+			instancesCh <- instances
+			return
+		}
+	}()
+	instances := <- instancesCh
 	r.updatesc <- r.makeUpdates(nil, instances)
-
 	// Start updater
-	go r.updater(instances, index)
+	go r.updater(instances, 0)
 
 	return r, nil
 }
@@ -122,7 +132,9 @@ func (r *ConsulResolver) getInstances(lastIndex uint64) ([]string, uint64, error
 	if err != nil {
 		return nil, lastIndex, err
 	}
-
+	if len(services) == 0{
+		return nil,lastIndex,base.NewError(base.ERRCODE_BASE_SYSTEM_INIT_ERROR,"consul resolver","service is no address available")
+	}
 	var instances []string
 	for _, service := range services {
 		s := service.Service.Address

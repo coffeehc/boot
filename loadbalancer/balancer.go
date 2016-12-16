@@ -72,7 +72,7 @@ func RoundRobin(r naming.Resolver) Balancer {
 type roundRobin struct {
 	r      naming.Resolver
 	w      naming.Watcher
-	addrs  []*addrInfo // all the addresses the client should potentially connect
+	addrs  []*addrInfo    // all the addresses the client should potentially connect
 	mu     sync.Mutex
 	addrCh chan []Address // the channel to notify gRPC internals the list of addresses the client should connect to.
 	next   int            // index of the next address to return for Get()
@@ -112,8 +112,8 @@ func (rr *roundRobin) watchAddrUpdates() error {
 			logger.Debug("delete addrs %s", update.Addr)
 			for i, v := range rr.addrs {
 				if addr == v.addr {
-					copy(rr.addrs[i:], rr.addrs[i+1:])
-					rr.addrs = rr.addrs[:len(rr.addrs)-1]
+					copy(rr.addrs[i:], rr.addrs[i + 1:])
+					rr.addrs = rr.addrs[:len(rr.addrs) - 1]
 					break
 				}
 			}
@@ -129,9 +129,8 @@ func (rr *roundRobin) watchAddrUpdates() error {
 	if rr.done {
 		return ErrClientConnClosing
 	}
-	if len(open) > 0{
-		rr.addrCh <- open
-	}
+	//此处不要判断 open 是否为空,否则关掉的节点在 clientconn 里面永远不能删除了
+	rr.addrCh <- open
 	return nil
 }
 
@@ -212,7 +211,7 @@ func (rr *roundRobin) Get(ctx context.Context, opts BalancerGetOptions) (addr Ad
 		err = ErrClientConnClosing
 		return
 	}
-
+	
 	if len(rr.addrs) > 0 {
 		if rr.next >= len(rr.addrs) {
 			rr.next = 0
@@ -265,7 +264,7 @@ func (rr *roundRobin) Get(ctx context.Context, opts BalancerGetOptions) (addr Ad
 				err = ErrClientConnClosing
 				return
 			}
-
+			
 			if len(rr.addrs) > 0 {
 				if rr.next >= len(rr.addrs) {
 					rr.next = 0
@@ -286,7 +285,7 @@ func (rr *roundRobin) Get(ctx context.Context, opts BalancerGetOptions) (addr Ad
 					}
 				}
 			}
-			// The newly added addr got removed by Down() again.
+		// The newly added addr got removed by Down() again.
 			if rr.waitCh == nil {
 				ch = make(chan struct{})
 				rr.waitCh = ch
