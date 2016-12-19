@@ -36,7 +36,7 @@ func NewConsulResolver(client *api.Client, service, tag string) (*ConsulResolver
 	}
 
 	// Retrieve instances immediately
-	var instancesCh chan []string
+	instancesCh := make(chan []string)
 	go func() {
 		sleep := int64(time.Second * 10)
 		for{

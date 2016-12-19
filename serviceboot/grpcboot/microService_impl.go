@@ -2,7 +2,7 @@ package grpcboot
 
 import (
 	"google.golang.org/grpc"
-
+	
 	"context"
 	"github.com/coffeehc/microserviceboot/base"
 	"github.com/coffeehc/microserviceboot/base/grpcbase"
@@ -80,6 +80,10 @@ func (this *GRpcMicroService) Init(cxt context.Context) (*serviceboot.ServiceCon
 }
 
 func (this *GRpcMicroService) Start() base.Error {
+	err := serviceboot.Util_StartService(this.service)
+	if err!=nil{
+		return err
+	}
 	//启动服务器
 	errSign := this.httpServer.Start()
 	go func() {
@@ -97,6 +101,7 @@ func (this *GRpcMicroService) Stop() {
 		this.httpServer = nil
 		httpServer.Stop()
 	}
+	serviceboot.Util_StartService(this.service)
 }
 
 func (this *GRpcMicroService) GetService() base.Service {

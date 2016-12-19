@@ -75,6 +75,10 @@ func (this *MicroService_Rest) Init(cxt context.Context) (*serviceboot.ServiceCo
 }
 
 func (this *MicroService_Rest) Start() base.Error {
+	err := serviceboot.Util_StartService(this.service)
+	if err!=nil{
+		return err
+	}
 	errSign := this.httpServer.Start()
 	go func() {
 		err := <-errSign
@@ -93,6 +97,7 @@ func (this *MicroService_Rest) Stop() {
 	if this.httpServer != nil {
 		this.httpServer.Stop()
 	}
+	serviceboot.Util_StartService(this.service)
 }
 
 func buildApiDefineRequestHandler(serviceInfo base.ServiceInfo) web.RequestHandler {
