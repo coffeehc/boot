@@ -2,11 +2,12 @@ package grpcboot
 
 import (
 	"google.golang.org/grpc"
-	
+
 	"context"
 	"github.com/coffeehc/microserviceboot/base"
 	"github.com/coffeehc/microserviceboot/base/grpcbase"
 	"github.com/coffeehc/microserviceboot/serviceboot"
+	"github.com/coffeehc/microserviceboot/serviceboot/internal"
 	"github.com/coffeehc/web"
 	"github.com/grpc-ecosystem/go-grpc-prometheus"
 	"google.golang.org/grpc/grpclog"
@@ -80,8 +81,8 @@ func (this *GRpcMicroService) Init(cxt context.Context) (*serviceboot.ServiceCon
 }
 
 func (this *GRpcMicroService) Start() base.Error {
-	err := serviceboot.Util_StartService(this.service)
-	if err!=nil{
+	err := internal.StartService(this.service)
+	if err != nil {
 		return err
 	}
 	//启动服务器
@@ -101,7 +102,7 @@ func (this *GRpcMicroService) Stop() {
 		this.httpServer = nil
 		httpServer.Stop()
 	}
-	serviceboot.Util_StartService(this.service)
+	internal.StopService(this.service)
 }
 
 func (this *GRpcMicroService) GetService() base.Service {

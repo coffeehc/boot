@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"github.com/coffeehc/logger"
 	"github.com/coffeehc/microserviceboot/base"
-	"time"
 	"os"
+	"time"
 )
 
 func LoadConfig(serviceConfig ServiceConfigration) (string, base.Error) {
@@ -54,39 +54,6 @@ func ServiceRegister(configPath string, service base.Service, serviceInfo base.S
 		}
 		logger.Info("注册服务[%s]成功", serviceInfo.GetServiceName())
 	}
-}
-
-func Util_StopService(service base.Service){
-	if service != nil && service.Stop != nil {
-		stopErr := service.Stop()
-		if stopErr != nil {
-			logger.Error("关闭服务失败,%s\n", stopErr)
-		}
-	}
-}
-
-func Util_StartService(service base.Service) (err base.Error) {
-	defer func() {
-		if err1 := recover(); err1 != nil {
-			if e, ok := err1.(base.Error); ok {
-				err = e
-				return
-			}
-			err = base.NewError(base.ERRCODE_BASE_SYSTEM_UNKNOWN, err_scope_startService, fmt.Sprintf("service crash,cause is %s", err1))
-		}
-	}()
-	if service == nil {
-		panic(base.NewError(base.ERRCODE_BASE_SYSTEM_INIT_ERROR, err_scope_startService, "没有 Service 的实例"))
-	}
-	if service.Run == nil {
-		panic(base.NewError(base.ERRCODE_BASE_SYSTEM_INIT_ERROR, err_scope_startService, "没有指定Run方法"))
-	}
-	err1 := service.Run()
-	if err1 != nil {
-		panic(err1)
-	}
-	logger.Info("服务已正常启动")
-	return
 }
 
 func launchError(err error) {

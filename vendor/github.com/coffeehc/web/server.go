@@ -10,6 +10,7 @@ import (
 	"crypto/tls"
 	"errors"
 	"github.com/coffeehc/logger"
+	"os"
 )
 
 type HttpServer interface {
@@ -61,6 +62,7 @@ func (this *_Server) Start() <-chan error {
 		TLSConfig:      conf.TLSConfig,
 		TLSNextProto:   conf.TLSNextProto,
 		ConnState:      conf.ConnState,
+		ErrorLog:       logger.CreatLoggerAdapter(logger.LOGGER_LEVEL_DEBUG, "", "", os.Stdout),
 	}
 	if conf.HttpErrorLogout != nil {
 		server.ErrorLog = logger.CreatLoggerAdapter(logger.LOGGER_LEVEL_ERROR, "", "", conf.HttpErrorLogout)
@@ -78,9 +80,8 @@ func (this *_Server) Start() <-chan error {
 	this.listener = tcpKeepAliveListener{TCPListener: listener.(*net.TCPListener), keepAliveDuration: conf.getKeepAliveDuration()}
 	if conf.TLSConfig != nil {
 		server.TLSConfig = conf.TLSConfig
+		this.listener = tls.NewListener(this.listener, server.TLSConfig)
 	}
-	this.listener = tls.NewListener(this.listener, server.TLSConfig)
-
 	go func() {
 		err := server.Serve(this.listener)
 		errorSign <- errors.New(logger.Error("启动 HttpServer 失败:%s", err))

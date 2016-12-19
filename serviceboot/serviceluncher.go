@@ -14,8 +14,6 @@ import (
 	"github.com/coffeehc/microserviceboot/base"
 )
 
-const err_scope_startService = "startService"
-
 /**
  *	Service 启动
  */
@@ -27,35 +25,38 @@ func ServiceLaunch(service base.Service, serviceBuilder MicroServiceBuilder, cxt
 		flag.PrintDefaults()
 		os.Exit(0)
 	}
-	microService,err := Launch(service,serviceBuilder,cxt)
-	if err != nil{
+	microService, err := Launch(service, serviceBuilder, cxt)
+	if err != nil {
 		launchError(err)
 		return
 	}
-	defer microService.Stop()
+	defer func() {
+		microService.Stop()
+		fmt.Printf("服务[%s]关闭\n", microService.GetServiceInfo().GetServiceName())
+	}()
 	commons.WaitStop()
 }
 
-func Launch(service base.Service, serviceBuilder MicroServiceBuilder, cxt context.Context) (MicroService,base.Error){
+func Launch(service base.Service, serviceBuilder MicroServiceBuilder, cxt context.Context) (MicroService, base.Error) {
 	logger.Info("launch microService")
 	startTime := time.Now()
 	if service == nil {
 		logger.Error("service is nil")
-		return nil,base.NewError(base.ERRCODE_BASE_SYSTEM_INIT_ERROR,"Launch","service is nil")
+		return nil, base.NewError(base.ERRCODE_BASE_SYSTEM_INIT_ERROR, "Launch", "service is nil")
 	}
 	microService, err := serviceBuilder(service)
 	if err != nil {
-		return nil,err
+		return nil, err
 	}
 	logger.Info("Service initing")
 	config, initErr := microService.Init(cxt)
 	if initErr != nil {
-		return nil,initErr
+		return nil, initErr
 	}
 	logger.Info("Service inited")
 	serviceInfo := microService.GetServiceInfo()
 	if serviceInfo == nil {
-		return nil,base.NewError(base.ERRCODE_BASE_SYSTEM_INIT_ERROR,"Launch","没有指定 ServiceInfo")
+		return nil, base.NewError(base.ERRCODE_BASE_SYSTEM_INIT_ERROR, "Launch", "没有指定 ServiceInfo")
 	}
 	logger.Info("ServiceName: %s", serviceInfo.GetServiceName())
 	logger.Info("Version: %s", serviceInfo.GetVersion())
@@ -67,12 +68,6 @@ func Launch(service base.Service, serviceBuilder MicroServiceBuilder, cxt contex
 		time.Sleep(time.Second)
 		os.Exit(-1)
 	}
-	logger.Info("核心服务启动成功,服务地址:%s", config.GetWebServerConfig().ServerAddr)
-	defer func() {
-		fmt.Printf("服务[%s]关闭\n", serviceInfo.GetServiceName())
-	}()
-	logger.Info("Service started [%s]", time.Since(startTime))
-	return microService,nil
+	logger.Info("核心服务启动成功,服务地址:%s,启动耗时:%s", config.GetWebServerConfig().ServerAddr, time.Since(startTime))
+	return microService, nil
 }
-
-

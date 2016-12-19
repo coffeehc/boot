@@ -7,6 +7,7 @@ import (
 	"github.com/coffeehc/microserviceboot/base"
 	"github.com/coffeehc/microserviceboot/base/restbase"
 	"github.com/coffeehc/microserviceboot/serviceboot"
+	"github.com/coffeehc/microserviceboot/serviceboot/internal"
 	"github.com/coffeehc/web"
 )
 
@@ -75,8 +76,8 @@ func (this *MicroService_Rest) Init(cxt context.Context) (*serviceboot.ServiceCo
 }
 
 func (this *MicroService_Rest) Start() base.Error {
-	err := serviceboot.Util_StartService(this.service)
-	if err!=nil{
+	err := internal.StartService(this.service)
+	if err != nil {
 		return err
 	}
 	errSign := this.httpServer.Start()
@@ -97,7 +98,7 @@ func (this *MicroService_Rest) Stop() {
 	if this.httpServer != nil {
 		this.httpServer.Stop()
 	}
-	serviceboot.Util_StartService(this.service)
+	internal.StopService(this.service)
 }
 
 func buildApiDefineRequestHandler(serviceInfo base.ServiceInfo) web.RequestHandler {
