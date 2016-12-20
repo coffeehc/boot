@@ -1,79 +1,63 @@
 package base
 
 import (
-	"fmt"
+	"bytes"
 	"net/http"
+	"strconv"
 )
 
 type Error interface {
-	Error() string
+	error
 	GetErrorCode() int64
-	Scope() string
-}
-
-type _ErrorWrapper struct {
-	scope string
-	err   error
-}
-
-func NewErrorWrapper(scope string, err error) Error {
-	return &_ErrorWrapper{scope: scope, err: err}
-}
-
-func (err _ErrorWrapper) Scope() string {
-	return err.scope
-}
-
-func (err _ErrorWrapper) Error() string {
-	return fmt.Sprintf("[%s] %d:%s", err.scope, ERRCODE_BASE_SYSTEM_UNKNOWN, err.err.Error())
-}
-func (_ErrorWrapper) GetErrorCode() int64 {
-	return ERRCODE_BASE_SYSTEM_UNKNOWN
+	Scopes() string
 }
 
 type BaseError struct {
-	scope     string
-	debugCode int64
-	msg       string
+	Scope     string `json:"scope"`
+	DebugCode int64  `json:"debug_code"`
+	Msg       string `json:"msg"`
 }
 
-func (err BaseError) Scope() string {
-	return err.scope
+func (err BaseError) Scopes() string {
+	return err.Scope
 }
 
 func (err BaseError) Error() string {
-	return fmt.Sprintf("[%s] %d:%s", err.scope, err.debugCode, err.msg)
+	buf := bytes.NewBufferString(`{"scope":"`)
+	buf.WriteString(err.Scope)
+	buf.WriteString(`","debug_code:`)
+	buf.WriteString(strconv.FormatInt(err.DebugCode, 10))
+	buf.WriteString(`,"msg":"`)
+	buf.WriteString(err.Msg)
+	buf.WriteString(`"}`)
+	return buf.String()
 }
 
 func (err BaseError) GetErrorCode() int64 {
-	return err.debugCode
+	return err.DebugCode
 }
 
 func NewError(debugCode int64, scope string, errMsg string) Error {
 	return &BaseError{
-		scope:     scope,
-		msg:       errMsg,
-		debugCode: debugCode,
+		Scope:     scope,
+		Msg:       errMsg,
+		DebugCode: debugCode,
 	}
 }
 
+type _ErrorWrapper struct {
+	BaseError
+	Err error `json:"err"`
+}
+
+func NewErrorWrapper(scope string, err error) Error {
+	return &_ErrorWrapper{BaseError: BaseError{Scope: scope, DebugCode: ERRCODE_BASE_SYSTEM_UNKNOWN, Msg: err.Error()}, Err: err}
+}
+
 type ErrorResponse struct {
+	BaseError
 	HttpCode        int    `json:"http_code"`
-	ErrorCode       int64  `json:"debug_code"`
-	Message         string `json:"message"`
 	InformationLink string `json:"information_link"`
-}
-
-func (err ErrorResponse) Scope() string {
-	return "http.response"
-}
-
-func (err ErrorResponse) Error() string {
-	return fmt.Sprintf("[http.response] %d:%d:%s", err.HttpCode, err.ErrorCode, err.Message)
-}
-
-func (err ErrorResponse) GetErrorCode() int64 {
-	return err.ErrorCode
 }
 
 func (err ErrorResponse) GetHttpCode() int {
@@ -84,5 +68,5 @@ func (err ErrorResponse) GetHttpCode() int {
 }
 
 func NewErrorResponse(httpCode int, errorCode int64, message, informationLink string) *ErrorResponse {
-	return &ErrorResponse{HttpCode: httpCode, ErrorCode: errorCode, Message: message, InformationLink: informationLink}
+	return &ErrorResponse{BaseError: BaseError{Scope: "response", DebugCode: errorCode, Msg: message}, HttpCode: httpCode, InformationLink: informationLink}
 }

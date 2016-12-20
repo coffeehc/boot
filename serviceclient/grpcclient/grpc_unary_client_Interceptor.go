@@ -2,12 +2,10 @@ package grpcclient
 
 import (
 	"fmt"
-	"github.com/coffeehc/logger"
 	"github.com/coffeehc/microserviceboot/base"
+	"github.com/pquerna/ffjson/ffjson"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/codes"
-	"runtime"
 	"sync"
 )
 
@@ -78,11 +76,23 @@ func (this *wapperUnartClientInterceptor) invoker(ctx context.Context, method st
 func paincInterceptor(ctx context.Context, method string, req, reply interface{}, cc *grpc.ClientConn, invoker grpc.UnaryInvoker, opts ...grpc.CallOption) (err error) {
 	defer func() {
 		if r := recover(); r != nil {
-			stack := make([]byte, 1024)
-			stack = stack[:runtime.Stack(stack, false)]
-			logger.Error("panic grpc invoke: %s, err=%v, stack:\n", method, r)
-			err = grpc.Errorf(codes.Internal, "panic error: %v", r)
+			if _err, ok := r.(error); ok {
+				if grpc.Code(_err) == 255 {
+					baseError := &base.BaseError{}
+					__err := ffjson.Unmarshal([]byte(grpc.ErrorDesc(_err)), baseError)
+					if __err != nil {
+						err = base.NewError(base.ERRCODE_BASE_SYSTEM_DECODE_ERROR, "response", "无法识别的错误")
+						return
+					}
+					err = baseError
+					return
+				}
+				err = _err
+				return
+			}
+			err = base.NewError(base.ERRCODE_BASE_RPC_UNKNOWN, "response", fmt.Sprintf("%s", r))
 		}
 	}()
-	return invoker(ctx, method, req, reply, cc, opts...)
+	err = invoker(ctx, method, req, reply, cc, opts...)
+	return err
 }

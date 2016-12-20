@@ -2,12 +2,10 @@ package grpcboot
 
 import (
 	"fmt"
-	"github.com/coffeehc/logger"
 	"github.com/coffeehc/microserviceboot/base"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
-	"runtime"
 	"sync"
 )
 
@@ -85,11 +83,20 @@ func (this *wapperUnartServerInterceptor) handler(ctx context.Context, req inter
 func paincInterceptor(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp interface{}, err error) {
 	defer func() {
 		if r := recover(); r != nil {
-			stack := make([]byte, 1024)
-			stack = stack[:runtime.Stack(stack, false)]
-			logger.Error("panic grpc invoke: %s, err=%v, stack:\n", info.FullMethod, r, string(stack))
-			err = grpc.Errorf(codes.Internal, "panic error: %v", r)
+			if _err, ok := r.(base.Error); ok {
+				err = grpc.Errorf(255, _err.Error())
+				return
+			}
+			if _err, ok := r.(error); ok {
+				err = grpc.Errorf(codes.Internal, _err.Error())
+				return
+			}
+			err = grpc.Errorf(codes.Unknown, "%s", r)
 		}
 	}()
-	return handler(ctx, req)
+	resp, err = handler(ctx, req)
+	if err != nil {
+		panic(err)
+	}
+	return resp, nil
 }

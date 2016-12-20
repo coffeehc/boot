@@ -69,10 +69,10 @@
 			"revisionTime": "2016-11-11T15:35:59Z"
 		},
 		{
-			"checksumSHA1": "tcYp3oECkLcPv1+q1Q+bumuDczk=",
+			"checksumSHA1": "oRBTtqtInVV09npTMOP3buqiqpM=",
 			"path": "github.com/coffeehc/web",
-			"revision": "dc7beac0245d9bdc09cde1b31c3007fe87023f1a",
-			"revisionTime": "2016-12-13T10:52:26Z"
+			"revision": "6e69e248babec6cfe0202a9efa1ac4bc6b45981f",
+			"revisionTime": "2016-12-20T07:44:21Z"
 		},
 		{
 			"checksumSHA1": "jiKaQesv5IG+lCBSzJ5fS+JP7iM=",
@@ -129,6 +129,24 @@
 			"path": "github.com/miekg/dns",
 			"revision": "48ab6605c66ac797e07f615101c3e9e10e932b66",
 			"revisionTime": "2016-05-12T06:43:16Z"
+		},
+		{
+			"checksumSHA1": "sKfYQurIIt+ldKDDF7TRbg9w20I=",
+			"path": "github.com/pquerna/ffjson/ffjson",
+			"revision": "c24ab9baf274473906fbdba5fccb594aec4b9ff1",
+			"revisionTime": "2016-12-13T16:03:21Z"
+		},
+		{
+			"checksumSHA1": "D1JbeyQhazKyXOokR5w7XrHWWw8=",
+			"path": "github.com/pquerna/ffjson/fflib/v1",
+			"revision": "c24ab9baf274473906fbdba5fccb594aec4b9ff1",
+			"revisionTime": "2016-12-13T16:03:21Z"
+		},
+		{
+			"checksumSHA1": "iZHmHPBzKJiS6ROUaVOf4DVOhbA=",
+			"path": "github.com/pquerna/ffjson/fflib/v1/internal",
+			"revision": "c24ab9baf274473906fbdba5fccb594aec4b9ff1",
+			"revisionTime": "2016-12-13T16:03:21Z"
 		},
 		{
 			"checksumSHA1": "/j0HRFJPThv7HEkZZ/gurf+5fQI=",
