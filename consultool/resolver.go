@@ -39,7 +39,7 @@ func NewConsulResolver(client *api.Client, service, tag string) (*ConsulResolver
 	instancesCh := make(chan []string)
 	go func() {
 		sleep := int64(time.Second * 10)
-		for{
+		for {
 			instances, _, err := r.getInstances(0)
 			if err != nil {
 				logger.Warn("lb: error retrieving instances from Consul: %v", err)
@@ -50,7 +50,7 @@ func NewConsulResolver(client *api.Client, service, tag string) (*ConsulResolver
 			return
 		}
 	}()
-	instances := <- instancesCh
+	instances := <-instancesCh
 	r.updatesc <- r.makeUpdates(nil, instances)
 	// Start updater
 	go r.updater(instances, 0)
@@ -127,13 +127,13 @@ func (r *ConsulResolver) updater(instances []string, lastIndex uint64) {
 func (r *ConsulResolver) getInstances(lastIndex uint64) ([]string, uint64, error) {
 	services, meta, err := r.c.Health().Service(r.service, r.tag, r.passingOnly, &api.QueryOptions{
 		WaitIndex: lastIndex,
-		WaitTime:time.Second,
+		WaitTime:  time.Second,
 	})
 	if err != nil {
 		return nil, lastIndex, err
 	}
-	if len(services) == 0{
-		return nil,lastIndex,base.NewError(base.ERRCODE_BASE_SYSTEM_INIT_ERROR,"consul resolver","service is no address available")
+	if len(services) == 0 {
+		return nil, lastIndex, base.NewError(base.ERRCODE_BASE_SYSTEM_INIT_ERROR, "consul resolver", "service is no address available")
 	}
 	var instances []string
 	for _, service := range services {

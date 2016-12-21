@@ -68,11 +68,10 @@ func BalancerWapper(balancer loadbalancer.Balancer) grpc.Balancer {
 	}
 }
 
-
-type reconnectionError struct{
+type reconnectionError struct {
 	err error
 }
 
-func (e *reconnectionError) Error() string   { return "reconnectionError:"+e.err.Error() }
+func (e *reconnectionError) Error() string   { return "reconnectionError:" + e.err.Error() }
 func (e *reconnectionError) Timeout() bool   { return true }
 func (e *reconnectionError) Temporary() bool { return true }

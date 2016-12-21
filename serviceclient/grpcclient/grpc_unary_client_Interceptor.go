@@ -77,11 +77,11 @@ func paincInterceptor(ctx context.Context, method string, req, reply interface{}
 	defer func() {
 		if r := recover(); r != nil {
 			if _err, ok := r.(error); ok {
-				if grpc.Code(_err) == 255 {
+				if grpc.Code(_err) == 0xff {
 					baseError := &base.BaseError{}
 					__err := ffjson.Unmarshal([]byte(grpc.ErrorDesc(_err)), baseError)
 					if __err != nil {
-						err = base.NewError(base.ERRCODE_BASE_SYSTEM_DECODE_ERROR, "response", "无法识别的错误")
+						err = base.NewError(base.ERRCODE_BASE_SYSTEM_DECODE_ERROR, "response", __err.Error())
 						return
 					}
 					err = baseError
@@ -94,5 +94,8 @@ func paincInterceptor(ctx context.Context, method string, req, reply interface{}
 		}
 	}()
 	err = invoker(ctx, method, req, reply, cc, opts...)
+	if err != nil {
+		panic(err)
+	}
 	return err
 }

@@ -18,11 +18,7 @@ type BaseError struct {
 	Msg       string `json:"msg"`
 }
 
-func (err BaseError) Scopes() string {
-	return err.Scope
-}
-
-func (err BaseError) Error() string {
+func (err *BaseError) Error() string {
 	buf := bytes.NewBufferString(`{"scope":"`)
 	buf.WriteString(err.Scope)
 	buf.WriteString(`","debug_code:`)
@@ -33,8 +29,11 @@ func (err BaseError) Error() string {
 	return buf.String()
 }
 
-func (err BaseError) GetErrorCode() int64 {
+func (err *BaseError) GetErrorCode() int64 {
 	return err.DebugCode
+}
+func (err *BaseError) Scopes() string {
+	return err.Scope
 }
 
 func NewError(debugCode int64, scope string, errMsg string) Error {

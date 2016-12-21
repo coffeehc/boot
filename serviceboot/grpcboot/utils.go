@@ -1,6 +1,5 @@
 package grpcboot
 
-import ()
 import (
 	"github.com/coffeehc/logger"
 	"golang.org/x/net/context"
@@ -16,5 +15,3 @@ func loggingInterceptor(ctx context.Context, req interface{}, info *grpc.UnarySe
 	resp, err = handler(ctx, req)
 	return resp, err
 }
-
-

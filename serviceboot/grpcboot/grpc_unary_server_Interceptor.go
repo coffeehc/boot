@@ -84,7 +84,7 @@ func paincInterceptor(ctx context.Context, req interface{}, info *grpc.UnaryServ
 	defer func() {
 		if r := recover(); r != nil {
 			if _err, ok := r.(base.Error); ok {
-				err = grpc.Errorf(255, _err.Error())
+				err = grpc.Errorf(0xff, _err.Error())
 				return
 			}
 			if _err, ok := r.(error); ok {

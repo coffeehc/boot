@@ -11,8 +11,8 @@ type consuleBalancerBuilder struct {
 	consulClient *api.Client
 }
 
-func (this *consuleBalancerBuilder) NewBalancer(cxt context.Context,serviceInfo base.ServiceInfo) (loadbalancer.Balancer, base.Error) {
-	return NewConsulBalancer(cxt,this.consulClient, serviceInfo)
+func (this *consuleBalancerBuilder) NewBalancer(cxt context.Context, serviceInfo base.ServiceInfo) (loadbalancer.Balancer, base.Error) {
+	return NewConsulBalancer(cxt, this.consulClient, serviceInfo)
 }
 
 func NewConsulBalancerBudiler(consulClient *api.Client) loadbalancer.BalancerBuilder {

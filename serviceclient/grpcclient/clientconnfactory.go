@@ -9,7 +9,7 @@ import (
 )
 
 type ClientConnFactory interface {
-	GetClientConn(cxt context.Context,serviceInfo base.ServiceInfo, timeout time.Duration) (*grpc.ClientConn, base.Error)
+	GetClientConn(cxt context.Context, serviceInfo base.ServiceInfo, timeout time.Duration) (*grpc.ClientConn, base.Error)
 }
 
 func NewClientConnFactory(grpcClient GrpcClient, builder loadbalancer.BalancerBuilder) ClientConnFactory {
@@ -27,8 +27,8 @@ type _ServiceClient struct {
 	builder    loadbalancer.BalancerBuilder
 }
 
-func (this *_ServiceClient) GetClientConn(cxt context.Context,serviceInfo base.ServiceInfo, timeout time.Duration) (*grpc.ClientConn, base.Error) {
-	balancer, err := this.builder.NewBalancer(cxt,serviceInfo)
+func (this *_ServiceClient) GetClientConn(cxt context.Context, serviceInfo base.ServiceInfo, timeout time.Duration) (*grpc.ClientConn, base.Error) {
+	balancer, err := this.builder.NewBalancer(cxt, serviceInfo)
 	if err != nil {
 		return nil, err
 	}
