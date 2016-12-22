@@ -9,6 +9,7 @@ type Error interface {
 	error
 	GetErrorCode() int64
 	Scopes() string
+	Message() string
 }
 
 type BaseError struct {
@@ -27,6 +28,10 @@ func (err *BaseError) GetErrorCode() int64 {
 }
 func (err *BaseError) Scopes() string {
 	return err.Scope
+}
+
+func (err *BaseError)Message() string{
+	return err.Msg
 }
 
 func NewError(debugCode int64, scope string, errMsg string) Error {
