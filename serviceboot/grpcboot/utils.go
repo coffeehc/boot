@@ -2,6 +2,7 @@ package grpcboot
 
 import (
 	"github.com/coffeehc/logger"
+	"github.com/coffeehc/microserviceboot/base"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 	"time"
@@ -14,4 +15,8 @@ func loggingInterceptor(ctx context.Context, req interface{}, info *grpc.UnarySe
 	}()
 	resp, err = handler(ctx, req)
 	return resp, err
+}
+
+func NewResponseError(messgae string) base.Error {
+	return base.NewError(base.ERRCODE_BASE_RPC_INTERNAL, "response", messgae)
 }

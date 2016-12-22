@@ -1,9 +1,8 @@
 package base
 
 import (
-	"bytes"
+	"github.com/pquerna/ffjson/ffjson"
 	"net/http"
-	"strconv"
 )
 
 type Error interface {
@@ -19,14 +18,8 @@ type BaseError struct {
 }
 
 func (err *BaseError) Error() string {
-	buf := bytes.NewBufferString(`{"scope":"`)
-	buf.WriteString(err.Scope)
-	buf.WriteString(`","debug_code:`)
-	buf.WriteString(strconv.FormatInt(err.DebugCode, 10))
-	buf.WriteString(`,"msg":"`)
-	buf.WriteString(err.Msg)
-	buf.WriteString(`"}`)
-	return buf.String()
+	data, _ := ffjson.Marshal(err)
+	return string(data)
 }
 
 func (err *BaseError) GetErrorCode() int64 {
