@@ -20,3 +20,7 @@ func loggingInterceptor(ctx context.Context, req interface{}, info *grpc.UnarySe
 func NewResponseError(messgae string) base.Error {
 	return base.NewError(base.ERRCODE_BASE_RPC_INTERNAL, "response", messgae)
 }
+
+func NewServiceProcessError(service string,message string) base.Error{
+	return base.NewError(base.ERRCODE_BASE_RPC_ABORTED, service, message)
+}
