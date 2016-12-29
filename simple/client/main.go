@@ -1,13 +1,14 @@
 package main
 
 import (
+	"time"
+
 	"github.com/coffeehc/logger"
 	"github.com/coffeehc/microserviceboot/base"
 	"github.com/coffeehc/microserviceboot/consultool"
 	"github.com/coffeehc/microserviceboot/serviceclient/grpcclient"
 	"github.com/coffeehc/microserviceboot/simple/simplemodel"
 	"golang.org/x/net/context"
-	"time"
 )
 
 func main() {
@@ -21,14 +22,14 @@ func main() {
 		time.Sleep(time.Millisecond * 300)
 		return
 	}
-	balanacer, err := consultool.NewConsulBalancer(consulClient, serviceInfo)
+	balanacer, err := consultool.newConsulBalancer(consulClient, serviceInfo)
 	if err != nil {
 		e = err
 		logger.Error("%s", e)
 		time.Sleep(time.Millisecond * 300)
 		return
 	}
-	client := grpcclient.NewGrpcClient()
+	client := grpcclient.newGRPCClient()
 	clientConn, err := client.NewClientConn(context.Background(), serviceInfo, balanacer, time.Second*30)
 	if err != nil {
 		e = err

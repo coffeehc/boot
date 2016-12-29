@@ -3,13 +3,14 @@ package consultool
 import (
 	"time"
 
-	"github.com/coffeehc/logger"
-	"github.com/hashicorp/consul/api"
-	"gopkg.in/yaml.v2"
 	"io/ioutil"
+
+	"github.com/coffeehc/logger"
+	"gopkg.in/yaml.v2"
 )
 
-func LoadConsulConfig(configPath string) *ConsulConfig {
+//LoadConsulConfig 加载 consul 配置
+func loadConsulConfig(configPath string) *ConsulConfig {
 	data, err := ioutil.ReadFile(configPath)
 	if err != nil {
 		logger.Error("加载配置文件失败,使用默认配置")
@@ -27,62 +28,52 @@ func LoadConsulConfig(configPath string) *ConsulConfig {
 
 }
 
+//ConsulConfig consul连接配置
 type ConsulConfig struct {
-	Address    string        `yaml:"address"`
-	Scheme     string        `yaml:"scheme"`
-	DataCenter string        `yaml:"daraCenter"`
-	WaitTime   time.Duration `yaml:"waitTime"`
-	Token      string        `yaml:"token"`
-	BasicAuth  HttpBasicAuth `yaml:"basic_auth"`
+	Address    string         `yaml:"address"`
+	Scheme     string         `yaml:"scheme"`
+	DataCenter string         `yaml:"daraCenter"`
+	WaitTime   time.Duration  `yaml:"waitTime"`
+	Token      string         `yaml:"token"`
+	BasicAuth  *HTTPBasicAuth `yaml:"basic_auth"`
 }
 
-type HttpBasicAuth struct {
-	Username string
-	Password string
+//HTTPBasicAuth consul的 BaseAuth
+type HTTPBasicAuth struct {
+	Username string `yaml:"username"`
+	Password string `yaml:"password"`
 }
 
-func (this *ConsulConfig) GetAddress() string {
-	if this.Address == "" {
+//GetAddress 获取 consul 的连接地址 默认为127.0.0.1:8500
+func (cc *ConsulConfig) GetAddress() string {
+	if cc.Address == "" {
 		return "127.0.0.1:8500"
 	}
-	return this.Address
+	return cc.Address
 }
 
-func (this *ConsulConfig) GetScheme() string {
-	if this.Scheme == "" {
+//GetScheme 获取 consul的连接协议,默认为: http
+func (cc *ConsulConfig) GetScheme() string {
+	if cc.Scheme == "" {
 		return "http"
 	}
-	return this.Scheme
+	return cc.Scheme
 }
 
-func (this *ConsulConfig) GetDataCenter() string {
-	if this.DataCenter == "" {
+//GetDataCenter 获取配置的数据中心,默认为: dc
+func (cc *ConsulConfig) GetDataCenter() string {
+	if cc.DataCenter == "" {
 		return "dc"
 	}
-	return this.DataCenter
+	return cc.DataCenter
 }
 
-func (this *ConsulConfig) GetWaitTime() time.Duration {
-	return this.WaitTime
+//GetWaitTime 获取等待时间
+func (cc *ConsulConfig) GetWaitTime() time.Duration {
+	return cc.WaitTime
 }
 
-func (this *ConsulConfig) GetToken() string {
-	return this.Token
-}
-
-func warpConsulConfig(consulConfig *ConsulConfig) *api.Config {
-	if consulConfig == nil {
-		return nil
-	}
-	config := api.DefaultConfig()
-	config.Address = consulConfig.GetAddress()
-	config.Scheme = consulConfig.GetScheme()
-	config.Datacenter = consulConfig.GetDataCenter()
-	config.WaitTime = consulConfig.GetWaitTime()
-	config.Token = consulConfig.GetToken()
-	config.HttpAuth = &api.HttpBasicAuth{
-		Username: consulConfig.BasicAuth.Username,
-		Password: consulConfig.BasicAuth.Password,
-	}
-	return config
+//GetToken 获取 Token
+func (cc *ConsulConfig) GetToken() string {
+	return cc.Token
 }

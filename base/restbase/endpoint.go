@@ -1,14 +1,16 @@
 package restbase
 
-import "github.com/coffeehc/web"
+import "github.com/coffeehc/httpx"
 
-type EndPointMeta struct {
-	Path        string         `json:"patp"`
-	Method      web.HttpMethod `json:"method"`
-	Description string         `json:"description"`
+//EndpointMeta endpoint meta define
+type EndpointMeta struct {
+	Path        string              `json:"patp"`
+	Method      httpx.RequestMethod `json:"method"`
+	Description string              `json:"description"`
 }
 
-type EndPoint struct {
-	Metadata    EndPointMeta
-	HandlerFunc web.RequestHandler
+//Endpoint endpoint define
+type Endpoint struct {
+	Metadata    EndpointMeta
+	HandlerFunc httpx.RequestHandler
 }

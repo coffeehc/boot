@@ -29,6 +29,7 @@ _testmain.go
 
 # IntelliJ project files
 .idea
+.vscode
 *.iml
 out
 gen

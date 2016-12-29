@@ -1,21 +1,22 @@
 package serviceboot
 
 import (
+	"github.com/coffeehc/httpx"
+	"github.com/coffeehc/httpx/pprof"
 	"github.com/coffeehc/microserviceboot/base"
-	"github.com/coffeehc/web"
-	"github.com/coffeehc/web/pprof"
 	"github.com/prometheus/client_golang/prometheus"
 )
 
-func NewHttpServer(config *web.HttpServerConfig, serviceInfo base.ServiceInfo) (web.HttpServer, base.Error) {
-	httpServer := web.NewHttpServer(config)
+//NewHTTPServer 创建 http server
+func NewHTTPServer(config *httpx.Config, serviceInfo base.ServiceInfo) (httpx.Server, base.Error) {
+	httpServer := httpx.NewServer(config)
 	pprof.RegeditPprof(httpServer)
 	health := newHealth(serviceInfo)
-	err := httpServer.Register("/health", web.GET, health.health)
+	err := httpServer.Register("/health", httpx.GET, health.health)
 	if err != nil {
 		return nil, base.NewErrorWrapper("httpserver", err)
 	}
-	err = httpServer.RegisterHttpHandler("/metrics", web.GET, prometheus.Handler())
+	err = httpServer.RegisterHandler("/metrics", httpx.GET, prometheus.Handler())
 	if err != nil {
 		return nil, base.NewErrorWrapper("httpserver", err)
 	}

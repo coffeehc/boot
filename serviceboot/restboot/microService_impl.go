@@ -3,19 +3,21 @@ package restboot
 import (
 	"context"
 	"fmt"
+
+	"github.com/coffeehc/httpx"
 	"github.com/coffeehc/logger"
 	"github.com/coffeehc/microserviceboot/base"
 	"github.com/coffeehc/microserviceboot/base/restbase"
 	"github.com/coffeehc/microserviceboot/serviceboot"
 	"github.com/coffeehc/microserviceboot/serviceboot/internal"
-	"github.com/coffeehc/web"
 )
 
+//RestMicroServiceBuilder rest 服务的MicroServiceBuilder
 var RestMicroServiceBuilder serviceboot.MicroServiceBuilder = microServiceBuild
 
-type MicroService_Rest struct {
+type _RestMicroService struct {
 	config     *Config
-	httpServer web.HttpServer
+	httpServer httpx.Server
 	service    restbase.RestService
 }
 
@@ -24,50 +26,48 @@ func microServiceBuild(service base.Service) (serviceboot.MicroService, base.Err
 	if !ok {
 		return nil, base.NewError(-1, "RestMicroService build", "service 不是Rest 服务")
 	}
-	return &MicroService_Rest{
+	return &_RestMicroService{
 		service: restService,
 	}, nil
 }
 
-func (this *MicroService_Rest) GetServiceInfo() base.ServiceInfo {
-	return this.config.GetServiceConfig().ServiceInfo
+func (ms *_RestMicroService) GetServiceInfo() base.ServiceInfo {
+	return ms.config.GetServiceConfig().ServiceInfo
 }
 
-func (this *MicroService_Rest) Init(cxt context.Context) (*serviceboot.ServiceConfig, base.Error) {
+func (ms *_RestMicroService) Init(cxt context.Context) (*serviceboot.ServiceConfig, base.Error) {
 	config := new(Config)
-	configPath, err := serviceboot.LoadConfig(config)
+	configPath, err := internal.LoadConfig(config)
 	if err != nil {
 		return nil, err
 	}
-	this.config = config
+	ms.config = config
 	serviceConfig := config.GetServiceConfig()
-	err = serviceboot.CheckServiceInfoConfig(this.GetServiceInfo())
+	err = internal.CheckServiceInfoConfig(ms.GetServiceInfo())
 	if err != nil {
 		return nil, err
 	}
 	if base.IsDevModule() {
-		debugConfig := serviceConfig.GetDebugConfig()
 		logger.Debug("open dev module")
-		apiDefineRequestHandler := buildApiDefineRequestHandler(this.GetServiceInfo())
+		apiDefineRequestHandler := buildAPIDefineRequestHandler(ms.GetServiceInfo())
 		if apiDefineRequestHandler != nil {
-			this.httpServer.Register(fmt.Sprintf("/apidefine/%s.api", this.GetServiceInfo().GetServiceName()), web.GET, apiDefineRequestHandler)
+			ms.httpServer.Register(fmt.Sprintf("/apidefine/%s.api", ms.GetServiceInfo().GetServiceName()), httpx.GET, apiDefineRequestHandler)
 		}
-		if debugConfig.IsEnableAccessInfo() {
-			this.httpServer.AddFirstFilter("/*", web.SimpleAccessLogFilter)
+		if serviceConfig.EnableAccessInfo {
+			ms.httpServer.AddFirstFilter("/*", httpx.AccessLogFilter)
 		}
 	}
-	httpServer, err := serviceboot.NewHttpServer(serviceConfig.GetWebServerConfig(), this.GetServiceInfo())
+	httpServer, err := serviceboot.NewHTTPServer(serviceConfig.GetHTTPServerConfig(), ms.GetServiceInfo())
 	if err != nil {
 		return nil, err
 	}
-	this.httpServer = httpServer
-	serviceboot.ServiceRegister(configPath, this.GetService(), this.GetServiceInfo(), serviceConfig, cxt)
-	err = this.registerEndpoints()
+	ms.httpServer = httpServer
+	err = ms.registerEndpoints()
 	if err != nil {
 		return nil, err
 	}
-	if this.service.Init != nil {
-		err := this.service.Init(configPath, httpServer, cxt)
+	if ms.service.Init != nil {
+		err := ms.service.Init(cxt, configPath, httpServer)
 		if err != nil {
 			return nil, err
 		}
@@ -75,56 +75,56 @@ func (this *MicroService_Rest) Init(cxt context.Context) (*serviceboot.ServiceCo
 	return serviceConfig, nil
 }
 
-func (this *MicroService_Rest) Start() base.Error {
-	err := internal.StartService(this.service)
+func (ms *_RestMicroService) Start(cxt context.Context) base.Error {
+	err := internal.StartService(ms.service)
 	if err != nil {
 		return err
 	}
-	errSign := this.httpServer.Start()
+	errSign := ms.httpServer.Start()
 	go func() {
 		err := <-errSign
 		if err != nil {
-			panic(base.NewError(base.ERRCODE_BASE_SYSTEM_INIT_ERROR, "RestMicroService Start", err.Error()))
+			panic(base.NewError(base.ErrCodeBaseSystemInit, "RestMicroService Start", err.Error()))
 		}
 	}()
 	return nil
 }
 
-func (this *MicroService_Rest) GetService() base.Service {
-	return this.service
+func (ms *_RestMicroService) GetService() base.Service {
+	return ms.service
 }
 
-func (this *MicroService_Rest) Stop() {
-	if this.httpServer != nil {
-		this.httpServer.Stop()
+func (ms *_RestMicroService) Stop() {
+	if ms.httpServer != nil {
+		ms.httpServer.Stop()
 	}
-	internal.StopService(this.service)
+	internal.StopService(ms.service)
 }
 
-func buildApiDefineRequestHandler(serviceInfo base.ServiceInfo) web.RequestHandler {
-	return func(reply web.Reply) {
-		reply.With(serviceInfo.GetApiDefine()).As(web.Default_Render_Text)
+func buildAPIDefineRequestHandler(serviceInfo base.ServiceInfo) httpx.RequestHandler {
+	return func(reply httpx.Reply) {
+		reply.With(serviceInfo.GetAPIDefine()).As(httpx.DefaultRenderText)
 	}
 }
 
-func (this *MicroService_Rest) registerEndpoint(endPoint restbase.EndPoint) base.Error {
+func (ms *_RestMicroService) registerEndpoint(endPoint restbase.Endpoint) base.Error {
 	metadata := endPoint.Metadata
 	logger.Debug("register endpoint [%s] %s %s", metadata.Method, metadata.Path, metadata.Description)
-	err := this.httpServer.Register(metadata.Path, metadata.Method, endPoint.HandlerFunc)
+	err := ms.httpServer.Register(metadata.Path, metadata.Method, endPoint.HandlerFunc)
 	if err != nil {
-		return base.NewError(base.ERRCODE_BASE_SYSTEM_INIT_ERROR, "RestMicroService register", err.Error())
+		return base.NewError(base.ErrCodeBaseSystemInit, "RestMicroService register", err.Error())
 	}
 	return nil
 }
 
-func (this *MicroService_Rest) registerEndpoints() base.Error {
-	endPoints := this.service.GetEndPoints()
+func (ms *_RestMicroService) registerEndpoints() base.Error {
+	endPoints := ms.service.GetEndPoints()
 	if len(endPoints) == 0 {
 		logger.Warn("not regedit any endpoint")
 		return nil
 	}
 	for _, endPoint := range endPoints {
-		err := this.registerEndpoint(endPoint)
+		err := ms.registerEndpoint(endPoint)
 		if err != nil {
 			return err
 		}

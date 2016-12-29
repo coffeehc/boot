@@ -7,6 +7,6 @@ import (
 
 type GRpcService interface {
 	base.Service
-	GetGrpcOptions() []grpc.ServerOption
+	GetGRPCOptions() []grpc.ServerOption
 	RegisterServer(s *grpc.Server) base.Error
 }

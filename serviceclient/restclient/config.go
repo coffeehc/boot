@@ -6,7 +6,7 @@ import (
 	"github.com/benschw/dns-clb-go/clb"
 )
 
-var Default_HttpClientConfiguration = &HttpClientConfiguration{
+var defaultHttpClientConfiguration = &HttpClientConfiguration{
 	KeepAlive: 30,
 }
 
@@ -22,52 +22,52 @@ type HttpClientConfiguration struct {
 	ExpectContinueTimeout time.Duration
 }
 
-func (this *HttpClientConfiguration) GetKeepAlive() time.Duration {
-	if this.KeepAlive == 0 {
-		this.KeepAlive = time.Duration(30)
+func (config *HttpClientConfiguration) GetKeepAlive() time.Duration {
+	if config.KeepAlive == 0 {
+		config.KeepAlive = time.Duration(30)
 	}
-	return this.KeepAlive * time.Second
+	return config.KeepAlive * time.Second
 }
-func (this *HttpClientConfiguration) GetTimeout() time.Duration {
-	if this.Timeout == 0 {
-		this.Timeout = time.Duration(30)
+func (config *HttpClientConfiguration) GetTimeout() time.Duration {
+	if config.Timeout == 0 {
+		config.Timeout = time.Duration(30)
 	}
-	return this.Timeout * time.Second
-}
-
-func (this *HttpClientConfiguration) GetIdleConnTimeout() time.Duration {
-	if this.IdleConnTimeout == 0 {
-		this.IdleConnTimeout = time.Duration(90)
-	}
-	return this.IdleConnTimeout * time.Second
+	return config.Timeout * time.Second
 }
 
-func (this *HttpClientConfiguration) GetTLSHandshakeTimeout() time.Duration {
-	if this.TLSHandshakeTimeout == 0 {
-		this.TLSHandshakeTimeout = time.Duration(10)
+func (config *HttpClientConfiguration) GetIdleConnTimeout() time.Duration {
+	if config.IdleConnTimeout == 0 {
+		config.IdleConnTimeout = time.Duration(90)
 	}
-	return this.TLSHandshakeTimeout * time.Second
+	return config.IdleConnTimeout * time.Second
 }
 
-func (this *HttpClientConfiguration) GetExpectContinueTimeout() time.Duration {
-	if this.ExpectContinueTimeout == 0 {
-		this.ExpectContinueTimeout = time.Duration(1)
+func (config *HttpClientConfiguration) GetTLSHandshakeTimeout() time.Duration {
+	if config.TLSHandshakeTimeout == 0 {
+		config.TLSHandshakeTimeout = time.Duration(10)
 	}
-	return this.ExpectContinueTimeout * time.Second
+	return config.TLSHandshakeTimeout * time.Second
 }
 
-func (this *HttpClientConfiguration) GetMaxIdleConns() int {
-	if this.MaxIdleConns == 0 {
-		this.MaxIdleConns = 40
+func (config *HttpClientConfiguration) GetExpectContinueTimeout() time.Duration {
+	if config.ExpectContinueTimeout == 0 {
+		config.ExpectContinueTimeout = time.Duration(1)
 	}
-	return this.MaxIdleConns
+	return config.ExpectContinueTimeout * time.Second
 }
 
-func (this *HttpClientConfiguration) GetMaxIdleConnsPerHost() int {
-	if this.MaxIdleConnsPerHost == 0 {
-		this.MaxIdleConnsPerHost = 10
+func (config *HttpClientConfiguration) GetMaxIdleConns() int {
+	if config.MaxIdleConns == 0 {
+		config.MaxIdleConns = 40
 	}
-	return this.MaxIdleConnsPerHost
+	return config.MaxIdleConns
+}
+
+func (config *HttpClientConfiguration) GetMaxIdleConnsPerHost() int {
+	if config.MaxIdleConnsPerHost == 0 {
+		config.MaxIdleConnsPerHost = 10
+	}
+	return config.MaxIdleConnsPerHost
 }
 
 type ServiceClientConsulConfig struct {
@@ -77,30 +77,30 @@ type ServiceClientConsulConfig struct {
 	LoadBalanceType LoadBalanceType `yaml:"loadBalanceType"`
 }
 
-func (this ServiceClientConsulConfig) GetNameServer() string {
-	if this.NameServer == "" {
+func (config ServiceClientConsulConfig) GetNameServer() string {
+	if config.NameServer == "" {
 		return "127.0.0.1:8600"
 	}
-	return this.NameServer
+	return config.NameServer
 }
 
-func (this ServiceClientConsulConfig) GetDomain() string {
-	if this.Domain == "" {
+func (config ServiceClientConsulConfig) GetDomain() string {
+	if config.Domain == "" {
 		return "xiagaogao"
 	}
-	return this.Domain
+	return config.Domain
 }
 
-func (this ServiceClientConsulConfig) GetDataCenter() string {
-	if this.DataCenter == "" {
+func (config ServiceClientConsulConfig) GetDataCenter() string {
+	if config.DataCenter == "" {
 		return "dc"
 	}
-	return this.DataCenter
+	return config.DataCenter
 }
 
-func (this ServiceClientConsulConfig) GetLoadBalanceType() clb.LoadBalancerType {
+func (config ServiceClientConsulConfig) GetLoadBalanceType() clb.LoadBalancerType {
 	var loadBalanceType clb.LoadBalancerType
-	switch this.LoadBalanceType {
+	switch config.LoadBalanceType {
 	case LoadBalance_RoundRobin:
 		loadBalanceType = clb.RoundRobin
 	case LoadBalance_Random:

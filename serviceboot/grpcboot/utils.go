@@ -1,11 +1,12 @@
 package grpcboot
 
 import (
+	"time"
+
 	"github.com/coffeehc/logger"
 	"github.com/coffeehc/microserviceboot/base"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
-	"time"
 )
 
 func loggingInterceptor(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp interface{}, err error) {
@@ -17,10 +18,12 @@ func loggingInterceptor(ctx context.Context, req interface{}, info *grpc.UnarySe
 	return resp, err
 }
 
+//NewResponseError create a response error ,code is base.ErrCodeBaseRPCInternal
 func NewResponseError(messgae string) base.Error {
-	return base.NewError(base.ERRCODE_BASE_RPC_INTERNAL, "response", messgae)
+	return base.NewError(base.ErrCodeBaseRPCInternal, "response", messgae)
 }
 
-func NewServiceProcessError(service string,message string) base.Error{
-	return base.NewError(base.ERRCODE_BASE_RPC_ABORTED, service, message)
+//NewServiceProcessError create a service response error ,code is base.ErrCodeBaseRPCAborted
+func NewServiceProcessError(service string, message string) base.Error {
+	return base.NewError(base.ErrCodeBaseRPCAborted, service, message)
 }

@@ -9,15 +9,14 @@ import (
 
 	"context"
 	"flag"
+
 	"github.com/coffeehc/commons"
 	"github.com/coffeehc/logger"
 	"github.com/coffeehc/microserviceboot/base"
 )
 
-/**
- *	Service 启动
- */
-func ServiceLaunch(service base.Service, serviceBuilder MicroServiceBuilder, cxt context.Context) {
+//ServiceLaunch Service 启动
+func ServiceLaunch(cxt context.Context, service base.Service, serviceBuilder MicroServiceBuilder) {
 	log.SetFlags(log.Ldate | log.Ltime | log.Llongfile)
 	logger.InitLogger()
 	defer logger.WaitToClose()
@@ -25,7 +24,13 @@ func ServiceLaunch(service base.Service, serviceBuilder MicroServiceBuilder, cxt
 		flag.PrintDefaults()
 		os.Exit(0)
 	}
-	microService, err := Launch(service, serviceBuilder, cxt)
+	if base.IsDevModule() {
+		logger.SetDefaultLevel("/", logger.LevelDebug)
+		logger.Debug("当前为:开发模式")
+	} else {
+		logger.Debug("当前为:生产模式")
+	}
+	microService, err := Launch(cxt, service, serviceBuilder)
 	if err != nil {
 		launchError(err)
 		return
@@ -37,12 +42,13 @@ func ServiceLaunch(service base.Service, serviceBuilder MicroServiceBuilder, cxt
 	commons.WaitStop()
 }
 
-func Launch(service base.Service, serviceBuilder MicroServiceBuilder, cxt context.Context) (MicroService, base.Error) {
+//Launch 纯粹的启动微服务,不做系统信令监听
+func Launch(cxt context.Context, service base.Service, serviceBuilder MicroServiceBuilder) (MicroService, base.Error) {
 	logger.Info("launch microService")
 	startTime := time.Now()
 	if service == nil {
 		logger.Error("service is nil")
-		return nil, base.NewError(base.ERRCODE_BASE_SYSTEM_INIT_ERROR, "Launch", "service is nil")
+		return nil, base.NewError(base.ErrCodeBaseSystemInit, "Launch", "service is nil")
 	}
 	microService, err := serviceBuilder(service)
 	if err != nil {
@@ -56,18 +62,20 @@ func Launch(service base.Service, serviceBuilder MicroServiceBuilder, cxt contex
 	logger.Info("Service inited")
 	serviceInfo := microService.GetServiceInfo()
 	if serviceInfo == nil {
-		return nil, base.NewError(base.ERRCODE_BASE_SYSTEM_INIT_ERROR, "Launch", "没有指定 ServiceInfo")
+		return nil, base.NewError(base.ErrCodeBaseSystemInit, "Launch", "没有指定 ServiceInfo")
 	}
 	logger.Info("ServiceName: %s", serviceInfo.GetServiceName())
 	logger.Info("Version: %s", serviceInfo.GetVersion())
 	logger.Info("Descriptor: %s", serviceInfo.GetDescriptor())
 	logger.Info("Service starting")
-	err = microService.Start()
+	err = microService.Start(cxt)
 	if err != nil {
 		logger.Error("service start fail. %s", err)
 		time.Sleep(time.Second)
 		os.Exit(-1)
 	}
-	logger.Info("核心服务启动成功,服务地址:%s,启动耗时:%s", config.GetWebServerConfig().ServerAddr, time.Since(startTime))
+	logger.Info("核心服务启动成功,服务地址:%s,启动耗时:%s", config.GetHTTPServerConfig().ServerAddr, time.Since(startTime))
+	//注册是在服务完全启动之后
+	serviceDiscoverRegister(cxt, microService.GetService(), microService.GetServiceInfo(), config)
 	return microService, nil
 }

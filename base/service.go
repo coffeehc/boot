@@ -2,20 +2,22 @@ package base
 
 import (
 	"context"
-	"github.com/coffeehc/web"
+
+	"github.com/coffeehc/httpx"
 )
 
+// Service 接口定义
 type Service interface {
-	Init(configPath string, server web.HttpServer, cxt context.Context) Error
+	Init(cxt context.Context, configPath string, server httpx.Server) Error
 	Run() Error
 	Stop() Error
-	//GetServiceInfo() ServiceInfo
-	GetServiceDiscoveryRegister(configPath string) (ServiceDiscoveryRegister, Error)
+	GetServiceDiscoveryRegister() (ServiceDiscoveryRegister, Error)
 }
 
+// ServiceInfo 接口定义
 type ServiceInfo interface {
 	//获取 Api 定义的内容
-	GetApiDefine() string
+	GetAPIDefine() string
 	//获取 Service 名称
 	GetServiceName() string
 	//获取服务版本号
@@ -24,45 +26,57 @@ type ServiceInfo interface {
 	GetDescriptor() string
 	//获取 Service tags
 	GetServiceTag() string
-
+	// GetScheme service 使用的协议
 	GetScheme() string
 }
 
+//SimpleServiceInfo 简单的 ServiceInfo 配置
 type SimpleServiceInfo struct {
 	ServiceName string `yaml:"service_name"`
 	Version     string `yaml:"version"`
 	Descriptor  string `yaml:"descriptor"`
-	ApiDefine   string `yaml:"api_define"`
+	APIDefine   string `yaml:"api_define"`
 	Tag         string `yaml:"tag"`
 	Scheme      string `yaml:"scheme"`
 }
 
-func (this *SimpleServiceInfo) GetApiDefine() string {
-	return this.ApiDefine
-}
-func (this *SimpleServiceInfo) GetServiceName() string {
-	return this.ServiceName
-}
-func (this *SimpleServiceInfo) GetVersion() string {
-	return this.Version
-}
-func (this *SimpleServiceInfo) GetDescriptor() string {
-	return this.Descriptor
-}
-func (this *SimpleServiceInfo) GetServiceTag() string {
-	return this.Tag
+//GetAPIDefine implement ServiceInfo interface
+func (ss *SimpleServiceInfo) GetAPIDefine() string {
+	return ss.APIDefine
 }
 
-func (this *SimpleServiceInfo) GetScheme() string {
-	return this.Scheme
+//GetServiceName implement ServiceInfo interface
+func (ss *SimpleServiceInfo) GetServiceName() string {
+	return ss.ServiceName
 }
 
+//GetVersion implement ServiceInfo interface
+func (ss *SimpleServiceInfo) GetVersion() string {
+	return ss.Version
+}
+
+//GetDescriptor implement ServiceInfo interface
+func (ss *SimpleServiceInfo) GetDescriptor() string {
+	return ss.Descriptor
+}
+
+//GetServiceTag implement ServiceInfo interface
+func (ss *SimpleServiceInfo) GetServiceTag() string {
+	return ss.Tag
+}
+
+//GetScheme implement ServiceInfo interface
+func (ss *SimpleServiceInfo) GetScheme() string {
+	return ss.Scheme
+}
+
+//NewSimpleServiceInfo create a simple ServiceInfo
 func NewSimpleServiceInfo(serviceName, version, tag, scheme, descriptor, apiDefine string) ServiceInfo {
 	return &SimpleServiceInfo{
 		ServiceName: serviceName,
 		Version:     version,
 		Descriptor:  descriptor,
-		ApiDefine:   apiDefine,
+		APIDefine:   apiDefine,
 		Tag:         tag,
 		Scheme:      scheme,
 	}

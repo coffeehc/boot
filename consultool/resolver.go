@@ -1,17 +1,18 @@
 package consultool
 
 import (
-	"github.com/coffeehc/logger"
-	"github.com/coffeehc/microserviceboot/base"
-	"github.com/hashicorp/consul/api"
-	"google.golang.org/grpc/naming"
 	"math/rand"
 	"net"
 	"strconv"
 	"time"
+
+	"github.com/coffeehc/logger"
+	"github.com/coffeehc/microserviceboot/base"
+	"github.com/hashicorp/consul/api"
+	"google.golang.org/grpc/naming"
 )
 
-type ConsulResolver struct {
+type _ConsulResolver struct {
 	c           *api.Client
 	service     string
 	tag         string
@@ -25,8 +26,8 @@ type ConsulResolver struct {
 //
 // It resolves addresses for gRPC connections to the given service and tag.
 // If the tag is irrelevant, use an empty string.
-func NewConsulResolver(client *api.Client, service, tag string) (*ConsulResolver, base.Error) {
-	r := &ConsulResolver{
+func newConsulResolver(client *api.Client, service, tag string) (naming.Resolver, base.Error) {
+	r := &_ConsulResolver{
 		c:           client,
 		service:     service,
 		tag:         tag,
@@ -60,7 +61,7 @@ func NewConsulResolver(client *api.Client, service, tag string) (*ConsulResolver
 
 // Resolve creates a watcher for target. The watcher interface is implemented
 // by ConsulResolver as well, see Next and Close.
-func (r *ConsulResolver) Resolve(target string) (naming.Watcher, error) {
+func (r *_ConsulResolver) Resolve(target string) (naming.Watcher, error) {
 	return r, nil
 }
 
@@ -70,12 +71,12 @@ func (r *ConsulResolver) Resolve(target string) (naming.Watcher, error) {
 // block until the resolver finds any new or removed instance.
 //
 // An error is returned if and only if the watcher cannot recover.
-func (r *ConsulResolver) Next() ([]*naming.Update, error) {
+func (r *_ConsulResolver) Next() ([]*naming.Update, error) {
 	return <-r.updatesc, nil
 }
 
 // Close closes the watcher.
-func (r *ConsulResolver) Close() {
+func (r *_ConsulResolver) Close() {
 	select {
 	case <-r.quitc:
 	default:
@@ -87,7 +88,7 @@ func (r *ConsulResolver) Close() {
 // updater is a background process started in NewConsulResolver. It takes
 // a list of previously resolved instances (in the format of host:port, e.g.
 // 192.168.0.1:1234) and the last index returned from Consul.
-func (r *ConsulResolver) updater(instances []string, lastIndex uint64) {
+func (r *_ConsulResolver) updater(instances []string, lastIndex uint64) {
 	var err error
 	var oldInstances = instances
 	var newInstances []string
@@ -124,7 +125,7 @@ func (r *ConsulResolver) updater(instances []string, lastIndex uint64) {
 
 // getInstances retrieves the new set of instances registered for the
 // service from Consul.
-func (r *ConsulResolver) getInstances(lastIndex uint64) ([]string, uint64, error) {
+func (r *_ConsulResolver) getInstances(lastIndex uint64) ([]string, uint64, error) {
 	services, meta, err := r.c.Health().Service(r.service, r.tag, r.passingOnly, &api.QueryOptions{
 		WaitIndex: lastIndex,
 		WaitTime:  time.Second,
@@ -133,7 +134,7 @@ func (r *ConsulResolver) getInstances(lastIndex uint64) ([]string, uint64, error
 		return nil, lastIndex, err
 	}
 	if len(services) == 0 {
-		return nil, lastIndex, base.NewError(base.ERRCODE_BASE_SYSTEM_INIT_ERROR, "consul resolver", "service is no address available")
+		return nil, lastIndex, base.NewError(base.ErrCodeBaseSystemInit, "consul resolver", "service is no address available")
 	}
 	var instances []string
 	for _, service := range services {
@@ -149,7 +150,7 @@ func (r *ConsulResolver) getInstances(lastIndex uint64) ([]string, uint64, error
 
 // makeUpdates calculates the difference between and old and a new set of
 // instances and turns it into an array of naming.Updates.
-func (r *ConsulResolver) makeUpdates(oldInstances, newInstances []string) []*naming.Update {
+func (r *_ConsulResolver) makeUpdates(oldInstances, newInstances []string) []*naming.Update {
 	oldAddr := make(map[string]struct{}, len(oldInstances))
 	for _, instance := range oldInstances {
 		oldAddr[instance] = struct{}{}

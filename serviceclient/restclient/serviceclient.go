@@ -9,7 +9,7 @@ import (
 	"github.com/coffeehc/microserviceboot/base"
 )
 
-const err_scope_restClient = "restClient"
+const errScopeRestClient = "restClient"
 
 type ServiceClient interface {
 	GetBaseUrl() string
@@ -19,7 +19,7 @@ type ServiceClient interface {
 
 func NewServiceClient(serviceInfo base.ServiceInfo, httpClientConfig *HttpClientConfiguration, discoveryConfig interface{}) (ServiceClient, base.Error) {
 	if httpClientConfig == nil {
-		httpClientConfig = Default_HttpClientConfiguration
+		httpClientConfig = defaultHttpClientConfiguration
 	}
 	rootCxt := context.TODO()
 	var httpClient HttpClient = nil
@@ -37,10 +37,10 @@ func NewServiceClient(serviceInfo base.ServiceInfo, httpClientConfig *HttpClient
 		}
 		httpClient, err = newHttpClientByConsul(serviceInfo, *c, httpClientConfig, rootCxt)
 	default:
-		err = base.NewError(base.ERRCODE_BASE_SYSTEM_INIT_ERROR, err_scope_restClient, fmt.Sprintf("无法识别的配置类型,%#v", discoveryConfig))
+		err = base.NewError(base.ErrCodeBaseSystemInit, errScopeRestClient, fmt.Sprintf("无法识别的配置类型,%#v", discoveryConfig))
 	}
 	if err != nil {
-		return nil, base.NewError(base.ERRCODE_BASE_SYSTEM_INIT_ERROR, err_scope_restClient, fmt.Sprintf("不能识别的 config 类型:%#v", discoveryConfig))
+		return nil, base.NewError(base.ErrCodeBaseSystemInit, errScopeRestClient, fmt.Sprintf("不能识别的 config 类型:%#v", discoveryConfig))
 	}
 	return &_ServiceClient{
 		client:      httpClient,
@@ -80,5 +80,5 @@ func (this *_ServiceClient) Call(cxt context.Context, request Request) (Response
 	if bErr, ok := err.(base.Error); ok {
 		return response, bErr
 	}
-	return response, base.NewErrorWrapper(err_scope_restClient, err)
+	return response, base.NewErrorWrapper(errScopeRestClient, err)
 }

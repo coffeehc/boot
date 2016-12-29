@@ -2,10 +2,12 @@ package restboot
 
 import "github.com/coffeehc/microserviceboot/serviceboot"
 
+//Config restboot config
 type Config struct {
-	BaseConfig *serviceboot.ServiceConfig `yaml:"base_config"`
+	ServiceConfig *serviceboot.ServiceConfig `yaml:"service_config"`
 }
 
-func (this *Config) GetServiceConfig() *serviceboot.ServiceConfig {
-	return this.BaseConfig
+//GetServiceConfig 实现的 ServiceConfiguration 的接口
+func (config *Config) GetServiceConfig() *serviceboot.ServiceConfig {
+	return config.ServiceConfig
 }

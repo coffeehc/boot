@@ -4,11 +4,12 @@ import (
 	"net/http"
 
 	"encoding/json"
-	"github.com/coffeehc/microserviceboot/base"
-	"github.com/coreos/etcd/Godeps/_workspace/src/github.com/gogo/protobuf/proto"
 	"io"
 	"io/ioutil"
 	"net/url"
+
+	"github.com/coffeehc/microserviceboot/base"
+	"github.com/golang/protobuf/proto"
 )
 
 const err_scope_rest_response = "rest response"

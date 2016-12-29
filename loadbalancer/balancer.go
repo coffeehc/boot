@@ -1,33 +1,39 @@
 package loadbalancer
 
+//代码是从 grpc 的 balancer 里面拷贝过来的
 import (
 	"errors"
 	"fmt"
+	"sync"
+
 	"github.com/coffeehc/logger"
 	"github.com/coffeehc/microserviceboot/base"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/naming"
-	"sync"
 )
 
-const err_scope_balance = "loadbalnace"
+const errScopeBalance = "loadbalnace"
 
-var ErrClientConnClosing = errors.New("the client connection is closing")
+var errClientConnClosing = errors.New("the client connection is closing")
 
+//Address 负载均衡的目标地址
 type Address struct {
 	Addr     string
 	Metadata interface{}
 }
 
+//BalancerConfig  Balancer配置
 type BalancerConfig struct {
 	DialCreds credentials.TransportCredentials
 }
 
+//BalancerGetOptions  Balancer获取是的设置,主要控制获取地址时是否堵塞
 type BalancerGetOptions struct {
 	BlockingWait bool
 }
 
+//Balancer Balancer接口
 type Balancer interface {
 	Start(target string, config BalancerConfig) error
 	Up(addr Address) (down func(error))
@@ -65,6 +71,7 @@ type addrInfo struct {
 	connected bool
 }
 
+//RoundRobin 构建RoundRobin方式的 balancer
 func RoundRobin(r naming.Resolver) Balancer {
 	return &roundRobin{r: r}
 }
@@ -127,7 +134,7 @@ func (rr *roundRobin) watchAddrUpdates() error {
 		open[i] = v.addr
 	}
 	if rr.done {
-		return ErrClientConnClosing
+		return errClientConnClosing
 	}
 	//此处不要判断 open 是否为空,否则关掉的节点在 clientconn 里面永远不能删除了
 	rr.addrCh <- open
@@ -138,7 +145,7 @@ func (rr *roundRobin) Start(target string, config BalancerConfig) error {
 	rr.mu.Lock()
 	defer rr.mu.Unlock()
 	if rr.done {
-		return ErrClientConnClosing
+		return errClientConnClosing
 	}
 	if rr.r == nil {
 		// If there is no name resolver installed, it is not needed to
@@ -208,7 +215,7 @@ func (rr *roundRobin) Get(ctx context.Context, opts BalancerGetOptions) (addr Ad
 	rr.mu.Lock()
 	if rr.done {
 		rr.mu.Unlock()
-		err = ErrClientConnClosing
+		err = errClientConnClosing
 		return
 	}
 
@@ -235,7 +242,7 @@ func (rr *roundRobin) Get(ctx context.Context, opts BalancerGetOptions) (addr Ad
 	if !opts.BlockingWait {
 		if len(rr.addrs) == 0 {
 			rr.mu.Unlock()
-			err = base.NewError(-1, err_scope_balance, "there is no address available")
+			err = base.NewError(-1, errScopeBalance, "there is no address available")
 			return
 		}
 		// Returns the next addr on rr.addrs for failfast RPCs.
@@ -261,7 +268,7 @@ func (rr *roundRobin) Get(ctx context.Context, opts BalancerGetOptions) (addr Ad
 			rr.mu.Lock()
 			if rr.done {
 				rr.mu.Unlock()
-				err = ErrClientConnClosing
+				err = errClientConnClosing
 				return
 			}
 

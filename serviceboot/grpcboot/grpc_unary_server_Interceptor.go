@@ -2,85 +2,94 @@ package grpcboot
 
 import (
 	"fmt"
+	"sync"
+
 	"github.com/coffeehc/microserviceboot/base"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
-	"sync"
 )
 
-var _unartServerInterceptor = newUnartServerInterceptor()
+const (
+	_internalUnaryServerInfo = "_internal_UnaryServerInfo"
+	_internalHandler         = "_internal_handler"
+)
 
-func AppendUnartServerInterceptor(name string, unaryServerInterceptor grpc.UnaryServerInterceptor) base.Error {
-	return _unartServerInterceptor.AppendInterceptor(name, unaryServerInterceptor)
+var _unaryServerInterceptor = newUnaryServerInterceptor()
+
+//AppendUnaryServerInterceptor 追加新的UnaryServerInterceptor
+func AppendUnaryServerInterceptor(name string, unaryServerInterceptor grpc.UnaryServerInterceptor) base.Error {
+	return _unaryServerInterceptor.AppendInterceptor(name, unaryServerInterceptor)
 }
 
-func newUnartServerInterceptor() *unartServerInterceptor {
-	return &unartServerInterceptor{
-		interceptors: make(map[string]*wapperUnartServerInterceptor),
-		rootInterceptor: &wapperUnartServerInterceptor{
-			interceptor: paincInterceptor,
+func newUnaryServerInterceptor() *unaryServerInterceptor {
+	return &unaryServerInterceptor{
+		interceptors: make(map[string]*unaryServerInterceptorWapper),
+		rootInterceptor: &unaryServerInterceptorWapper{
+			interceptor: catchPanicInterceptor,
 		},
 		mutex: new(sync.Mutex),
 	}
 }
 
-type unartServerInterceptor struct {
-	interceptors    map[string]*wapperUnartServerInterceptor
-	rootInterceptor *wapperUnartServerInterceptor
+type unaryServerInterceptor struct {
+	interceptors    map[string]*unaryServerInterceptorWapper
+	rootInterceptor *unaryServerInterceptorWapper
 	mutex           *sync.Mutex
 }
 
-func (this *unartServerInterceptor) Interceptor(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp interface{}, err error) {
-	return this.rootInterceptor.interceptor(context.WithValue(context.WithValue(ctx, "_internal_UnaryServerInfo", info), "_internal_handler", handler), req, info, this.rootInterceptor.handler)
+func (usi *unaryServerInterceptor) Interceptor(cxt context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp interface{}, err error) {
+	cxt = context.WithValue(cxt, _internalUnaryServerInfo, info)
+	cxt = context.WithValue(cxt, _internalHandler, handler)
+	return usi.rootInterceptor.interceptor(cxt, req, info, usi.rootInterceptor.handler)
 }
 
-func (this *unartServerInterceptor) AppendInterceptor(name string, interceptor grpc.UnaryServerInterceptor) base.Error {
-	this.mutex.Lock()
-	defer this.mutex.Unlock()
-	if _, ok := this.interceptors[name]; ok {
-		return base.NewError(base.ERRCODE_BASE_SYSTEM_INIT_ERROR, "grpc interceptor", fmt.Sprintf("%s 已经存在", name))
+func (usi *unaryServerInterceptor) AppendInterceptor(name string, interceptor grpc.UnaryServerInterceptor) base.Error {
+	usi.mutex.Lock()
+	defer usi.mutex.Unlock()
+	if _, ok := usi.interceptors[name]; ok {
+		return base.NewError(base.ErrCodeBaseSystemInit, "grpc interceptor", fmt.Sprintf("%s 已经存在", name))
 	}
-	lastInterceptor := getLastUnaryServerInterceptor(this.rootInterceptor)
-	lastInterceptor.next = &wapperUnartServerInterceptor{interceptor: interceptor}
-	this.interceptors[name] = lastInterceptor.next
+	lastInterceptor := getLastUnaryServerInterceptor(usi.rootInterceptor)
+	lastInterceptor.next = &unaryServerInterceptorWapper{interceptor: interceptor}
+	usi.interceptors[name] = lastInterceptor.next
 	return nil
 }
 
-func getLastUnaryServerInterceptor(root *wapperUnartServerInterceptor) *wapperUnartServerInterceptor {
+func getLastUnaryServerInterceptor(root *unaryServerInterceptorWapper) *unaryServerInterceptorWapper {
 	if root.next == nil {
 		return root
 	}
 	return getLastUnaryServerInterceptor(root.next)
 }
 
-type wapperUnartServerInterceptor struct {
+type unaryServerInterceptorWapper struct {
 	interceptor grpc.UnaryServerInterceptor
-	next        *wapperUnartServerInterceptor
+	next        *unaryServerInterceptorWapper
 }
 
-func (this *wapperUnartServerInterceptor) handler(ctx context.Context, req interface{}) (interface{}, error) {
-	if this.next == nil {
-		realHandler := ctx.Value("_internal_handler")
+func (usiw *unaryServerInterceptorWapper) handler(ctx context.Context, req interface{}) (interface{}, error) {
+	if usiw.next == nil {
+		realHandler := ctx.Value(_internalHandler)
 		if realHandler == nil {
-			return nil, base.NewError(base.ERRCODE_BASE_SYSTEM_NIL, "grpc handler", "没有 Handler")
+			return nil, base.NewError(base.ErrCodeBaseSystemNil, "grpc handler", "没有 Handler")
 		}
 		if handler, ok := realHandler.(grpc.UnaryHandler); ok {
 			return handler(ctx, req)
 		}
-		return nil, base.NewError(base.ERRCODE_BASE_SYSTEM_TYPE_CONV_ERROR, "grpc handler", "类型错误")
+		return nil, base.NewError(base.ErrCodeBaseSystemTypeConversion, "grpc handler", "类型错误")
 	}
-	info := ctx.Value("_internal_UnaryServerInfo")
+	info := ctx.Value(_internalUnaryServerInfo)
 	if info == 0 {
-		return nil, base.NewError(base.ERRCODE_BASE_SYSTEM_NIL, "grpc interceptor", "没有 ServerInfo")
+		return nil, base.NewError(base.ErrCodeBaseSystemNil, "grpc interceptor", "没有 ServerInfo")
 	}
 	if unaryServerInfo, ok := info.(*grpc.UnaryServerInfo); ok {
-		return this.next.interceptor(ctx, req, unaryServerInfo, this.next.handler)
+		return usiw.next.interceptor(ctx, req, unaryServerInfo, usiw.next.handler)
 	}
-	return nil, base.NewError(base.ERRCODE_BASE_SYSTEM_TYPE_CONV_ERROR, "grpc interceptor", "类型错误")
+	return nil, base.NewError(base.ErrCodeBaseSystemTypeConversion, "grpc interceptor", "类型错误")
 }
 
-func paincInterceptor(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp interface{}, err error) {
+func catchPanicInterceptor(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp interface{}, err error) {
 	defer func() {
 		if r := recover(); r != nil {
 			if _err, ok := r.(base.Error); ok {

@@ -5,23 +5,23 @@ import (
 	"google.golang.org/grpc/naming"
 )
 
-func NewSimpleBalancer(addrs []string) (Balancer, base.Error) {
-	r, err := NewSimpleResolver(addrs)
+func newAddrArrayBalancer(addrs []string) (Balancer, base.Error) {
+	r, err := newAddrArrayResolver(addrs)
 	if err != nil {
 		return nil, err
 	}
 	return RoundRobin(r), nil
 }
 
-type SimpleResolver struct {
+type addrArrayResolver struct {
 	updatesc chan []*naming.Update
 }
 
-func NewSimpleResolver(addrs []string) (*SimpleResolver, base.Error) {
+func newAddrArrayResolver(addrs []string) (*addrArrayResolver, base.Error) {
 	if addrs == nil || len(addrs) == 0 {
-		return nil, base.NewError(-1, err_scope_balance, "addrs is nil")
+		return nil, base.NewError(-1, errScopeBalance, "addrs is nil")
 	}
-	resolver := &SimpleResolver{
+	resolver := &addrArrayResolver{
 		updatesc: make(chan []*naming.Update, 1),
 	}
 	go func() {
@@ -37,14 +37,14 @@ func NewSimpleResolver(addrs []string) (*SimpleResolver, base.Error) {
 	return resolver, nil
 }
 
-func (this *SimpleResolver) Resolve(target string) (naming.Watcher, error) {
-	return this, nil
+func (sr *addrArrayResolver) Resolve(target string) (naming.Watcher, error) {
+	return sr, nil
 }
 
-func (this *SimpleResolver) Next() ([]*naming.Update, error) {
-	return <-this.updatesc, nil
+func (sr *addrArrayResolver) Next() ([]*naming.Update, error) {
+	return <-sr.updatesc, nil
 }
 
-func (this *SimpleResolver) Close() {
-	close(this.updatesc)
+func (sr *addrArrayResolver) Close() {
+	close(sr.updatesc)
 }

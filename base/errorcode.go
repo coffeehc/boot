@@ -1,48 +1,72 @@
 package base
 
 const (
-	ERRCODE_SCOPE_BASE = 0x00000000
+	//ErrCodeScopeBase 基础的 ErrCode
+	ErrCodeScopeBase = 0x00000000
 )
 
 const (
-	ERRCODE_SCOPE_BASE_SYSTEM = ERRCODE_SCOPE_BASE | 0x00000100
-	ERRCODE_SCOPE_BASE_RPC    = ERRCODE_SCOPE_BASE | 0x00000200
+	//ErrCodeScopeBaseSystem 系统级别的 ErrCode
+	ErrCodeScopeBaseSystem = ErrCodeScopeBase | 0x00000100
+	//ErrCodeScopeBaseRPC RPC级别的 ErrCode
+	ErrCodeScopeBaseRPC = ErrCodeScopeBase | 0x00000200
 )
 
 var (
-	ERRCODE_BASE_SYSTEM_UNKNOWN                int64 = ERRCODE_SCOPE_BASE_SYSTEM | 0x0  //未知错误
-	ERRCODE_BASE_SYSTEM_INIT_ERROR             int64 = ERRCODE_SCOPE_BASE_SYSTEM | 0x1  //初始化失败
-	ERRCODE_BASE_SYSTEM_CONFIG_ERROR           int64 = ERRCODE_SCOPE_BASE_SYSTEM | 0x2  // 配置错误
-	ERRCODE_BASE_SYSTEM_INVALID_PARAM          int64 = ERRCODE_SCOPE_BASE_SYSTEM | 0x4  //无效参数
-	ERRCODE_BASE_SYSTEM_MARSHAL_ERROR          int64 = ERRCODE_SCOPE_BASE_SYSTEM | 0x5  //序列化错误
-	ERRCODE_BASE_SYSTEM_UNMARSHAL_ERROR        int64 = ERRCODE_SCOPE_BASE_SYSTEM | 0x6  //反序列化错误
-	ERRCODE_BASE_SYSTEM_ENCODE_ERROR           int64 = ERRCODE_SCOPE_BASE_SYSTEM | 0x7  //编码错误
-	ERRCODE_BASE_SYSTEM_DECODE_ERROR           int64 = ERRCODE_SCOPE_BASE_SYSTEM | 0x8  //解码错误
-	ERRCODE_BASE_SYSTEM_SERVICE_REGISTER_ERROR int64 = ERRCODE_SCOPE_BASE_SYSTEM | 0x9  //注册服务失败
-	ERRCODE_BASE_SYSTEM_TYPE_CONV_ERROR        int64 = ERRCODE_SCOPE_BASE_SYSTEM | 0x10 // 类型转换错误
-	ERRCODE_BASE_SYSTEM_NIL                    int64 = ERRCODE_SCOPE_BASE_SYSTEM | 0x11 // 空指针
+	//ErrCodeBaseSystemUnknown 未知错误
+	ErrCodeBaseSystemUnknown int64 = ErrCodeScopeBaseSystem | 0x0
+	//ErrCodeBaseSystemInit 初始化失败
+	ErrCodeBaseSystemInit int64 = ErrCodeScopeBaseSystem | 0x1
+	//ErrCodeBaseSystemConfig 配置错误
+	ErrCodeBaseSystemConfig int64 = ErrCodeScopeBaseSystem | 0x2
+	//ErrCodeBaseSystemInvalidParam 无效参数
+	ErrCodeBaseSystemInvalidParam int64 = ErrCodeScopeBaseSystem | 0x4
+	//ErrCodeBaseSystemMarshal 序列化错误
+	ErrCodeBaseSystemMarshal int64 = ErrCodeScopeBaseSystem | 0x5
+	//ErrCodeBaseSystemUnmarshal 反序列化错误
+	ErrCodeBaseSystemUnmarshal int64 = ErrCodeScopeBaseSystem | 0x6
+	//ErrCodeBaseSystemEncode 编码错误
+	ErrCodeBaseSystemEncode int64 = ErrCodeScopeBaseSystem | 0x7
+	//ErrCodeBaseSystemDecode 解码错误
+	ErrCodeBaseSystemDecode int64 = ErrCodeScopeBaseSystem | 0x8
+	//ErrCodeBaseSystemServiceRegister 注册服务失败
+	ErrCodeBaseSystemServiceRegister int64 = ErrCodeScopeBaseSystem | 0x9
+	//ErrCodeBaseSystemTypeConversion 类型转换错误
+	ErrCodeBaseSystemTypeConversion int64 = ErrCodeScopeBaseSystem | 0x10
+	//ErrCodeBaseSystemNil 空指针
+	ErrCodeBaseSystemNil int64 = ErrCodeScopeBaseSystem | 0x11
 )
 var (
-	ERRCODE_BASE_RPC_UNKNOWN             int64 = ERRCODE_SCOPE_BASE_RPC | 0x0 //请求错误,原因未知
-	ERRCODE_BASE_RPC_CANCELLED           int64 = ERRCODE_SCOPE_BASE_RPC | 0x3 //请求被取消
-	ERRCODE_BASE_RPC_INVALID_ARGUMENT    int64 = ERRCODE_SCOPE_BASE_RPC | 0x4 //无效参数
-	ERRCODE_BASE_RPC_DEADLINE_EXCEEDED   int64 = ERRCODE_SCOPE_BASE_RPC | 0x5 //超时
-	ERRCODE_BASE_RPC_NOT_FOUND           int64 = ERRCODE_SCOPE_BASE_RPC | 0x6
-	ERRCODE_BASE_RPC_ALREADY_EXISTS      int64 = ERRCODE_SCOPE_BASE_RPC | 0x7  //已经存在的实例再创建的时候错误
-	ERRCODE_BASE_RPC_PERMISSION_DENIED   int64 = ERRCODE_SCOPE_BASE_RPC | 0x8  //权限不足
-	ERRCODE_BASE_RPC_RESOURCE_EXHAUSTED  int64 = ERRCODE_SCOPE_BASE_RPC | 0x9  //资源耗尽
-	ERRCODE_BASE_RPC_FAILED_PRECONDITION int64 = ERRCODE_SCOPE_BASE_RPC | 0xa  //前置条件失败
-	ERRCODE_BASE_RPC_ABORTED             int64 = ERRCODE_SCOPE_BASE_RPC | 0xb  //中途失败
-	ERRCODE_BASE_RPC_OUT_OF_RANGE        int64 = ERRCODE_SCOPE_BASE_RPC | 0xc  //超出范围
-	ERRCODE_BASE_RPC_UNIMPLEMENTED       int64 = ERRCODE_SCOPE_BASE_RPC | 0xd  //没有实现
-	ERRCODE_BASE_RPC_INTERNAL            int64 = ERRCODE_SCOPE_BASE_RPC | 0xe  //内部错误
-	ERRCODE_BASE_RPC_UNAVAILABLE         int64 = ERRCODE_SCOPE_BASE_RPC | 0xf  //服务不可用
-	ERRCODE_BASE_RPC_DATA_LOSS           int64 = ERRCODE_SCOPE_BASE_RPC | 0x10 //数据丢失
-	ERRCODE_BASE_RPC_UNAUTHENTICATED     int64 = ERRCODE_SCOPE_BASE_RPC | 0x11 //没有认证
+	//ErrCodeBaseRPCUnknown 请求错误,原因未知
+	ErrCodeBaseRPCUnknown int64 = ErrCodeScopeBaseRPC | 0x0
+	//ErrCodeBaseRPCCancelled 请求被取消
+	ErrCodeBaseRPCCancelled int64 = ErrCodeScopeBaseRPC | 0x3
+	//ErrCodeBaseRPCInvalidArgument 无效参数
+	ErrCodeBaseRPCInvalidArgument int64 = ErrCodeScopeBaseRPC | 0x4
+	//ErrCodeBaseRPCTimeout 超时
+	ErrCodeBaseRPCTimeout int64 = ErrCodeScopeBaseRPC | 0x5
+	//ErrCodeBaseRPCNotFount 没有找到资源
+	ErrCodeBaseRPCNotFount int64 = ErrCodeScopeBaseRPC | 0x6
+	//ErrCodeBaseRPCAlreadyExests 已经存在的实例再创建的时候错误
+	ErrCodeBaseRPCAlreadyExests int64 = ErrCodeScopeBaseRPC | 0x7
+	//ErrCodeBaseRPCPermissionDenied 权限不足
+	ErrCodeBaseRPCPermissionDenied int64 = ErrCodeScopeBaseRPC | 0x8
+	//ErrCodeBaseRPCResourceExhausted 资源耗尽
+	ErrCodeBaseRPCResourceExhausted int64 = ErrCodeScopeBaseRPC | 0x9
+	//ErrCodeBaseRPCFailedPrecondition 前置条件失败
+	ErrCodeBaseRPCFailedPrecondition int64 = ErrCodeScopeBaseRPC | 0xa
+	//ErrCodeBaseRPCAborted 中途失败
+	ErrCodeBaseRPCAborted int64 = ErrCodeScopeBaseRPC | 0xb
+	//ErrCodeBaseRPCOutOfRange 超出范围
+	ErrCodeBaseRPCOutOfRange int64 = ErrCodeScopeBaseRPC | 0xc
+	//ErrCodeBaseRPCUnImplemented 没有实现
+	ErrCodeBaseRPCUnImplemented int64 = ErrCodeScopeBaseRPC | 0xd
+	//ErrCodeBaseRPCInternal 内部错误
+	ErrCodeBaseRPCInternal int64 = ErrCodeScopeBaseRPC | 0xe
+	//ErrCodeBaseRPCUnAvailable 服务不可用
+	ErrCodeBaseRPCUnAvailable int64 = ErrCodeScopeBaseRPC | 0xf
+	//ErrCodeBaseRPCDataLoss 数据丢失
+	ErrCodeBaseRPCDataLoss int64 = ErrCodeScopeBaseRPC | 0x10
+	//ErrCodeBaseRPCUnAuthenticated 没有认证
+	ErrCodeBaseRPCUnAuthenticated int64 = ErrCodeScopeBaseRPC | 0x11
 )
-
-func GetErrorDescriptor(code int64) string {
-	return _errcodeMap[code]
-}
-
-var _errcodeMap = map[int64]string{}

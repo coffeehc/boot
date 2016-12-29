@@ -17,7 +17,7 @@ const err_scope_rest_request = "rest request"
 
 type Request interface {
 	GetCommand() string
-	Init(baseUrl string, endpointMeta *restbase.EndPointMeta) base.Error
+	Init(baseUrl string, endpointMeta *restbase.EndpointMeta) base.Error
 	SetPathParam(map[string]string) base.Error
 	SetQueryParam(values url.Values) base.Error
 	EncodeBody(data interface{}, handler RequestBodyEncoder) base.Error
@@ -40,7 +40,7 @@ func (this *_Request) GetCommand() string {
 	return this.command
 }
 
-func (this *_Request) Init(baseUrl string, endpointMeta *restbase.EndPointMeta) base.Error {
+func (this *_Request) Init(baseUrl string, endpointMeta *restbase.EndpointMeta) base.Error {
 	_url, err := url.Parse(baseUrl + endpointMeta.Path)
 	if err != nil {
 		return base.NewErrorWrapper(err_scope_rest_request, err)
@@ -77,7 +77,7 @@ type RequestBodyEncoder func(data interface{}, request *http.Request) base.Error
 func RequestFormBodyEncoder(data interface{}, request *http.Request) base.Error {
 	values, ok := data.(url.Values)
 	if !ok {
-		return base.NewError(base.ERRCODE_BASE_SYSTEM_TYPE_CONV_ERROR, err_scope_rest_request, "request body 参数不是 url.Values类型")
+		return base.NewError(base.ErrCodeBaseSystemTypeConversion, err_scope_rest_request, "request body 参数不是 url.Values类型")
 	}
 	request.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	request.Body = ioutil.NopCloser(strings.NewReader(values.Encode()))
@@ -88,7 +88,7 @@ func RequestJsonBodyEncoder(data interface{}, request *http.Request) base.Error 
 	request.Header.Set("Content-Type", "application/json")
 	d, err := json.Marshal(data)
 	if err != nil {
-		return base.NewError(base.ERRCODE_BASE_SYSTEM_MARSHAL_ERROR, err_scope_rest_request, err.Error())
+		return base.NewError(base.ErrCodeBaseSystemMarshal, err_scope_rest_request, err.Error())
 	}
 	request.Body = ioutil.NopCloser(bytes.NewReader(d))
 	return nil
@@ -102,7 +102,7 @@ func RequestPBBodyEncoder(data interface{}, request *http.Request) base.Error {
 	request.Header.Set("Content-Type", "application/x-protobuf")
 	d, err := proto.Marshal(message)
 	if err != nil {
-		return base.NewError(base.ERRCODE_BASE_SYSTEM_MARSHAL_ERROR, err_scope_rest_request, err.Error())
+		return base.NewError(base.ErrCodeBaseSystemMarshal, err_scope_rest_request, err.Error())
 	}
 	request.Body = ioutil.NopCloser(bytes.NewReader(d))
 	return nil

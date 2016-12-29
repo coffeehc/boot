@@ -1,10 +1,13 @@
 package base
 
 import (
-	"github.com/pquerna/ffjson/ffjson"
 	"net/http"
+
+	"github.com/coffeehc/commons/convers"
+	"github.com/pquerna/ffjson/ffjson"
 )
 
+// Error 基础的错误接口
 type Error interface {
 	error
 	GetErrorCode() int64
@@ -12,58 +15,78 @@ type Error interface {
 	Message() string
 }
 
-type BaseError struct {
+//BaseError Error 接口的实现,可 json 序列化
+type baseError struct {
 	Scope     string `json:"scope"`
 	DebugCode int64  `json:"debug_code"`
 	Msg       string `json:"msg"`
 }
 
-func (err *BaseError) Error() string {
+func (err *baseError) Error() string {
 	data, _ := ffjson.Marshal(err)
-	return string(data)
+	return convers.BytesToString(data)
 }
 
-func (err *BaseError) GetErrorCode() int64 {
+func (err *baseError) GetErrorCode() int64 {
 	return err.DebugCode
 }
-func (err *BaseError) Scopes() string {
+func (err *baseError) Scopes() string {
 	return err.Scope
 }
 
-func (err *BaseError)Message() string{
+func (err *baseError) Message() string {
 	return err.Msg
 }
 
+//ParseErrorFromJSON 从 Jons数据解析出 Error 对象
+func ParseErrorFromJSON(data []byte) Error {
+	err := &baseError{}
+	e := ffjson.Unmarshal(data, err)
+	if e != nil {
+		return nil
+	}
+	return err
+}
+
+//NewError 构建一个新的 Error
 func NewError(debugCode int64, scope string, errMsg string) Error {
-	return &BaseError{
+	return &baseError{
 		Scope:     scope,
 		Msg:       errMsg,
 		DebugCode: debugCode,
 	}
 }
 
-type _ErrorWrapper struct {
-	BaseError
+type errorWrapper struct {
+	baseError
 	Err error `json:"err"`
 }
 
+//NewErrorWrapper 创建一个对普通的 error的封装
 func NewErrorWrapper(scope string, err error) Error {
-	return &_ErrorWrapper{BaseError: BaseError{Scope: scope, DebugCode: ERRCODE_BASE_SYSTEM_UNKNOWN, Msg: err.Error()}, Err: err}
+	return &errorWrapper{baseError: baseError{Scope: scope, DebugCode: ErrCodeBaseSystemUnknown, Msg: err.Error()}, Err: err}
 }
 
-type ErrorResponse struct {
-	BaseError
-	HttpCode        int    `json:"http_code"`
+//ErrorResponse 对http error的封装
+type ErrorResponse interface {
+	Error
+	GetHTTPCode() int
+}
+
+type errorResponse struct {
+	baseError
+	HTTPCode        int    `json:"http_code"`
 	InformationLink string `json:"information_link"`
 }
 
-func (err ErrorResponse) GetHttpCode() int {
-	if err.HttpCode == 0 {
+func (err *errorResponse) GetHTTPCode() int {
+	if err.HTTPCode == 0 {
 		return http.StatusBadRequest
 	}
-	return err.HttpCode
+	return err.HTTPCode
 }
 
-func NewErrorResponse(httpCode int, errorCode int64, message, informationLink string) *ErrorResponse {
-	return &ErrorResponse{BaseError: BaseError{Scope: "response", DebugCode: errorCode, Msg: message}, HttpCode: httpCode, InformationLink: informationLink}
+//NewErrorResponse 创建一个 Response 的 Error
+func NewErrorResponse(httpCode int, errorCode int64, message, informationLink string) ErrorResponse {
+	return &errorResponse{baseError: baseError{Scope: "response", DebugCode: errorCode, Msg: message}, HTTPCode: httpCode, InformationLink: informationLink}
 }

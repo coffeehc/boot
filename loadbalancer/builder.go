@@ -5,17 +5,18 @@ import (
 	"golang.org/x/net/context"
 )
 
+//BalancerBuilder balancer 构建接口
 type BalancerBuilder interface {
 	NewBalancer(cxt context.Context, serviceInfo base.ServiceInfo) (Balancer, base.Error)
 }
 
-type SimpleBalancerBuilder struct {
+type _BalancerBuilder struct {
 	Addrs []string
 }
 
-func (this *SimpleBalancerBuilder) NewBalancer(cxt context.Context, serviceInfo base.ServiceInfo) (Balancer, base.Error) {
-	if len(this.Addrs) == 0 {
-		return nil, base.NewError(base.ERRCODE_BASE_SYSTEM_INIT_ERROR, "BalancerBuilder", "no addrs")
+func (bb *_BalancerBuilder) NewBalancerWithAddrArray(cxt context.Context, serviceInfo base.ServiceInfo) (Balancer, base.Error) {
+	if len(bb.Addrs) == 0 {
+		return nil, base.NewError(base.ErrCodeBaseSystemInit, "BalancerBuilder", "no addrs")
 	}
-	return NewSimpleBalancer(this.Addrs)
+	return newAddrArrayBalancer(bb.Addrs)
 }
