@@ -6,10 +6,17 @@ import (
 	"github.com/hashicorp/consul/api"
 )
 
-//NewConsulClient 创建一个新的 Consul Client
-func NewConsulClient(configPath string) (*api.Client, base.Error) {
-	consulConfig := loadConsulConfig(configPath)
-	consulClient, err := api.NewClient(warpConsulConfig(consulConfig))
+//NewClientByConfigFile 通过配置文件创建一个新的 Consul Client
+func NewClientByConfigFile(configPath string) (*api.Client, base.Error) {
+	config := loadConsulConfig(configPath)
+	return NewClient(config)
+}
+//NewClient 创建 consul client
+func NewClient(config *ConsulConfig) (*api.Client, base.Error){
+	if config == nil{
+		config = &ConsulConfig{}
+	}
+	consulClient, err := api.NewClient(warpConsulConfig(config))
 	if err != nil {
 		logger.Error("创建 Consul Client 失败")
 		return nil, base.NewError(base.ErrCodeBaseSystemInit, "consul init", err.Error())

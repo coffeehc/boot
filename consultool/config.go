@@ -32,8 +32,8 @@ func loadConsulConfig(configPath string) *ConsulConfig {
 type ConsulConfig struct {
 	Address    string         `yaml:"address"`
 	Scheme     string         `yaml:"scheme"`
-	DataCenter string         `yaml:"daraCenter"`
-	WaitTime   time.Duration  `yaml:"waitTime"`
+	DataCenter string         `yaml:"data_center"`
+	WaitTime   time.Duration  `yaml:"wait_time"`
 	Token      string         `yaml:"token"`
 	BasicAuth  *HTTPBasicAuth `yaml:"basic_auth"`
 }

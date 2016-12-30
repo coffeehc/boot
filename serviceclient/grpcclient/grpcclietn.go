@@ -34,7 +34,7 @@ func (client *_GRPCClient) newClientConn(cxt context.Context, serviceInfo base.S
 		grpc.WithCompressor(grpc.NewGZIPCompressor()),
 		grpc.WithDecompressor(grpc.NewGZIPDecompressor()),
 		grpc.WithDialer(func(addr string, timeout time.Duration) (net.Conn, error) {
-			conn, err := net.Dial("tcp", addr)
+			conn, err := net.DialTimeout("tcp", addr, timeout)
 			if err != nil {
 				return nil, &reconnectionError{err: err}
 			}

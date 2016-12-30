@@ -15,26 +15,19 @@ func main() {
 	logger.InitLogger()
 	serviceInfo := base.NewSimpleServiceInfo("simple_service", "0.0.1", "dev", "https", "", "")
 	var e error
-	consulClient, err := consultool.NewConsulClient(nil)
+	consulClient, err := consultool.NewClient(nil)
 	if err != nil {
 		e = err
 		logger.Error("%s", e)
 		time.Sleep(time.Millisecond * 300)
 		return
 	}
-	balanacer, err := consultool.newConsulBalancer(consulClient, serviceInfo)
-	if err != nil {
-		e = err
-		logger.Error("%s", e)
-		time.Sleep(time.Millisecond * 300)
-		return
-	}
-	client := grpcclient.newGRPCClient()
-	clientConn, err := client.NewClientConn(context.Background(), serviceInfo, balanacer, time.Second*30)
-	if err != nil {
-		e = err
-		logger.Error("%s", e)
-		time.Sleep(time.Millisecond * 300)
+	balancerBuilder := consultool.NewConsulBalancerBuilder(consulClient)
+	clientConnFactory := grpcclient.NewClientConnFactory(balancerBuilder)
+	clientConn,err := clientConnFactory.GetClientConn(context.Background(),serviceInfo,0)
+	if err!=nil{
+		logger.Error("error is %s",err)
+		time.Sleep(time.Millisecond*300)
 		return
 	}
 	greeterClient := simplemodel.NewGreeterClient(clientConn)
@@ -42,7 +35,7 @@ func main() {
 	request.Name = time.Now().String()
 	response, err1 := greeterClient.SayHello(context.Background(), request)
 	if err1 != nil {
-		e = base.NewErrorWrapper(err1)
+		e = base.NewErrorWrapper("test",err1)
 		logger.Error("%s", e)
 		time.Sleep(time.Millisecond * 300)
 		return

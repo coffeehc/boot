@@ -5,7 +5,7 @@ import (
 	"google.golang.org/grpc"
 )
 
-type GRpcService interface {
+type GRPCService interface {
 	base.Service
 	GetGRPCOptions() []grpc.ServerOption
 	RegisterServer(s *grpc.Server) base.Error

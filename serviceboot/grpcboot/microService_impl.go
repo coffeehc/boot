@@ -19,9 +19,9 @@ import (
 var GRPCMicroServiceBuilder serviceboot.MicroServiceBuilder = microServiceBuilder
 
 func microServiceBuilder(service base.Service) (serviceboot.MicroService, base.Error) {
-	grpcService, ok := service.(grpcbase.GRpcService)
+	grpcService, ok := service.(grpcbase.GRPCService)
 	if !ok {
-		return nil, base.NewError(-1, "GrpcMicroService build", "service 不是Rest 服务")
+		return nil, base.NewError(-1, "GrpcMicroService build", "service 不是grpc 服务")
 	}
 	return &_GRPCMicroService{
 		service: grpcService,
@@ -29,7 +29,7 @@ func microServiceBuilder(service base.Service) (serviceboot.MicroService, base.E
 }
 
 type _GRPCMicroService struct {
-	service    grpcbase.GRpcService
+	service    grpcbase.GRPCService
 	config     *Config
 	httpServer httpx.Server
 	grpcServer *grpc.Server
