@@ -68,11 +68,9 @@ func (ms *_GRPCMicroService) Init(cxt context.Context) (*serviceboot.ServiceConf
 		grpcOptions = append(grpcOptions, ms.service.GetGRPCOptions()...)
 	}
 	ms.grpcServer = grpc.NewServer(grpcOptions...)
-	if ms.service.Init != nil {
-		err := ms.service.Init(cxt, configPath, httpServer)
-		if err != nil {
-			return nil, err
-		}
+	err := ms.service.Init(cxt, configPath, httpServer)
+	if err != nil {
+		return nil, err
 	}
 	ms.service.RegisterServer(ms.grpcServer)
 	grpc_prometheus.Register(ms.grpcServer)

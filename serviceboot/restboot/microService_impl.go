@@ -47,6 +47,15 @@ func (ms *_RestMicroService) Init(cxt context.Context) (*serviceboot.ServiceConf
 	if err != nil {
 		return nil, err
 	}
+	httpServer, err := serviceboot.NewHTTPServer(serviceConfig.GetHTTPServerConfig(), ms.GetServiceInfo())
+	if err != nil {
+		return nil, err
+	}
+	ms.httpServer = httpServer
+	err = ms.registerEndpoints()
+	if err != nil {
+		return nil, err
+	}
 	if base.IsDevModule() {
 		logger.Debug("open dev module")
 		apiDefineRequestHandler := buildAPIDefineRequestHandler(ms.GetServiceInfo())
@@ -57,20 +66,9 @@ func (ms *_RestMicroService) Init(cxt context.Context) (*serviceboot.ServiceConf
 			ms.httpServer.AddFirstFilter("/*", httpx.AccessLogFilter)
 		}
 	}
-	httpServer, err := serviceboot.NewHTTPServer(serviceConfig.GetHTTPServerConfig(), ms.GetServiceInfo())
+	err := ms.service.Init(cxt, configPath, httpServer)
 	if err != nil {
 		return nil, err
-	}
-	ms.httpServer = httpServer
-	err = ms.registerEndpoints()
-	if err != nil {
-		return nil, err
-	}
-	if ms.service.Init != nil {
-		err := ms.service.Init(cxt, configPath, httpServer)
-		if err != nil {
-			return nil, err
-		}
 	}
 	return serviceConfig, nil
 }
