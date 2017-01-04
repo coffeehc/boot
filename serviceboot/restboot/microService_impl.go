@@ -66,7 +66,7 @@ func (ms *_RestMicroService) Init(cxt context.Context) (*serviceboot.ServiceConf
 			ms.httpServer.AddFirstFilter("/*", httpx.AccessLogFilter)
 		}
 	}
-	err := ms.service.Init(cxt, configPath, httpServer)
+	err = ms.service.Init(cxt, configPath, httpServer)
 	if err != nil {
 		return nil, err
 	}
