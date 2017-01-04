@@ -68,7 +68,7 @@ func (ms *_GRPCMicroService) Init(cxt context.Context) (*serviceboot.ServiceConf
 		grpcOptions = append(grpcOptions, ms.service.GetGRPCOptions()...)
 	}
 	ms.grpcServer = grpc.NewServer(grpcOptions...)
-	err := ms.service.Init(cxt, configPath, httpServer)
+	err = ms.service.Init(cxt, configPath, httpServer)
 	if err != nil {
 		return nil, err
 	}
