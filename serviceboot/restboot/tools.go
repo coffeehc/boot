@@ -2,7 +2,6 @@ package restboot
 
 import (
 	"encoding/base64"
-	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -11,6 +10,7 @@ import (
 	"github.com/coffeehc/logger"
 	"github.com/coffeehc/microserviceboot/base"
 	"github.com/golang/protobuf/proto"
+	"github.com/pquerna/ffjson/ffjson"
 )
 
 const errScopeRest = "rest"
@@ -43,7 +43,7 @@ func UnmarshalWhitJSON(request *http.Request, data interface{}) {
 	if err != nil {
 		panic(err)
 	}
-	err = json.Unmarshal(dataBytes, data)
+	err = ffjson.Unmarshal(dataBytes, data)
 	if err != nil {
 		panic(err)
 	}
