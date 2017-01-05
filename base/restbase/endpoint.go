@@ -4,7 +4,7 @@ import "github.com/coffeehc/httpx"
 
 //EndpointMeta endpoint meta define
 type EndpointMeta struct {
-	Path        string              `json:"patp"`
+	Path        string              `json:"path"`
 	Method      httpx.RequestMethod `json:"method"`
 	Description string              `json:"description"`
 }
