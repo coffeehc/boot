@@ -10,9 +10,9 @@ import (
 	"google.golang.org/grpc/codes"
 )
 
-const (
-	_internalUnaryServerInfo = &"_internal_UnaryServerInfo"
-	_internalHandler         = &"_internal_handler"
+var (
+	_internalUnaryServerInfo = "_internal_UnaryServerInfo"
+	_internalHandler         = "_internal_handler"
 )
 
 var _unaryServerInterceptor = newUnaryServerInterceptor()

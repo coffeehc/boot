@@ -13,6 +13,7 @@ type MicroService interface {
 	Stop()
 	GetService() base.Service
 	GetServiceInfo() base.ServiceInfo
+	AddCleanFunc(func())
 }
 
 //MicroServiceBuilder MicroService Builder function define

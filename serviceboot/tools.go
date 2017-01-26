@@ -13,7 +13,7 @@ import (
 )
 
 //ServiceRegister 服务注册到服务发现中心,暂时支持的就是 consul
-func serviceDiscoverRegister(cxt context.Context, service base.Service, serviceInfo base.ServiceInfo, serviceConfig *ServiceConfig) {
+func serviceDiscoverRegister(cxt context.Context, service base.Service, serviceInfo base.ServiceInfo, serviceConfig *ServiceConfig) func() {
 	serviceDiscoveryRegister, err := service.GetServiceDiscoveryRegister()
 	if err != nil {
 		launchError(fmt.Errorf("获取没有指定serviceDiscoveryRegister失败,注册服务[%s]失败", serviceInfo.GetServiceName()))
@@ -22,12 +22,18 @@ func serviceDiscoverRegister(cxt context.Context, service base.Service, serviceI
 		if serviceDiscoveryRegister == nil {
 			launchError(fmt.Errorf("没有指定serviceDiscoveryRegister,注册服务[%s]失败", serviceInfo.GetServiceName()))
 		}
-		registerError := serviceDiscoveryRegister.RegService(cxt, serviceInfo, serviceConfig.GetHTTPServerConfig().ServerAddr)
+		httpServerConfig, err := serviceConfig.GetHTTPServerConfig()
+		if err != nil {
+			launchError(fmt.Errorf("没有可用的 Http server 的配置,注册服务[%s]失败", serviceInfo.GetServiceName()))
+		}
+		deregister, registerError := serviceDiscoveryRegister.RegService(cxt, serviceInfo, httpServerConfig.ServerAddr)
 		if registerError != nil {
 			launchError(fmt.Errorf("注册服务[%s]失败,%s", serviceInfo.GetServiceName(), registerError.Error()))
 		}
 		logger.Info("注册服务[%s]成功", serviceInfo.GetServiceName())
+		return deregister
 	}
+	return func() {}
 }
 
 func launchError(err error) {

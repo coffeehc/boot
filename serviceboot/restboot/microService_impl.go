@@ -19,6 +19,7 @@ type _RestMicroService struct {
 	config     *Config
 	httpServer httpx.Server
 	service    restbase.RestService
+	cleanFuncs []func()
 }
 
 func microServiceBuild(service base.Service) (serviceboot.MicroService, base.Error) {
@@ -27,7 +28,8 @@ func microServiceBuild(service base.Service) (serviceboot.MicroService, base.Err
 		return nil, base.NewError(-1, "RestMicroService build", "service 不是Rest 服务")
 	}
 	return &_RestMicroService{
-		service: restService,
+		service:    restService,
+		cleanFuncs: make([]func(), 0),
 	}, nil
 }
 
@@ -93,11 +95,25 @@ func (ms *_RestMicroService) GetService() base.Service {
 	return ms.service
 }
 
+func (ms *_RestMicroService) AddCleanFunc(f func()) {
+	ms.cleanFuncs = append(ms.cleanFuncs, f)
+}
+
 func (ms *_RestMicroService) Stop() {
 	if ms.httpServer != nil {
 		ms.httpServer.Stop()
 	}
 	internal.StopService(ms.service)
+	for _, f := range ms.cleanFuncs {
+		func() {
+			defer func() {
+				if err := recover(); err != nil {
+					logger.Error("clean func painc :%s", err)
+				}
+			}()
+			f()
+		}()
+	}
 }
 
 func buildAPIDefineRequestHandler(serviceInfo base.ServiceInfo) httpx.RequestHandler {

@@ -7,6 +7,7 @@ import (
 	"net"
 
 	"github.com/coffeehc/httpx"
+	"github.com/coffeehc/logger"
 	"github.com/coffeehc/microserviceboot/base"
 	"github.com/coffeehc/microserviceboot/base/grpcbase"
 	"github.com/coffeehc/microserviceboot/serviceboot"
@@ -24,7 +25,8 @@ func microServiceBuilder(service base.Service) (serviceboot.MicroService, base.E
 		return nil, base.NewError(-1, "GrpcMicroService build", "service 不是grpc 服务")
 	}
 	return &_GRPCMicroService{
-		service: grpcService,
+		service:    grpcService,
+		cleanFuncs: make([]func(), 0),
 	}, nil
 }
 
@@ -33,6 +35,7 @@ type _GRPCMicroService struct {
 	config     *Config
 	httpServer httpx.Server
 	grpcServer *grpc.Server
+	cleanFuncs []func()
 }
 
 func (ms *_GRPCMicroService) Init(cxt context.Context) (*serviceboot.ServiceConfig, base.Error) {
@@ -98,6 +101,10 @@ func (ms *_GRPCMicroService) Start(cxt context.Context) base.Error {
 	return nil
 }
 
+func (ms *_GRPCMicroService) AddCleanFunc(f func()) {
+	ms.cleanFuncs = append(ms.cleanFuncs, f)
+}
+
 func (ms *_GRPCMicroService) Stop() {
 	if ms.httpServer != nil {
 		httpServer := ms.httpServer
@@ -105,6 +112,16 @@ func (ms *_GRPCMicroService) Stop() {
 		httpServer.Stop()
 	}
 	internal.StopService(ms.service)
+	for _, f := range ms.cleanFuncs {
+		func() {
+			defer func() {
+				if err := recover(); err != nil {
+					logger.Error("clean func painc :%s", err)
+				}
+			}()
+			f()
+		}()
+	}
 }
 
 func (ms *_GRPCMicroService) GetService() base.Service {

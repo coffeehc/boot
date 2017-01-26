@@ -21,11 +21,11 @@ func (sc *ServiceConfig) GetHTTPServerConfig() (*httpx.Config, base.Error) {
 		sc.HTTPConfig = new(httpx.Config)
 	}
 	if sc.HTTPConfig.ServerAddr == "" {
-		localIp, err := getLocalIP()
+		localIP, err := getLocalIP()
 		if err != nil {
 			return nil, err
 		}
-		sc.HTTPConfig.ServerAddr = fmt.Sprintf("%s:8888", localIp)
+		sc.HTTPConfig.ServerAddr = fmt.Sprintf("%s:8888", localIP)
 	}
 	sc.HTTPConfig.DefaultRender = httpx.DefaultRenderJSON
 	return sc.HTTPConfig, nil

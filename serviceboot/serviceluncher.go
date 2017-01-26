@@ -70,12 +70,15 @@ func Launch(cxt context.Context, service base.Service, serviceBuilder MicroServi
 	logger.Info("Service starting")
 	err = microService.Start(cxt)
 	if err != nil {
-		logger.Error("service start fail. %s", err)
-		time.Sleep(time.Second)
-		os.Exit(-1)
+		launchError(err)
 	}
-	logger.Info("核心服务启动成功,服务地址:%s,启动耗时:%s", config.GetHTTPServerConfig().ServerAddr, time.Since(startTime))
+	httpServerConfig, err := config.GetHTTPServerConfig()
+	if err != nil {
+		launchError(err)
+	}
+	logger.Info("核心服务启动成功,服务地址:%s,启动耗时:%s", httpServerConfig.ServerAddr, time.Since(startTime))
 	//注册是在服务完全启动之后
-	serviceDiscoverRegister(cxt, microService.GetService(), microService.GetServiceInfo(), config)
+	deregisterFunc := serviceDiscoverRegister(cxt, microService.GetService(), microService.GetServiceInfo(), config)
+	microService.AddCleanFunc(deregisterFunc)
 	return microService, nil
 }

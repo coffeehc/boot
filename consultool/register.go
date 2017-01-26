@@ -28,26 +28,27 @@ func NewConsulServiceRegister(consulClient *api.Client) (base.ServiceDiscoveryRe
 	}, nil
 }
 
-func (csr *consulServiceRegister) RegService(cxt context.Context, serviceInfo base.ServiceInfo, serviceAddr string) base.Error {
+func (csr *consulServiceRegister) RegService(cxt context.Context, serviceInfo base.ServiceInfo, serviceAddr string) (func(), base.Error) {
 	if serviceAddr == "" {
-		return base.NewError(-1, errScopeConsulRegister, "serverAddr is nil")
+		return nil, base.NewError(-1, errScopeConsulRegister, "serverAddr is nil")
 	}
 	tcpAddr, err := net.ResolveTCPAddr("tcp", serviceAddr)
 	if err != nil {
-		return base.NewError(-1, errScopeConsulRegister, "serviceAddr is not a tcp addr")
+		return nil, base.NewError(-1, errScopeConsulRegister, "serviceAddr is not a tcp addr")
 	}
 	addr := tcpAddr.IP.String()
 	if tcpAddr.IP.Equal(net.IPv4zero) {
-		return base.NewError(base.ErrCodeBaseSystemInit, errScopeConsulRegister, "没有指定具体的注册 IP")
+		return nil, base.NewError(base.ErrCodeBaseSystemInit, errScopeConsulRegister, "没有指定具体的注册 IP")
 	}
 	serviceAddr = net.JoinHostPort(addr, strconv.Itoa(tcpAddr.Port))
 	logger.Debug("向Consul注册地址为:%s", serviceAddr)
 	_, port, err := net.SplitHostPort(serviceAddr)
 	if err != nil {
-		return base.NewError(-1, errScopeConsulRegister, "serviceAddr is not a tcp addr")
+		return nil, base.NewError(-1, errScopeConsulRegister, "serviceAddr is not a tcp addr")
 	}
 	p, _ := strconv.Atoi(port)
 	registration := &api.AgentServiceRegistration{
+		ID:                serviceAddr,
 		Name:              serviceInfo.GetServiceName(),
 		Tags:              []string{serviceInfo.GetServiceTag()},
 		Port:              p,
@@ -65,7 +66,10 @@ func (csr *consulServiceRegister) RegService(cxt context.Context, serviceInfo ba
 	err = csr.client.Agent().ServiceRegister(registration)
 	if err != nil {
 		logger.Error("注册服务失败:%s", err)
-		return base.NewError(base.ErrCodeBaseSystemServiceRegister, errScopeConsulRegister, err.Error())
+		return nil, base.NewError(base.ErrCodeBaseSystemServiceRegister, errScopeConsulRegister, err.Error())
 	}
-	return nil
+	return func() {
+		csr.client.Agent().ServiceDeregister(serviceAddr)
+		logger.Info("leave the consul,serviceID is %s", serviceAddr)
+	}, nil
 }
