@@ -11,8 +11,8 @@ import (
 )
 
 const (
-	_internalUnaryServerInfo = "_internal_UnaryServerInfo"
-	_internalHandler         = "_internal_handler"
+	_internalUnaryServerInfo = &"_internal_UnaryServerInfo"
+	_internalHandler         = &"_internal_handler"
 )
 
 var _unaryServerInterceptor = newUnaryServerInterceptor()

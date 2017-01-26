@@ -8,7 +8,7 @@ import (
 	"github.com/coffeehc/microserviceboot/serviceboot"
 )
 
-var configPath = flag.String("config", "", "配置文件路径")
+var configPath = flag.String("config", "./config.yml", "配置文件路径")
 
 //ServiceConfiguration  服务配置接口服务接口定义
 type ServiceConfiguration interface {
@@ -17,7 +17,6 @@ type ServiceConfiguration interface {
 
 //LoadConfig 加载ServiceConfiguration的配置
 func LoadConfig(serviceConfig ServiceConfiguration) (string, base.Error) {
-	*configPath = base.GetDefaultConfigPath(*configPath)
 	err := base.LoadConfig(*configPath, serviceConfig)
 	if err != nil {
 		return "", err

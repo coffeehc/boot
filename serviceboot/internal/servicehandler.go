@@ -7,7 +7,7 @@ import (
 	"github.com/coffeehc/microserviceboot/base"
 )
 
-const err_scope_service_handler = "startService"
+const errScopeServiceHandler = "startService"
 
 //StopService 停止服务
 func StopService(service base.Service) {
@@ -27,14 +27,14 @@ func StartService(service base.Service) (err base.Error) {
 				err = e
 				return
 			}
-			err = base.NewError(base.ErrCodeBaseSystemUnknown, err_scope_service_handler, fmt.Sprintf("service crash,cause is %s", err1))
+			err = base.NewError(base.ErrCodeBaseSystemUnknown, errScopeServiceHandler, fmt.Sprintf("service crash,cause is %s", err1))
 		}
 	}()
 	if service == nil {
-		panic(base.NewError(base.ErrCodeBaseSystemInit, err_scope_service_handler, "没有 Service 的实例"))
+		panic(base.NewError(base.ErrCodeBaseSystemInit, errScopeServiceHandler, "没有 Service 的实例"))
 	}
 	if service.Run == nil {
-		panic(base.NewError(base.ErrCodeBaseSystemInit, err_scope_service_handler, "没有指定Run方法"))
+		panic(base.NewError(base.ErrCodeBaseSystemInit, errScopeServiceHandler, "没有指定Run方法"))
 	}
 	err1 := service.Run()
 	if err1 != nil {

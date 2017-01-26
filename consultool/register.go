@@ -15,9 +15,7 @@ import (
 const errScopeConsulRegister = "consul register"
 
 type consulServiceRegister struct {
-	client    *api.Client
-	serviceID string
-	checkID   string
+	client *api.Client
 }
 
 //NewConsulServiceRegister 构建一个 base.ServiceDiscoveryRegister的基于 consul 的实现实例
@@ -34,18 +32,26 @@ func (csr *consulServiceRegister) RegService(cxt context.Context, serviceInfo ba
 	if serviceAddr == "" {
 		return base.NewError(-1, errScopeConsulRegister, "serverAddr is nil")
 	}
-	csr.serviceID = fmt.Sprintf("%s-%s", serviceInfo.GetServiceName(), serviceAddr)
-	csr.checkID = fmt.Sprintf("service:%s", csr.serviceID)
+	tcpAddr, err := net.ResolveTCPAddr("tcp", serviceAddr)
+	if err != nil {
+		return base.NewError(-1, errScopeConsulRegister, "serviceAddr is not a tcp addr")
+	}
+	addr := tcpAddr.IP.String()
+	if tcpAddr.IP.Equal(net.IPv4zero) {
+		return base.NewError(base.ErrCodeBaseSystemInit, errScopeConsulRegister, "没有指定具体的注册 IP")
+	}
+	serviceAddr = net.JoinHostPort(addr, strconv.Itoa(tcpAddr.Port))
+	logger.Debug("向Consul注册地址为:%s", serviceAddr)
 	_, port, err := net.SplitHostPort(serviceAddr)
 	if err != nil {
 		return base.NewError(-1, errScopeConsulRegister, "serviceAddr is not a tcp addr")
 	}
 	p, _ := strconv.Atoi(port)
 	registration := &api.AgentServiceRegistration{
-		Name: serviceInfo.GetServiceName(),
-		Tags: []string{serviceInfo.GetServiceTag()},
-		Port: p,
-		//Address:           addr, //http 获取节点的情况下,或出现问题
+		Name:              serviceInfo.GetServiceName(),
+		Tags:              []string{serviceInfo.GetServiceTag()},
+		Port:              p,
+		Address:           addr, //http 获取节点的情况下,或出现问题
 		EnableTagOverride: true,
 		Checks: api.AgentServiceChecks([]*api.AgentServiceCheck{
 			{
@@ -61,19 +67,5 @@ func (csr *consulServiceRegister) RegService(cxt context.Context, serviceInfo ba
 		logger.Error("注册服务失败:%s", err)
 		return base.NewError(base.ErrCodeBaseSystemServiceRegister, errScopeConsulRegister, err.Error())
 	}
-	//context.WithValue(cxt, Context_ConsulClient, csr.client)
 	return nil
 }
-
-//const Context_ConsulClient = &"__consulClient"
-//
-//func GetConsulClient(cxt context.Context) (*api.Client, base.Error) {
-//	i := cxt.Value(Context_ConsulClient)
-//	if i == nil {
-//		return nil, base.NewError(base.ErrCodeBaseSystemInit, errScopeConsulRegister, "no create consul client")
-//	}
-//	if client, ok := i.(*api.Client); ok {
-//		return client, nil
-//	}
-//	return nil, base.NewError(base.ErrCodeBaseSystemInit, errScopeConsulRegister, "no create consul client")
-//}

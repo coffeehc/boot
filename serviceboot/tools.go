@@ -6,6 +6,8 @@ import (
 	"os"
 	"time"
 
+	"net"
+
 	"github.com/coffeehc/logger"
 	"github.com/coffeehc/microserviceboot/base"
 )
@@ -32,4 +34,36 @@ func launchError(err error) {
 	logger.Error("启动失败:%s", err.Error())
 	time.Sleep(500 * time.Millisecond)
 	os.Exit(-1)
+}
+
+const envIPInterfaceName = "NET_INTERFACE"
+
+func getLocalIP() (string, base.Error) {
+	if interfaceName, ok := os.LookupEnv(envIPInterfaceName); ok {
+		netInterface, err := net.InterfaceByName(interfaceName)
+		if err != nil {
+			return "", base.NewError(base.ErrCodeBaseSystemInit, "serviceboot", fmt.Sprintf("获取指定网络接口[s%]失败", interfaceName))
+		}
+		addrs, err := netInterface.Addrs()
+		if err != nil || len(addrs) == 0 {
+			return "", base.NewError(base.ErrCodeBaseSystemInit, "serviceboot", fmt.Sprintf("获取指定网络接口[s%]地址失败", interfaceName))
+		}
+		return getActiveIP(addrs)
+	}
+	addrs, err := net.InterfaceAddrs()
+	if err != nil || len(addrs) == 0 {
+		return "", base.NewError(base.ErrCodeBaseSystemInit, "serviceboot", "获取本地Ip地址失败")
+	}
+	return getActiveIP(addrs)
+}
+
+func getActiveIP(addrs []net.Addr) (string, base.Error) {
+	for _, addr := range addrs {
+		if ipnet, ok := addr.(*net.IPNet); ok && !ipnet.IP.IsLoopback() {
+			if ipnet.IP.To4() != nil {
+				return ipnet.IP.String(), nil
+			}
+		}
+	}
+	return "", base.NewError(base.ErrCodeBaseSystemInit, "serviceboot", "没有可用的有效 Ip")
 }

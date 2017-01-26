@@ -47,7 +47,10 @@ func (ms *_GRPCMicroService) Init(cxt context.Context) (*serviceboot.ServiceConf
 	if err != nil {
 		return nil, err
 	}
-	httpServerConfig := config.GetServiceConfig().GetHTTPServerConfig()
+	httpServerConfig, err := config.GetServiceConfig().GetHTTPServerConfig()
+	if err != nil {
+		return nil, err
+	}
 	//构建 TSL
 	if httpServerConfig.TLSConfig == nil {
 		httpServerConfig.TLSConfig, err = serviceboot.NewDefaultTLSConfig()
