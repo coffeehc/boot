@@ -49,8 +49,11 @@ func (ms *_RestMicroService) Init(cxt context.Context) (*serviceboot.ServiceConf
 	if err != nil {
 		return nil, err
 	}
-
-	httpServer, err := serviceboot.NewHTTPServer(serviceConfig.GetHTTPServerConfig(), ms.GetServiceInfo())
+	httpServerConfig, err := config.GetServiceConfig().GetHTTPServerConfig()
+	if err != nil {
+		return nil, err
+	}
+	httpServer, err := serviceboot.NewHTTPServer(httpServerConfig, ms.GetServiceInfo())
 	if err != nil {
 		return nil, err
 	}

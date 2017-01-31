@@ -1,10 +1,9 @@
 package ttlcache
 
 import (
+	"github.com/benschw/dns-clb-go/dns"
 	"net"
 	"time"
-
-	"github.com/benschw/dns-clb-go/dns"
 )
 
 func NewTtlCache(lib dns.Lookup, ttl int) *TtlCache {
