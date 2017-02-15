@@ -1,7 +1,6 @@
 package restclient
 
 import (
-	"net/http"
 
 	"encoding/json"
 	"io"
@@ -14,32 +13,6 @@ import (
 
 const err_scope_rest_response = "rest response"
 
-type Response interface {
-	GetStatusCode() int
-	GetBody() io.ReadCloser
-	DecodeBody(decoder ResponseBodyDecoder, target interface{}) base.Error
-}
-
-func buildResponse(res *http.Response) Response {
-	return &_Response{
-		response: res,
-	}
-}
-
-type _Response struct {
-	response *http.Response
-}
-
-func (this *_Response) GetStatusCode() int {
-	return this.response.StatusCode
-}
-
-func (this *_Response) GetBody() io.ReadCloser {
-	return this.response.Body
-}
-func (this *_Response) DecodeBody(decoder ResponseBodyDecoder, target interface{}) base.Error {
-	return decoder(this.GetBody(), target)
-}
 
 type ResponseBodyDecoder func(body io.ReadCloser, target interface{}) base.Error
 

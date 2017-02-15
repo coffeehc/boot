@@ -2,83 +2,123 @@ package restclient
 
 import (
 	"fmt"
-
+	
 	"context"
-
-	"github.com/afex/hystrix-go/hystrix"
+	
 	"github.com/coffeehc/microserviceboot/base"
+	"github.com/coffeehc/commons/httpcommons/client"
+	"github.com/coffeehc/microserviceboot/loadbalancer"
+	"github.com/coffeehc/microserviceboot/consultool"
+	"github.com/hashicorp/consul/api"
+	"github.com/coffeehc/microserviceboot/base/restbase"
+	"io/ioutil"
 )
-
-const errScopeRestClient = "restClient"
 
 type ServiceClient interface {
 	GetBaseUrl() string
-	GetHttpClient() HttpClient
-	Call(cxt context.Context, request Request) (Response, base.Error)
 }
 
-func NewServiceClient(serviceInfo base.ServiceInfo, httpClientConfig *HttpClientConfiguration, discoveryConfig interface{}) (ServiceClient, base.Error) {
-	if httpClientConfig == nil {
-		httpClientConfig = defaultHttpClientConfiguration
+func NewServiceClient(serviceInfo base.ServiceInfo, httpClientConfig *client.HTTPClientOptions, discoveryConfig interface{}) (ServiceClient, base.Error) {
+	if serviceInfo == nil {
+		return nil, base.NewError(base.ErrCodeBaseSystemNil, "rest client", "serviceInfo is nil")
 	}
-	rootCxt := context.TODO()
-	var httpClient HttpClient = nil
+	if discoveryConfig == nil {
+		return nil, base.NewError(base.ErrCodeBaseSystemNil, "rest client", "discoveryConfig is nil")
+	}
+	if httpClientConfig == nil {
+		httpClientConfig = *client.HTTPClientOptions{}
+	}
+	rootCxt := context.Background()
+	var balancer loadbalancer.Balancer
+	var baseURL string
 	var err base.Error
 	switch c := discoveryConfig.(type) {
-	case string:
-		httpClient, err = newHttpClientByHostAddress(c, httpClientConfig, rootCxt)
-	case *string:
-		httpClient, err = newHttpClientByHostAddress(*c, httpClientConfig, rootCxt)
-	case ServiceClientConsulConfig:
-		httpClient, err = newHttpClientByConsul(serviceInfo, c, httpClientConfig, rootCxt)
-	case *ServiceClientConsulConfig:
-		if c == nil {
-			c = &ServiceClientConsulConfig{}
+	case string: //host
+		if c == "" {
+			return nil, base.NewError(base.ErrCodeBaseSystemNil, "rest client", "discoveryConfig is a addrs")
 		}
-		httpClient, err = newHttpClientByConsul(serviceInfo, *c, httpClientConfig, rootCxt)
-	default:
-		err = base.NewError(base.ErrCodeBaseSystemInit, errScopeRestClient, fmt.Sprintf("无法识别的配置类型,%#v", discoveryConfig))
+		balancer, err = loadbalancer.NewAddrArrayBalancer([]string{c})
+		if err != nil {
+			return nil, base.NewErrorWrapper("rest client", err)
+		}
+		baseURL = fmt.Sprintf("%s://%s", serviceInfo.GetScheme(), c)
+	case *api.Client:
+		balancer, err = consultool.NewConsulBalancer(rootCxt, c, serviceInfo)
+		if err != nil {
+			return nil, err
+		}
+		baseURL = fmt.Sprintf("%s://%s.%s.service", serviceInfo.GetScheme(), serviceInfo.GetServiceTag(), serviceInfo.GetServiceName())
 	}
-	if err != nil {
-		return nil, base.NewError(base.ErrCodeBaseSystemInit, errScopeRestClient, fmt.Sprintf("不能识别的 config 类型:%#v", discoveryConfig))
-	}
+	restClient := newHttpClient(rootCxt, serviceInfo, balancer, httpClientConfig)
 	return &_ServiceClient{
-		client:      httpClient,
+		client:      restClient,
 		serviceInfo: serviceInfo,
+		baseURL:baseURL,
 	}, nil
 }
 
 type _ServiceClient struct {
-	client      HttpClient
+	client      client.HTTPClient
 	serviceInfo base.ServiceInfo
+	baseURL     string
 }
 
-func (this *_ServiceClient) GetServiceName() string {
-	return this.serviceInfo.GetServiceName()
+func (sc *_ServiceClient) GetServiceName() string {
+	return sc.serviceInfo.GetServiceName()
 }
 
-func (this *_ServiceClient) GetBaseUrl() string {
-	return this.GetHttpClient().GetBaseUrl()
+func (sc *_ServiceClient) GetBaseUrl() string {
+	return sc.baseURL
 }
 
-func (this *_ServiceClient) GetHttpClient() HttpClient {
-	return this.client
+func (sc *_ServiceClient) GetHttpClient() client.HTTPClient {
+	return sc.client
 }
 
-func (this *_ServiceClient) Call(cxt context.Context, request Request) (Response, base.Error) {
-	var response Response
-	err := hystrix.Do(request.GetCommand(), func() error {
-		var err1 error
-		response, err1 = this.client.Do(cxt, request)
-		return err1
-	}, func(err error) error {
-		//logger.Error("请求异常:%#v", err)
-		cxt.Done()
-		//TODO 处理异常
-		return err
-	})
-	if bErr, ok := err.(base.Error); ok {
-		return response, bErr
+func (sc *_ServiceClient)Do(endpintMeta restbase.EndpointMeta, requestData, responstData interface{}, contentType ContentType) base.Error {
+	if contentType == nil {
+		contentType = JsonContentType
 	}
-	return response, base.NewErrorWrapper(errScopeRestClient, err)
+	req := client.NewHTTPRequest()
+	method := string(endpintMeta.Method)
+	req.SetMethod(method)
+	uri := fmt.Sprintf("%s/%s", sc.baseURL, endpintMeta.Path)
+	if method != "POST" && method != "PUT" && method != "PATCH" && method != "OPTIONS" {
+		if query, ok := requestData.(string); ok {
+			uri = fmt.Sprintf("%s?%s", uri, query)
+		} else {
+			return base.NewError(base.ErrCodeBaseRPCInvalidArgument, "rest client", "requestData is not query")
+		}
+	} else {
+		if requestData != nil {
+			req.SetContentType(contentType.GetContenType())
+			data, err := contentType.Encode(requestData)
+			if err != nil {
+				return base.NewErrorWrapper("rest client", err)
+			}
+			req.SetBody(data)
+		}
+	}
+	req.SetURI(uri)
+	response,err:=sc.client.Do(req,false)
+	if err!=nil{
+		return base.NewErrorWrapper("rest client",err)
+	}
+	//response.GetContentType() == ""
+	body :=response.GetBody()
+	defer body.Close()
+	if response.SetStatusCode() != 200{
+		return base.NewError(base.ErrCodeBaseRPCAborted,"rest client",fmt.Sprintf("response code is ",response.SetStatusCode()))
+	}
+	data ,err:= ioutil.ReadAll(body)
+	if err!=nil{
+		return base.NewErrorWrapper("rest client", err)
+	}
+	err = contentType.Decoder(data,responstData)
+	if err!=nil{
+		return base.NewErrorWrapper("rest client", err)
+	}
+	return nil
 }
+
+

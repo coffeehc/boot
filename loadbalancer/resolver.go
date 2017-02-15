@@ -5,7 +5,7 @@ import (
 	"google.golang.org/grpc/naming"
 )
 
-func newAddrArrayBalancer(addrs []string) (Balancer, base.Error) {
+func NewAddrArrayBalancer(addrs []string) (Balancer, base.Error) {
 	r, err := newAddrArrayResolver(addrs)
 	if err != nil {
 		return nil, err

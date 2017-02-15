@@ -1,39 +1,32 @@
 package restclient
 
 import (
-	"fmt"
+	
+)
+import (
+	"net/url"
 	"strings"
-
-	"github.com/coffeehc/microserviceboot/base"
 )
 
-func buildServiceDomain(serviceName string, serviceClientDNSConfig ServiceClientConsulConfig) string {
-	tag := ""
-	if base.IsDevModule() {
-		tag = "dev"
-	}
-	if len(tag) > 0 {
-		tag += "."
-	}
-	return fmt.Sprintf("%s%s.service.%s.%s", tag, serviceName, serviceClientDNSConfig.GetDataCenter(), serviceClientDNSConfig.GetDomain())
+var portMap = map[string]string{
+	"http":  "80",
+	"https": "443",
 }
 
-func WarpUrl(restUrl string, pathParams map[string]string) string {
-	//TODO 此处可以优化
-	for k, v := range pathParams {
-		restUrl = strings.Replace(restUrl, "{"+k+"}", v, -1)
+// canonicalAddr returns url.Host but always with a ":port" suffix
+func canonicalAddr(url *url.URL) string {
+	addr := url.Host
+	if !hasPort(addr) {
+		return addr + ":" + portMap[url.Scheme]
 	}
-	return restUrl
+	return addr
 }
 
-func addMissingPort(addr string, isTLS bool) string {
-	n := strings.Index(addr, ":")
-	if n >= 0 {
-		return addr
+func hasPort(s string) bool { return strings.LastIndex(s, ":") > strings.LastIndex(s, "]") }
+
+func removeEmptyPort(host string) string {
+	if hasPort(host) {
+		return strings.TrimSuffix(host, ":")
 	}
-	port := 80
-	if isTLS {
-		port = 443
-	}
-	return fmt.Sprintf("%s:%d", addr, port)
+	return host
 }
