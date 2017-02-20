@@ -14,14 +14,18 @@ import (
 
 const errScopeGRPCClient = "grpcClient"
 
+type GRPCClient interface {
+	NewClientConn(cxt context.Context, serviceInfo base.ServiceInfo, balancer loadbalancer.Balancer, timeout time.Duration) (*grpc.ClientConn, base.Error)
+}
+
 type _GRPCClient struct {
 }
 
-func newGRPCClient() *_GRPCClient {
+func NewGRPCClient() GRPCClient {
 	return &_GRPCClient{}
 }
 
-func (client *_GRPCClient) newClientConn(cxt context.Context, serviceInfo base.ServiceInfo, balancer loadbalancer.Balancer, timeout time.Duration) (*grpc.ClientConn, base.Error) {
+func (client *_GRPCClient) NewClientConn(cxt context.Context, serviceInfo base.ServiceInfo, balancer loadbalancer.Balancer, timeout time.Duration) (*grpc.ClientConn, base.Error) {
 	opts := []grpc.DialOption{
 		//grpc.WithBackoffConfig(grpc.BackoffConfig{
 		//	MaxDelay: time.Second,
