@@ -57,7 +57,7 @@ func (d *_BalanceDialer) DialContext(ctx context.Context, network, address strin
 		return nil, &net.OpError{Op: "dial", Net: network, Source: nil, Addr: nil, Err: err}
 	}
 	
-	c,err:=net.Dial(network,addr)
+	c,err:=net.Dial(network,addr.Addr)
 	if err != nil {
 		return nil, err
 	}
@@ -68,8 +68,6 @@ func (d *_BalanceDialer) DialContext(ctx context.Context, network, address strin
 	}
 	return c, nil
 }
-
-func connection()
 
 
 func minNonzeroTime(a, b time.Time) time.Time {

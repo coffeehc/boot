@@ -13,27 +13,27 @@ import (
 	"github.com/pquerna/ffjson/ffjson"
 )
 
-const errScopeRest = "rest"
+const errScopeRest = "restRequest"
 
 //ErrorRecover 对 err 进行转换
 func ErrorRecover(reply httpx.Reply) {
 	if err := recover(); err != nil {
 		logger.Error("处理请求,发生错误:%s", err)
-		var errorResponse base.ErrorResponse
+		var errorResponse base.Error
+		statusCode := http.StatusInternalServerError
 		switch e := err.(type) {
-		case base.ErrorResponse:
-			errorResponse = e
 		case base.Error:
-			errorResponse = base.NewErrorResponse(http.StatusBadRequest, e.GetErrorCode(), e.Error(), "")
+			statusCode = http.StatusBadRequest
+			errorResponse = e
 		case string:
-			errorResponse = base.NewErrorResponse(http.StatusInternalServerError, base.ErrCodeBaseRPCUnknown, e, "")
+			errorResponse = base.NewError(base.ErrCodeBaseRPCUnknown, errScopeRest, e)
 		case error:
-			errorResponse = base.NewErrorResponse(http.StatusInternalServerError, base.ErrCodeBaseRPCUnknown, e.Error(), "")
+			errorResponse = base.NewErrorWrapper(errScopeRest,base.ErrCodeBaseRPCUnknown,e)
 		default:
-			errorResponse = base.NewErrorResponse(http.StatusInternalServerError, base.ErrCodeBaseRPCUnknown, fmt.Sprintf("%#v", err), "")
+			errorResponse = base.NewError(base.ErrCodeBaseRPCUnknown, errScopeRest,fmt.Sprintf("%#v",err))
 		}
 		//暂时统一按照400处理
-		reply.SetStatusCode(errorResponse.GetHTTPCode()).With(errorResponse).As(httpx.DefaultRenderJSON)
+		reply.SetStatusCode(statusCode).With(errorResponse).As(httpx.DefaultRenderJSON)
 	}
 }
 

@@ -5,11 +5,31 @@ import (
 	"github.com/coffeehc/microserviceboot/loadbalancer"
 	"context"
 	"github.com/coffeehc/commons/httpcommons/client"
+	"net/http"
 )
 
+type restClient struct {
+	options *client.HTTPClientOptions
+	transport *http.Transport
+	serviceInfo base.ServiceInfo
+}
 
-func newHttpClient(cxt context.Context, serviceInfo base.ServiceInfo, balancer loadbalancer.Balancer, defaultOption *client.HTTPClientOptions) client.HTTPClient {
-	option := &client.HTTPClientOptions{
+func (rc *restClient)getTransport() *http.Transport{
+	return rc.transport
+}
+
+
+func newHttpClient(cxt context.Context, serviceInfo base.ServiceInfo, balancer loadbalancer.Balancer, defaultOption *client.HTTPClientOptions) *restClient {
+	_clientOptions := &restClient{}
+	_clientOptions.serviceInfo = serviceInfo
+	transport := defaultOption.NewTransport()
+	transport.DialContext = (&_BalanceDialer{
+		Timeout:defaultOption.GetTimeout(),
+		KeepAlive:defaultOption.GetDialerKeepAlive(),
+		balancer:balancer,
+	}).DialContext
+	_clientOptions.transport = transport
+	options:= &client.HTTPClientOptions{
 		Timeout:defaultOption.GetTimeout(),
 		DialerTimeout:defaultOption.GetDialerTimeout(),
 		DialerKeepAlive:defaultOption.GetDialerKeepAlive(),
@@ -18,17 +38,10 @@ func newHttpClient(cxt context.Context, serviceInfo base.ServiceInfo, balancer l
 		TransportIdleConnTimeout:defaultOption.GetTransportIdleConnTimeout(),
 		TransportMaxIdleConns:defaultOption.GetTransportMaxIdleConns(),
 		TransportMaxIdleConnsPerHost:defaultOption.GetTransportMaxIdleConnsPerHost(),
-		Transport:defaultOption.Transport,
 		GlobalHeaderSetting:defaultOption.GlobalHeaderSetting,
 	}
-	if option.Transport == nil {
-		option.GetTransport().Dial = &_BalanceDialer{
-			Timeout:option.GetTimeout(),
-			KeepAlive:option.GetDialerKeepAlive(),
-			balancer:balancer,
-		}
-	}
-	return  client.NewHTTPClient(option)
+	_clientOptions.options = options
+	return  _clientOptions
 }
 
 

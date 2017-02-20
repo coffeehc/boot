@@ -47,7 +47,7 @@ func (client *_GRPCClient) newClientConn(cxt context.Context, serviceInfo base.S
 	}
 	clientConn, err := grpc.DialContext(cxt, serviceInfo.GetServiceName(), opts...)
 	if err != nil {
-		return nil, base.NewErrorWrapper(errScopeGRPCClient, err)
+		return nil, base.NewErrorWrapper(errScopeGRPCClient,0, err)
 	}
 	return clientConn, nil
 }

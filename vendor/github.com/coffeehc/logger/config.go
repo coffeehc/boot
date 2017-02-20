@@ -48,11 +48,11 @@ var _loggerConf = flag.String("logger_config", "./log.yml", "日志文件路径"
 var defaultConfig = &Config{
 	Context: "Default",
 	Appenders: []*Appender{
-		{
-					Level:       DefaultLevel,
-					PackagePath: "/",
-					Adapter:     AdapterConsole,
-				},
+		&Appender{
+			Level:       DefaultLevel,
+			PackagePath: "/",
+			Adapter:     AdapterConsole,
+		},
 	},
 }
 

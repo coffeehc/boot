@@ -17,7 +17,7 @@ type ServiceClient interface {
 	GetServiceName() string
 	GetBaseUrl() string
 	GetHttpClient() client.HTTPClient
-	BuildRequest(endpintMeta restbase.EndpointMeta,query string) client.HTTPRequest
+	BuildRequest(endpintMeta restbase.EndpointMeta,query string) (client.HTTPRequest,error)
 }
 
 func NewServiceClient(serviceInfo base.ServiceInfo, httpClientConfig *client.HTTPClientOptions, discoveryConfig interface{}) (ServiceClient, base.Error) {
@@ -28,7 +28,7 @@ func NewServiceClient(serviceInfo base.ServiceInfo, httpClientConfig *client.HTT
 		return nil, base.NewError(base.ErrCodeBaseSystemNil, "rest client", "discoveryConfig is nil")
 	}
 	if httpClientConfig == nil {
-		httpClientConfig = *client.HTTPClientOptions{}
+		httpClientConfig = &client.HTTPClientOptions{}
 	}
 	rootCxt := context.Background()
 	var balancer loadbalancer.Balancer
@@ -41,7 +41,7 @@ func NewServiceClient(serviceInfo base.ServiceInfo, httpClientConfig *client.HTT
 		}
 		balancer, err = loadbalancer.NewAddrArrayBalancer([]string{c})
 		if err != nil {
-			return nil, base.NewErrorWrapper("rest client", err)
+			return nil, base.NewErrorWrapper("rest client",0, err)
 		}
 		baseURL = fmt.Sprintf("%s://%s", serviceInfo.GetScheme(), c)
 	case *api.Client:
@@ -53,13 +53,15 @@ func NewServiceClient(serviceInfo base.ServiceInfo, httpClientConfig *client.HTT
 	}
 	restClient := newHttpClient(rootCxt, serviceInfo, balancer, httpClientConfig)
 	return &_ServiceClient{
-		client:      restClient,
+		_restClient:restClient,
+		client:   client.NewHTTPClient(restClient.options,restClient.transport)   ,
 		serviceInfo: serviceInfo,
 		baseURL:baseURL,
 	}, nil
 }
 
 type _ServiceClient struct {
+	_restClient *restClient
 	client      client.HTTPClient
 	serviceInfo base.ServiceInfo
 	baseURL     string
@@ -77,12 +79,8 @@ func (sc *_ServiceClient) GetHttpClient() client.HTTPClient {
 	return sc.client
 }
 
-func (sc *_ServiceClient)BuildRequest(endpintMeta restbase.EndpointMeta,query string) client.HTTPRequest {
-	req := client.NewHTTPRequest()
-	method := string(endpintMeta.Method)
-	req.SetMethod(method)
-	req.SetURI(fmt.Sprintf("%s/%s?%s", sc.baseURL, endpintMeta.Path,query))
-	return req
+func (sc *_ServiceClient)BuildRequest(endpintMeta restbase.EndpointMeta,query string) (client.HTTPRequest,error) {
+	return  client.NewHTTPRequest(string(endpintMeta.Method),fmt.Sprintf("%s/%s?%s", sc.baseURL, endpintMeta.Path,query))
 }
 
 
