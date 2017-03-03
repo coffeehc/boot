@@ -11,26 +11,26 @@
 		{
 			"checksumSHA1": "BBV1TKzw6GE25JD3u0ZbQlJ5pko=",
 			"path": "github.com/coffeehc/commons",
-			"revision": "abc8076a548613d9eb1f92fa3c2aeb4482dd7bad",
-			"revisionTime": "2017-02-20T03:47:13Z"
+			"revision": "69ba364628fa340f642432c7620ee446ce8ec7c7",
+			"revisionTime": "2017-02-20T11:16:28Z"
 		},
 		{
 			"checksumSHA1": "G57VZTUHL6OTsqwW+nmECYHWsrw=",
 			"path": "github.com/coffeehc/commons/convers",
-			"revision": "abc8076a548613d9eb1f92fa3c2aeb4482dd7bad",
-			"revisionTime": "2017-02-20T03:47:13Z"
+			"revision": "69ba364628fa340f642432c7620ee446ce8ec7c7",
+			"revisionTime": "2017-02-20T11:16:28Z"
 		},
 		{
-			"checksumSHA1": "ecnDR4zPJ6v4u94L0sPMssiXV7Q=",
+			"checksumSHA1": "Yo6zrmBuFB1iAzp4uEzqylftG/M=",
 			"path": "github.com/coffeehc/httpx",
-			"revision": "37a530edcb9e4f300ed64e41c9fd1c8036331370",
-			"revisionTime": "2017-01-05T14:18:54Z"
+			"revision": "8cb1b1c32b50926860b4e593c9e874d50034dbbe",
+			"revisionTime": "2017-03-01T06:38:32Z"
 		},
 		{
 			"checksumSHA1": "x/9MkUxFC5r0z0lMf6m5U+P6/Vk=",
 			"path": "github.com/coffeehc/httpx/pprof",
-			"revision": "37a530edcb9e4f300ed64e41c9fd1c8036331370",
-			"revisionTime": "2017-01-05T14:18:54Z"
+			"revision": "8cb1b1c32b50926860b4e593c9e874d50034dbbe",
+			"revisionTime": "2017-03-01T06:38:32Z"
 		},
 		{
 			"checksumSHA1": "99y6ZBu2zSqcSEmOh/Ld4dbOd6g=",
