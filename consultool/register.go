@@ -41,7 +41,7 @@ func (csr *consulServiceRegister) RegService(cxt context.Context, serviceInfo ba
 		return nil, base.NewError(base.ErrCodeBaseSystemInit, errScopeConsulRegister, "没有指定具体的注册 IP")
 	}
 	serviceAddr = net.JoinHostPort(addr, strconv.Itoa(tcpAddr.Port))
-	logger.Debug("向Consul注册地址为:%s", serviceAddr)
+	logger.Info("向Consul注册地址为:%s", serviceAddr)
 	_, port, err := net.SplitHostPort(serviceAddr)
 	if err != nil {
 		return nil, base.NewError(-1, errScopeConsulRegister, "serviceAddr is not a tcp addr")
