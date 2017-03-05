@@ -12,7 +12,7 @@ type ServiceConfig struct {
 	ServiceInfo            *base.SimpleServiceInfo `yaml:"service_info"`
 	EnableAccessInfo       bool                    `yaml:"enableAccessInfo"`
 	DisableServiceRegister bool                    `yaml:"disable_service_register"`
-	HTTPConfig             *httpx.Config           `yaml:"web_server_config"`
+	HTTPConfig             *httpx.Config           `yaml:"http_config"`
 }
 
 //GetHTTPServerConfig 获取 HTTP config
