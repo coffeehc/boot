@@ -26,7 +26,19 @@ func serviceDiscoverRegister(cxt context.Context, service base.Service, serviceI
 		if err != nil {
 			launchError(fmt.Errorf("没有可用的 Http server 的配置,注册服务[%s]失败", serviceInfo.GetServiceName()))
 		}
-		deregister, registerError := serviceDiscoveryRegister.RegService(cxt, serviceInfo, httpServerConfig.ServerAddr)
+		serverAddr := httpServerConfig.ServerAddr
+		addr, err1 := net.ResolveTCPAddr("tcp", serverAddr)
+		if err1 != nil {
+			launchError(fmt.Errorf("无法解析HttpServer地址,%s", err1))
+		}
+		if addr.IP.Equal(net.IPv4zero) {
+			localIp, err := getLocalIP()
+			if err != nil {
+				launchError(err)
+			}
+			serverAddr = fmt.Sprintf("%s:%d", localIp, addr.Port)
+		}
+		deregister, registerError := serviceDiscoveryRegister.RegService(cxt, serviceInfo, serverAddr)
 		if registerError != nil {
 			launchError(fmt.Errorf("注册服务[%s]失败,%s", serviceInfo.GetServiceName(), registerError.Error()))
 		}
