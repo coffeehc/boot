@@ -1,8 +1,8 @@
 package base
 
 import (
-	"github.com/pquerna/ffjson/ffjson"
 	"fmt"
+	"github.com/pquerna/ffjson/ffjson"
 )
 
 // Error 基础的错误接口
@@ -15,7 +15,7 @@ type Error interface {
 
 type strError string
 
-func (m strError)Error() string {
+func (m strError) Error() string {
 	return string(m)
 }
 
@@ -27,7 +27,7 @@ type baseError struct {
 }
 
 func (err *baseError) Error() string {
-	return fmt.Sprintf(`{"scope":"%s","debug_code":"%s","root_error":"%s"}`, err.Scope, err.DebugCode, err.RootError.Error())
+	return fmt.Sprintf(`{"scope":"%s","debug_code":"%d","root_error":"%s"}`, err.Scope, err.DebugCode, err.RootError.Error())
 }
 
 func (err *baseError) GetErrorCode() int64 {
@@ -55,11 +55,10 @@ func ParseErrorFromJSON(data []byte) Error {
 func NewError(debugCode int64, scope string, errMsg string) Error {
 	return &baseError{
 		Scope:     scope,
-		RootError:       strError(errMsg),
+		RootError: strError(errMsg),
 		DebugCode: debugCode,
 	}
 }
-
 
 //NewErrorWrapper 创建一个对普通的 error的封装
 func NewErrorWrapper(scope string, debugCode int64, err error) Error {

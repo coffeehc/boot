@@ -1,39 +1,12 @@
 package base
 
 import (
-	"io/ioutil"
-	"os"
-	"path"
-
-	"github.com/coffeehc/commons"
 	"github.com/coffeehc/logger"
 	"gopkg.in/yaml.v2"
+	"io/ioutil"
 )
 
 const errScopeLoadConfig = "loadConfig"
-
-//GetDefaultConfigPath load default config from app dir
-func GetDefaultConfigPath(configPath string) string {
-	if configPath == "" {
-		configPath = path.Join(commons.GetAppDir(), "config.yml")
-		_, err := os.Open(configPath)
-		if err != nil {
-			//logger.Error("%s 不存在", configPath)
-			dir, err := os.Getwd()
-			if err != nil {
-				logger.Error("获取不到工作目录")
-				return ""
-			}
-			configPath = path.Join(dir, "config.yml")
-			_, err = os.Open(configPath)
-			if err != nil {
-				//logger.Error("%s 不存在", configPath)
-				return ""
-			}
-		}
-	}
-	return configPath
-}
 
 //LoadConfig load the config from config path
 func LoadConfig(configPath string, config interface{}) Error {
