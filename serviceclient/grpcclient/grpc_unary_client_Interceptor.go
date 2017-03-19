@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/coffeehc/commons/convers"
 	"github.com/coffeehc/microserviceboot/base"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
@@ -82,7 +81,7 @@ func paincInterceptor(ctx context.Context, method string, req, reply interface{}
 		if r := recover(); r != nil {
 			if _err, ok := r.(error); ok {
 				if grpc.Code(_err) == 0xff {
-					err = base.ParseErrorFromJSON(convers.StringToBytes(grpc.ErrorDesc(_err)))
+					err = base.ParseErrorFromJSON([]byte(grpc.ErrorDesc(_err)))
 					return
 				}
 				err = _err
