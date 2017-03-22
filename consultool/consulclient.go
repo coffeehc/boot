@@ -11,9 +11,10 @@ func NewClientByConfigFile(configPath string) (*api.Client, base.Error) {
 	config := loadConsulConfig(configPath)
 	return NewClient(config)
 }
+
 //NewClient 创建 consul client
-func NewClient(config *ConsulConfig) (*api.Client, base.Error){
-	if config == nil{
+func NewClient(config *ConsulConfig) (*api.Client, base.Error) {
+	if config == nil {
 		config = &ConsulConfig{}
 	}
 	consulClient, err := api.NewClient(warpConsulConfig(config))

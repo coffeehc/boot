@@ -1,18 +1,18 @@
 package restclient
 
 import (
-	"time"
 	"context"
-	"net"
 	"github.com/coffeehc/microserviceboot/loadbalancer"
+	"net"
+	"time"
 )
 
 type _BalanceDialer struct {
-	Timeout time.Duration
-	Deadline time.Time
+	Timeout   time.Duration
+	Deadline  time.Time
 	KeepAlive time.Duration
-	Cancel <-chan struct{}
-	balancer loadbalancer.Balancer
+	Cancel    <-chan struct{}
+	balancer  loadbalancer.Balancer
 }
 
 func (d *_BalanceDialer) deadline(ctx context.Context, now time.Time) (earliest time.Time) {
@@ -49,26 +49,25 @@ func (d *_BalanceDialer) DialContext(ctx context.Context, network, address strin
 		}()
 		ctx = subCtx
 	}
-	addr,_,err:=d.balancer.Get(ctx,loadbalancer.BalancerGetOptions{
-		BlockingWait:true,
+	addr, _, err := d.balancer.Get(ctx, loadbalancer.BalancerGetOptions{
+		BlockingWait: true,
 	})
-	
+
 	if err != nil {
 		return nil, &net.OpError{Op: "dial", Net: network, Source: nil, Addr: nil, Err: err}
 	}
-	
-	c,err:=net.Dial(network,addr.Addr)
+
+	c, err := net.Dial(network, addr.Addr)
 	if err != nil {
 		return nil, err
 	}
-	
+
 	if tc, ok := c.(*net.TCPConn); ok && d.KeepAlive > 0 {
 		tc.SetKeepAlive(true)
 		tc.SetKeepAlivePeriod(d.KeepAlive)
 	}
 	return c, nil
 }
-
 
 func minNonzeroTime(a, b time.Time) time.Time {
 	if a.IsZero() {

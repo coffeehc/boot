@@ -53,3 +53,21 @@ func WaitStop() {
 	sig := <-sigChan
 	fmt.Printf("接收到指令:%s,立即关闭程序", sig)
 }
+
+/*
+	获取文件清单
+*/
+func FileList(path string) []string {
+	list := make([]string, 0)
+	filepath.Walk(path, func(path string, f os.FileInfo, err error) error {
+		if f == nil {
+			return err
+		}
+		if f.IsDir() {
+			return nil
+		}
+		list = append(list, path)
+		return nil
+	})
+	return list
+}

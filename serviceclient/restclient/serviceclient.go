@@ -2,22 +2,22 @@ package restclient
 
 import (
 	"fmt"
-	
+
 	"context"
-	
-	"github.com/coffeehc/microserviceboot/base"
+
 	"github.com/coffeehc/commons/httpcommons/client"
-	"github.com/coffeehc/microserviceboot/loadbalancer"
-	"github.com/coffeehc/microserviceboot/consultool"
-	"github.com/hashicorp/consul/api"
+	"github.com/coffeehc/microserviceboot/base"
 	"github.com/coffeehc/microserviceboot/base/restbase"
+	"github.com/coffeehc/microserviceboot/consultool"
+	"github.com/coffeehc/microserviceboot/loadbalancer"
+	"github.com/hashicorp/consul/api"
 )
 
 type ServiceClient interface {
 	GetServiceName() string
 	GetBaseUrl() string
 	GetHttpClient() client.HTTPClient
-	BuildRequest(endpintMeta restbase.EndpointMeta,query string) (client.HTTPRequest,error)
+	BuildRequest(endpintMeta restbase.EndpointMeta, query string) (client.HTTPRequest, error)
 }
 
 func NewServiceClient(serviceInfo base.ServiceInfo, httpClientConfig *client.HTTPClientOptions, discoveryConfig interface{}) (ServiceClient, base.Error) {
@@ -41,7 +41,7 @@ func NewServiceClient(serviceInfo base.ServiceInfo, httpClientConfig *client.HTT
 		}
 		balancer, err = loadbalancer.NewAddrArrayBalancer([]string{c})
 		if err != nil {
-			return nil, base.NewErrorWrapper("rest client",0, err)
+			return nil, base.NewErrorWrapper("rest client", 0, err)
 		}
 		baseURL = fmt.Sprintf("%s://%s", serviceInfo.GetScheme(), c)
 	case *api.Client:
@@ -53,10 +53,10 @@ func NewServiceClient(serviceInfo base.ServiceInfo, httpClientConfig *client.HTT
 	}
 	restClient := newHttpClient(rootCxt, serviceInfo, balancer, httpClientConfig)
 	return &_ServiceClient{
-		_restClient:restClient,
-		client:   client.NewHTTPClient(restClient.options,restClient.transport)   ,
+		_restClient: restClient,
+		client:      client.NewHTTPClient(restClient.options, restClient.transport),
 		serviceInfo: serviceInfo,
-		baseURL:baseURL,
+		baseURL:     baseURL,
 	}, nil
 }
 
@@ -79,8 +79,6 @@ func (sc *_ServiceClient) GetHttpClient() client.HTTPClient {
 	return sc.client
 }
 
-func (sc *_ServiceClient)BuildRequest(endpintMeta restbase.EndpointMeta,query string) (client.HTTPRequest,error) {
-	return  client.NewHTTPRequest(string(endpintMeta.Method),fmt.Sprintf("%s/%s?%s", sc.baseURL, endpintMeta.Path,query))
+func (sc *_ServiceClient) BuildRequest(endpintMeta restbase.EndpointMeta, query string) (client.HTTPRequest, error) {
+	return client.NewHTTPRequest(string(endpintMeta.Method), fmt.Sprintf("%s/%s?%s", sc.baseURL, endpintMeta.Path, query))
 }
-
-

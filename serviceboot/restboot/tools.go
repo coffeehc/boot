@@ -28,9 +28,9 @@ func ErrorRecover(reply httpx.Reply) {
 		case string:
 			errorResponse = base.NewError(base.ErrCodeBaseRPCUnknown, errScopeRest, e)
 		case error:
-			errorResponse = base.NewErrorWrapper(errScopeRest,base.ErrCodeBaseRPCUnknown,e)
+			errorResponse = base.NewErrorWrapper(errScopeRest, base.ErrCodeBaseRPCUnknown, e)
 		default:
-			errorResponse = base.NewError(base.ErrCodeBaseRPCUnknown, errScopeRest,fmt.Sprintf("%#v",err))
+			errorResponse = base.NewError(base.ErrCodeBaseRPCUnknown, errScopeRest, fmt.Sprintf("%#v", err))
 		}
 		//暂时统一按照400处理
 		reply.SetStatusCode(statusCode).With(errorResponse).As(httpx.DefaultRenderJSON)

@@ -24,10 +24,10 @@ func main() {
 	}
 	balancerBuilder := consultool.NewConsulBalancerBuilder(consulClient)
 	clientConnFactory := grpcclient.NewClientConnFactory(balancerBuilder)
-	clientConn,err := clientConnFactory.GetClientConn(context.Background(),serviceInfo,0)
-	if err!=nil{
-		logger.Error("error is %s",err)
-		time.Sleep(time.Millisecond*300)
+	clientConn, err := clientConnFactory.GetClientConn(context.Background(), serviceInfo, 0)
+	if err != nil {
+		logger.Error("error is %s", err)
+		time.Sleep(time.Millisecond * 300)
 		return
 	}
 	greeterClient := simplemodel.NewGreeterClient(clientConn)
@@ -35,7 +35,7 @@ func main() {
 	request.Name = time.Now().String()
 	response, err1 := greeterClient.SayHello(context.Background(), request)
 	if err1 != nil {
-		e = base.NewErrorWrapper("test",err1)
+		e = base.NewErrorWrapper("test", err1)
 		logger.Error("%s", e)
 		time.Sleep(time.Millisecond * 300)
 		return

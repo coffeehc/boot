@@ -1,8 +1,6 @@
 package grpcboot
 
 import (
-	"google.golang.org/grpc"
-
 	"context"
 	"net"
 
@@ -13,6 +11,7 @@ import (
 	"github.com/coffeehc/microserviceboot/serviceboot"
 	"github.com/coffeehc/microserviceboot/serviceboot/internal"
 	"github.com/grpc-ecosystem/go-grpc-prometheus"
+	"google.golang.org/grpc"
 	"google.golang.org/grpc/grpclog"
 )
 
@@ -68,7 +67,6 @@ func (ms *_GRPCMicroService) Init(cxt context.Context) (*serviceboot.ServiceConf
 		return nil, err
 	}
 	ms.httpServer = httpServer
-
 	grpcOptions := ms.config.GetGRPCOptions()
 	if len(ms.service.GetGRPCOptions()) > 0 {
 		grpcOptions = append(grpcOptions, ms.service.GetGRPCOptions()...)

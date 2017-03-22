@@ -4,10 +4,12 @@ import (
 	"math/rand"
 	"net"
 	"strconv"
+	"sync"
 	"time"
 
 	"github.com/coffeehc/logger"
 	"github.com/coffeehc/microserviceboot/base"
+	"github.com/coffeehc/microserviceboot/loadbalancer"
 	"github.com/hashicorp/consul/api"
 	"google.golang.org/grpc/naming"
 )
@@ -18,8 +20,10 @@ type _ConsulResolver struct {
 	tag         string
 	passingOnly bool
 
-	quitc    chan struct{}
-	updatesc chan []*naming.Update
+	quitc       chan struct{}
+	quitUpdate  chan struct{}
+	updatesc    chan []*naming.Update
+	updateMutex *sync.Mutex
 }
 
 // NewConsulResolver initializes and returns a new ConsulResolver.
@@ -33,7 +37,9 @@ func newConsulResolver(client *api.Client, service, tag string) (naming.Resolver
 		tag:         tag,
 		passingOnly: true,
 		quitc:       make(chan struct{}),
+		quitUpdate:  make(chan struct{}),
 		updatesc:    make(chan []*naming.Update, 1),
+		updateMutex: new(sync.Mutex),
 	}
 
 	// Retrieve instances immediately
@@ -55,7 +61,6 @@ func newConsulResolver(client *api.Client, service, tag string) (naming.Resolver
 	r.updatesc <- r.makeUpdates(nil, instances)
 	// Start updater
 	go r.updater(instances, 0)
-
 	return r, nil
 }
 
@@ -99,6 +104,8 @@ func (r *_ConsulResolver) updater(instances []string, lastIndex uint64) {
 		select {
 		case <-r.quitc:
 			break
+		case <-r.quitUpdate:
+			return
 		default:
 			func() {
 				defer func() {
@@ -171,4 +178,15 @@ func (r *_ConsulResolver) makeUpdates(oldInstances, newInstances []string) []*na
 		}
 	}
 	return updates
+}
+
+func (sr *_ConsulResolver) Delete(addr loadbalancer.Address) {
+	sr.updateMutex.Lock()
+	defer sr.updateMutex.Unlock()
+	logger.Warn("delete addr [%s]", addr.Addr)
+	sr.updatesc <- []*naming.Update{&naming.Update{Op: naming.Delete, Addr: addr.Addr}}
+	sr.quitUpdate <- struct{}{}
+	time.Sleep(time.Second * 10)
+	instances := make([]string, 0)
+	go sr.updater(instances, 0)
 }
