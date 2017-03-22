@@ -3,7 +3,6 @@ package grpcclient
 import (
 	"context"
 	"crypto/tls"
-	"net"
 	"time"
 
 	"github.com/coffeehc/microserviceboot/base"
