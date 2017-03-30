@@ -8,7 +8,7 @@ import (
 
 //NewClientByConfigFile 通过配置文件创建一个新的 Consul Client
 func NewClientByConfigFile(configPath string) (*api.Client, base.Error) {
-	config := loadConsulConfig(configPath)
+	config := LoadConsulConfig(configPath)
 	return NewClient(config)
 }
 

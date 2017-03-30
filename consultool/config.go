@@ -1,16 +1,15 @@
 package consultool
 
 import (
-	"time"
-
 	"io/ioutil"
+	"time"
 
 	"github.com/coffeehc/logger"
 	"gopkg.in/yaml.v2"
 )
 
 //LoadConsulConfig 加载 consul 配置
-func loadConsulConfig(configPath string) *ConsulConfig {
+func LoadConsulConfig(configPath string) *ConsulConfig {
 	data, err := ioutil.ReadFile(configPath)
 	if err != nil {
 		logger.Error("加载配置文件失败,使用默认配置")
