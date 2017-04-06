@@ -9,22 +9,22 @@
 			"revisionTime": "2016-08-04T10:47:26Z"
 		},
 		{
-			"checksumSHA1": "/FM5ymjmAqBcdoW8nnviv48RLVs=",
+			"checksumSHA1": "sMCKM39Zhk54AEfZSY2/0xOjDtE=",
 			"path": "github.com/coffeehc/commons",
-			"revision": "01408de2a9949a040e77c15e4bd63b6cdb119dc8",
-			"revisionTime": "2017-03-14T06:51:36Z"
+			"revision": "7a82ecbc60b76b309972205f43f09a47229e8a1b",
+			"revisionTime": "2017-04-04T15:02:24Z"
 		},
 		{
-			"checksumSHA1": "Yo6zrmBuFB1iAzp4uEzqylftG/M=",
+			"checksumSHA1": "jugkDqxvCEPyzoRNGzPZv3qI31s=",
 			"path": "github.com/coffeehc/httpx",
-			"revision": "8cb1b1c32b50926860b4e593c9e874d50034dbbe",
-			"revisionTime": "2017-03-01T06:38:32Z"
+			"revision": "474a60dd30422db7b1266008468de39cbb15fe25",
+			"revisionTime": "2017-04-06T16:27:35Z"
 		},
 		{
 			"checksumSHA1": "x/9MkUxFC5r0z0lMf6m5U+P6/Vk=",
 			"path": "github.com/coffeehc/httpx/pprof",
-			"revision": "8cb1b1c32b50926860b4e593c9e874d50034dbbe",
-			"revisionTime": "2017-03-01T06:38:32Z"
+			"revision": "474a60dd30422db7b1266008468de39cbb15fe25",
+			"revisionTime": "2017-04-06T16:27:35Z"
 		},
 		{
 			"checksumSHA1": "99y6ZBu2zSqcSEmOh/Ld4dbOd6g=",
@@ -89,7 +89,7 @@
 			"revisionTime": "2017-03-09T00:06:51Z"
 		},
 		{
-			"checksumSHA1": "V7BV/OAGXK4PZh8EyKFRQxMyNj8=",
+			"checksumSHA1": "XsTWgEVHkRZ4xSvUYZ7ECXbfA8E=",
 			"path": "github.com/prometheus/client_golang/prometheus",
 			"revision": "a5060f1eaab721946b185b2de468ff83ea5b89cb",
 			"revisionTime": "2017-03-07T14:33:02Z"
@@ -143,13 +143,13 @@
 			"revisionTime": "2017-03-08T20:54:49Z"
 		},
 		{
-			"checksumSHA1": "kyClpesDqa6LA7CFPGgKrX9NKkA=",
+			"checksumSHA1": "CBoO1DFToP49Ezph60yZ4J4PBBs=",
 			"path": "golang.org/x/net/http2/hpack",
 			"revision": "a6577fac2d73be281a500b310739095313165611",
 			"revisionTime": "2017-03-08T20:54:49Z"
 		},
 		{
-			"checksumSHA1": "GIGmSrYACByf5JDIP9ByBZksY80=",
+			"checksumSHA1": "VrzPJyWI6disCgYuVEQzkjqUsJk=",
 			"path": "golang.org/x/net/idna",
 			"revision": "a6577fac2d73be281a500b310739095313165611",
 			"revisionTime": "2017-03-08T20:54:49Z"
