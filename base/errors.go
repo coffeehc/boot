@@ -2,6 +2,7 @@ package base
 
 import (
 	"fmt"
+
 	"github.com/pquerna/ffjson/ffjson"
 )
 
@@ -61,30 +62,6 @@ func NewError(debugCode int64, scope string, errMsg string) Error {
 }
 
 //NewErrorWrapper 创建一个对普通的 error的封装
-func NewErrorWrapper(scope string, debugCode int64, err error) Error {
+func NewErrorWrapper(debugCode int64, scope string, err error) Error {
 	return &baseError{Scope: scope, DebugCode: ErrCodeBaseSystemUnknown, RootError: err}
 }
-
-//ErrorResponse 对http error的封装
-//type ErrorResponse interface {
-//	Error
-//	GetHTTPCode() int
-//}
-//
-//type errorResponse struct {
-//	baseError
-//	HTTPCode        int    `json:"http_code"`
-//	InformationLink string `json:"information_link"`
-//}
-//
-//func (err *errorResponse) GetHTTPCode() int {
-//	if err.HTTPCode == 0 {
-//		return http.StatusBadRequest
-//	}
-//	return err.HTTPCode
-//}
-//
-////NewErrorResponse 创建一个 Response 的 Error
-//func NewErrorResponse(httpCode int, errorCode int64, message, informationLink string) ErrorResponse {
-//	return &errorResponse{baseError: baseError{Scope: "response", DebugCode: errorCode, RootError: message}, HTTPCode: httpCode, InformationLink: informationLink}
-//}
