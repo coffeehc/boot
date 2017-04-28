@@ -1,6 +1,5 @@
 package restclient
 
-import ()
 import (
 	"net/url"
 	"strings"

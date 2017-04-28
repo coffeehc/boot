@@ -10,6 +10,12 @@ const (
 	ErrCodeScopeBaseSystem = ErrCodeScopeBase | 0x00000100
 	//ErrCodeScopeBaseRPC RPC级别的 ErrCode
 	ErrCodeScopeBaseRPC = ErrCodeScopeBase | 0x00000200
+
+	ErrCodeScopeBaseMessage = ErrCodeScopeBase | 0x00000300
+)
+
+var (
+	ErrCodeBaseMessage int64 = ErrCodeScopeBaseMessage | 0x0
 )
 
 var (
@@ -32,9 +38,11 @@ var (
 	//ErrCodeBaseSystemServiceRegister 注册服务失败
 	ErrCodeBaseSystemServiceRegister int64 = ErrCodeScopeBaseSystem | 0x9
 	//ErrCodeBaseSystemTypeConversion 类型转换错误
-	ErrCodeBaseSystemTypeConversion int64 = ErrCodeScopeBaseSystem | 0x10
+	ErrCodeBaseSystemTypeConversion int64 = ErrCodeScopeBaseSystem | 0x1
 	//ErrCodeBaseSystemNil 空指针
-	ErrCodeBaseSystemNil int64 = ErrCodeScopeBaseSystem | 0x11
+	ErrCodeBaseSystemNil int64 = ErrCodeScopeBaseSystem | 0xb
+	//ErrCodeBaseSystemDB DB错误
+	ErrCodeBaseSystemDB int64 = ErrCodeScopeBaseSystem | 0xc
 )
 var (
 	//ErrCodeBaseRPCUnknown 请求错误,原因未知
