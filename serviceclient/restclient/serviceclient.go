@@ -1,11 +1,10 @@
 package restclient
 
 import (
+	"context"
 	"fmt"
 
-	"context"
-
-	"github.com/coffeehc/commons/httpcommons/client"
+	"github.com/coffeehc/commons/https/client"
 	"github.com/coffeehc/microserviceboot/base"
 	"github.com/coffeehc/microserviceboot/base/restbase"
 	"github.com/coffeehc/microserviceboot/consultool"
@@ -39,9 +38,9 @@ func NewServiceClient(serviceInfo base.ServiceInfo, httpClientConfig *client.HTT
 		if c == "" {
 			return nil, base.NewError(base.ErrCodeBaseSystemNil, "rest client", "discoveryConfig is a addrs")
 		}
-		balancer, err = loadbalancer.NewAddrArrayBalancer([]string{c})
+		balancer, err = loadbalancer.NewAddrArrayBalancer([]string{c}, serviceInfo.GetScheme() == "https")
 		if err != nil {
-			return nil, base.NewErrorWrapper("rest client", 0, err)
+			return nil, base.NewErrorWrapper(0, "rest client", err)
 		}
 		baseURL = fmt.Sprintf("%s://%s", serviceInfo.GetScheme(), c)
 	case *api.Client:

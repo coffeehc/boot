@@ -2,10 +2,11 @@ package restclient
 
 import (
 	"context"
-	"github.com/coffeehc/commons/httpcommons/client"
+	"net/http"
+
+	"github.com/coffeehc/commons/https/client"
 	"github.com/coffeehc/microserviceboot/base"
 	"github.com/coffeehc/microserviceboot/loadbalancer"
-	"net/http"
 )
 
 type restClient struct {
@@ -21,12 +22,12 @@ func (rc *restClient) getTransport() *http.Transport {
 func newHttpClient(cxt context.Context, serviceInfo base.ServiceInfo, balancer loadbalancer.Balancer, defaultOption *client.HTTPClientOptions) *restClient {
 	_clientOptions := &restClient{}
 	_clientOptions.serviceInfo = serviceInfo
-	transport := defaultOption.NewTransport()
-	transport.DialContext = (&_BalanceDialer{
+	transport := defaultOption.NewTransport((&_BalanceDialer{
 		Timeout:   defaultOption.GetTimeout(),
 		KeepAlive: defaultOption.GetDialerKeepAlive(),
 		balancer:  balancer,
-	}).DialContext
+	}).DialContext)
+
 	_clientOptions.transport = transport
 	options := &client.HTTPClientOptions{
 		Timeout:                        defaultOption.GetTimeout(),

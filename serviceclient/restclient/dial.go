@@ -2,9 +2,10 @@ package restclient
 
 import (
 	"context"
-	"github.com/coffeehc/microserviceboot/loadbalancer"
 	"net"
 	"time"
+
+	"github.com/coffeehc/microserviceboot/loadbalancer"
 )
 
 type _BalanceDialer struct {

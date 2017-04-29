@@ -28,7 +28,7 @@ func ErrorRecover(reply httpx.Reply) {
 		case string:
 			errorResponse = base.NewError(base.ErrCodeBaseRPCUnknown, errScopeRest, e)
 		case error:
-			errorResponse = base.NewErrorWrapper(errScopeRest, base.ErrCodeBaseRPCUnknown, e)
+			errorResponse = base.NewErrorWrapper(base.ErrCodeBaseRPCUnknown, errScopeRest, e)
 		default:
 			errorResponse = base.NewError(base.ErrCodeBaseRPCUnknown, errScopeRest, fmt.Sprintf("%#v", err))
 		}
