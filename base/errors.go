@@ -25,10 +25,11 @@ type baseError struct {
 	Scope     string `json:"scope"`
 	DebugCode int64  `json:"debug_code"`
 	RootError error  `json:"root_error"`
+	Message   string `json:"message"`
 }
 
 func (err *baseError) Error() string {
-	return fmt.Sprintf(`{"scope":"%s","debug_code":"%d","root_error":"%s"}`, err.Scope, err.DebugCode, err.RootError.Error())
+	return err.Message
 }
 
 func (err *baseError) GetErrorCode() int64 {
@@ -52,16 +53,22 @@ func ParseErrorFromJSON(data []byte) Error {
 	return err
 }
 
+func ErrorToJson(err Error) string {
+	data, _ := ffjson.Marshal(err.GetRootError())
+	return fmt.Sprintf(`{"scope":"%s","debug_code":"%d","root_error":{%s},"message":"%s"}`, err.GetScopes(), err.GetErrorCode(), data, err.Error())
+}
+
 //NewError 构建一个新的 Error
 func NewError(debugCode int64, scope string, errMsg string) Error {
 	return &baseError{
 		Scope:     scope,
 		RootError: strError(errMsg),
 		DebugCode: debugCode,
+		Message:   errMsg,
 	}
 }
 
 //NewErrorWrapper 创建一个对普通的 error的封装
 func NewErrorWrapper(debugCode int64, scope string, err error) Error {
-	return &baseError{Scope: scope, DebugCode: ErrCodeBaseSystemUnknown, RootError: err}
+	return &baseError{Scope: scope, DebugCode: ErrCodeBaseSystemUnknown, RootError: err, Message: err.Error()}
 }
