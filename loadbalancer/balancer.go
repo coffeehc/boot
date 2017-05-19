@@ -219,7 +219,6 @@ func (rr *roundRobin) Get(ctx context.Context, opts BalancerGetOptions) (addr Ad
 		err = errClientConnClosing
 		return
 	}
-
 	if len(rr.addrs) > 0 {
 		if rr.next >= len(rr.addrs) {
 			rr.next = 0
@@ -272,7 +271,6 @@ func (rr *roundRobin) Get(ctx context.Context, opts BalancerGetOptions) (addr Ad
 				err = errClientConnClosing
 				return
 			}
-
 			if len(rr.addrs) > 0 {
 				if rr.next >= len(rr.addrs) {
 					rr.next = 0

@@ -1,9 +1,8 @@
 package consultool
 
 import (
-	"fmt"
-
 	"context"
+	"fmt"
 	"net"
 	"strconv"
 

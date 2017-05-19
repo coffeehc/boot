@@ -32,12 +32,12 @@ type ServiceInfo interface {
 
 //SimpleServiceInfo 简单的 ServiceInfo 配置
 type SimpleServiceInfo struct {
-	ServiceName string `yaml:"service_name"`
-	Version     string `yaml:"version"`
-	Descriptor  string `yaml:"descriptor"`
-	APIDefine   string `yaml:"api_define"`
-	Tag         string `yaml:"tag"`
-	Scheme      string `yaml:"scheme"`
+	ServiceName string `yaml:"service_name" json:"service_name"`
+	Version     string `yaml:"version" json:"version"`
+	Descriptor  string `yaml:"descriptor" json:"descriptor"`
+	APIDefine   string `yaml:"api_define" json:"api_define"`
+	Tag         string `yaml:"tag" json:"tag"`
+	Scheme      string `yaml:"scheme" json:"scheme"`
 }
 
 //GetAPIDefine implement ServiceInfo interface

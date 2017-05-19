@@ -45,6 +45,36 @@
 			"revisionTime": "2017-02-13T03:43:02Z"
 		},
 		{
+			"checksumSHA1": "7BC2/27NId9xaPDB5w3nWN2mn9A=",
+			"path": "github.com/coreos/etcd/auth/authpb",
+			"revision": "1f2dcbb935e3d294df315d05fa2c7e0c80bae388",
+			"revisionTime": "2017-05-18T16:31:34Z"
+		},
+		{
+			"checksumSHA1": "0xcIEF98NqTEsL0VTnblD7FJk7I=",
+			"path": "github.com/coreos/etcd/clientv3",
+			"revision": "1f2dcbb935e3d294df315d05fa2c7e0c80bae388",
+			"revisionTime": "2017-05-18T16:31:34Z"
+		},
+		{
+			"checksumSHA1": "PnBbh5xS4/RtluD+Vatock/WZts=",
+			"path": "github.com/coreos/etcd/etcdserver/api/v3rpc/rpctypes",
+			"revision": "1f2dcbb935e3d294df315d05fa2c7e0c80bae388",
+			"revisionTime": "2017-05-18T16:31:34Z"
+		},
+		{
+			"checksumSHA1": "qzppfVnJPThUwh/5bFJF7Q7llbA=",
+			"path": "github.com/coreos/etcd/etcdserver/etcdserverpb",
+			"revision": "1f2dcbb935e3d294df315d05fa2c7e0c80bae388",
+			"revisionTime": "2017-05-18T16:31:34Z"
+		},
+		{
+			"checksumSHA1": "JAkX9DfIBrSe0vUa07xl5cikxVQ=",
+			"path": "github.com/coreos/etcd/mvcc/mvccpb",
+			"revision": "1f2dcbb935e3d294df315d05fa2c7e0c80bae388",
+			"revisionTime": "2017-05-18T16:31:34Z"
+		},
+		{
 			"checksumSHA1": "kBeNcaKk56FguvPSUCEaH6AxpRc=",
 			"path": "github.com/golang/protobuf/proto",
 			"revision": "c9c7427a2a70d2eb3bafa0ab2dc163e45f143317",
@@ -315,6 +345,12 @@
 			"path": "google.golang.org/grpc/transport",
 			"revision": "c5a5dbc5005d9153f67df476a7b561c07b22dbc2",
 			"revisionTime": "2017-03-21T18:35:53Z"
+		},
+		{
+			"checksumSHA1": "CEFTYXtWmgSh+3Ik1NmDaJcz4E0=",
+			"path": "gopkg.in/check.v1",
+			"revision": "20d25e2804050c1cd24a7eea1e7a6447dd0e74ec",
+			"revisionTime": "2016-12-08T18:13:25Z"
 		},
 		{
 			"checksumSHA1": "0KwOlQV1dNUh9X8t+5s7nX5bqfk=",
