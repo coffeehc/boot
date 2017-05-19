@@ -55,7 +55,7 @@ func newEtcdResolver(client *clientv3.Client, service, tag string) (naming.Resol
 		}
 	}()
 	r.updatesc <- r.makeUpdates(nil, <-instancesCh)
-	//go r.updater(instances)
+	go r.updater(instances)
 	return r, nil
 }
 
@@ -80,22 +80,19 @@ func (r *_EtcdResolver) updater(instances []string) {
 	var err error
 	var oldInstances = instances
 	var newInstances []string
-
-	// TODO Cache the updates for a while, so that we don't overwhelm Consul.
-	sleep := int64(time.Second * 3)
+	watchChan := r.client.Watch(context.Background(), r.registerPrefix, clientv3.WithPrefix())
 	for {
 		select {
 		case <-r.quitc:
 			break
 		case <-r.quitUpdate:
 			return
-		default:
-			func() {
-				defer func() {
-					if err := recover(); err != nil {
-						logger.Warn("update addrs error :%s", err)
-					}
-				}()
+		case response, ok := <-watchChan:
+			if !ok {
+				watchChan = r.client.Watch(context.Background(), r.registerPrefix, clientv3.WithPrefix())
+				break
+			}
+			if response.IsProgressNotify() {
 				newInstances, err = r.getInstances()
 				if err != nil {
 					logger.Warn("lb: error retrieving instances from Consul: %v", err)
@@ -108,7 +105,7 @@ func (r *_EtcdResolver) updater(instances []string) {
 				}
 				r.updatesc <- updates
 				oldInstances = newInstances
-			}()
+			}
 		}
 	}
 }
