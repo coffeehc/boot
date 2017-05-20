@@ -5,6 +5,14 @@ import (
 	"github.com/coreos/etcd/clientv3"
 )
 
+func NewClientByConfigFile(configPath string) (*clientv3.Client, base.Error) {
+	config, err := LoadEtcdConfig(configPath)
+	if err != nil {
+		return nil, err
+	}
+	return NewClient(config)
+}
+
 func NewClient(config *Config) (*clientv3.Client, base.Error) {
 	conf, err := config.GetEtcdConfig()
 	if err != nil {

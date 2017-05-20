@@ -54,7 +54,8 @@ func newEtcdResolver(client *clientv3.Client, service, tag string) (naming.Resol
 			return
 		}
 	}()
-	r.updatesc <- r.makeUpdates(nil, <-instancesCh)
+	instances := <-instancesCh
+	r.updatesc <- r.makeUpdates(nil, instances)
 	go r.updater(instances)
 	return r, nil
 }
@@ -96,7 +97,6 @@ func (r *_EtcdResolver) updater(instances []string) {
 				newInstances, err = r.getInstances()
 				if err != nil {
 					logger.Warn("lb: error retrieving instances from Consul: %v", err)
-					time.Sleep(time.Duration(rand.Int63n(sleep)))
 					return
 				}
 				updates := r.makeUpdates(oldInstances, newInstances)

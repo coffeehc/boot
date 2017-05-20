@@ -1,14 +1,31 @@
 package etcdtool
 
 import (
-	"crypto/tls"
-	"time"
-
 	"context"
+	"crypto/tls"
+	"io/ioutil"
+	"time"
 
 	"github.com/coffeehc/microserviceboot/base"
 	"github.com/coreos/etcd/clientv3"
+	yaml "gopkg.in/yaml.v2"
 )
+
+func LoadEtcdConfig(configPath string) (*Config, base.Error) {
+	data, err := ioutil.ReadFile(configPath)
+	if err != nil {
+		return nil, base.NewError(base.ErrCodeBaseSystemInit, "etcd", "加载配置文件失败")
+	}
+	i := &struct {
+		EtcdConfig *Config `yaml:"etcd"`
+	}{}
+	err = yaml.Unmarshal(data, i)
+	if err != nil {
+		return nil, base.NewError(base.ErrCodeBaseSystemInit, "etcd", "解析Etcd配置失败")
+	}
+	return i.EtcdConfig, nil
+
+}
 
 type Config struct {
 	Endpoints        []string `yaml:"endpoints"`
