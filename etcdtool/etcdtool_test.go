@@ -10,7 +10,6 @@ import (
 	"github.com/coffeehc/logger"
 	"github.com/coffeehc/microserviceboot/base"
 	"github.com/coffeehc/microserviceboot/etcdtool"
-	"github.com/coffeehc/microserviceboot/loadbalancer"
 	"github.com/coreos/etcd/clientv3"
 	. "gopkg.in/check.v1"
 )
@@ -32,6 +31,8 @@ func (t *EtcdToolSuite) SetUpSuite(c *C) {
 	config := &etcdtool.Config{
 		Endpoints:   []string{"127.0.0.1:2379"},
 		DialTimeout: 5,
+		Username:    "service",
+		Password:    "service#123",
 	}
 	client, err := etcdtool.NewClient(config)
 	if err != nil {
@@ -62,17 +63,14 @@ func (t *EtcdToolSuite) TestRegister(c *C) {
 	c.Assert(err, IsNil)
 	c.Assert(deregister, NotNil)
 	//TODO test balancer
-	balancer, err := etcdtool.NewEtcdBalancer(cxt, t.etcdClient, t.serviceInfo)
-	c.Assert(err, IsNil)
-	c.Assert(balancer, NotNil)
-	go func() {
-
-	}()
-	_err := balancer.Start("", loadbalancer.BalancerConfig{})
-	c.Assert(_err, IsNil)
-	addrsChan := balancer.Notify()
-	addrs := <-addrsChan
-	c.Assert(len(addrs), Equals, 1)
-	c.Assert(addrs[0].Addr, Equals, "127.0.0.1:8080")
+	//balancer, err := etcdtool.NewEtcdBalancer(cxt, t.etcdClient, t.serviceInfo)
+	//c.Assert(err, IsNil)
+	//c.Assert(balancer, NotNil)
+	//_err := balancer.Start("", loadbalancer.BalancerConfig{})
+	//c.Assert(_err, IsNil)
+	//addrsChan := balancer.Notify()
+	//addrs := <-addrsChan
+	//c.Assert(len(addrs), Equals, 1)
+	//c.Assert(addrs[0].Addr, Equals, "127.0.0.1:8080")
 	deregister()
 }

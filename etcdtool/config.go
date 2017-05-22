@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"time"
 
+	"github.com/coffeehc/logger"
 	"github.com/coffeehc/microserviceboot/base"
 	"github.com/coreos/etcd/clientv3"
 	yaml "gopkg.in/yaml.v2"
@@ -23,6 +24,10 @@ func LoadEtcdConfig(configPath string) (*Config, base.Error) {
 	if err != nil {
 		return nil, base.NewError(base.ErrCodeBaseSystemInit, "etcd", "解析Etcd配置失败")
 	}
+	if i.EtcdConfig == nil {
+		return nil, base.NewError(base.ErrCodeBaseSystemInit, "etcd", "加载的Etcd配置为空")
+	}
+	logger.Debug("读取配置文件内容为:%#v", i.EtcdConfig)
 	return i.EtcdConfig, nil
 
 }

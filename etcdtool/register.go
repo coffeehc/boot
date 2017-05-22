@@ -34,10 +34,10 @@ type etcdServiceRegister struct {
 func (reg *etcdServiceRegister) RegService(cxt context.Context, info base.ServiceInfo, serviceAddr string) (deregister func(), err base.Error) {
 	// 注册格式  internal_ms.${servicename}.${tag}.${instance:port}
 	if info.GetServiceName() == "" && info.GetServiceTag() == "" {
-		return nil, base.NewError(base.ErrCodeBaseSystemInit, "etcd", "没有指定ServiceInfo内容")
+		return nil, base.NewError(base.ErrCodeBaseSystemInit, "etcd", "没有指定ServiceInfo内容,"+err.Error())
 	}
 	if _, err := net.ResolveTCPAddr("tcp", serviceAddr); err != nil {
-		return nil, base.NewError(base.ErrCodeBaseSystemInit, "etcd", "服务地址不是一个标准的tcp地址")
+		return nil, base.NewError(base.ErrCodeBaseSystemInit, "etcd", "服务地址不是一个标准的tcp地址,"+err.Error())
 	}
 	leaseGrantResponse, _err := reg.client.Lease.Grant(cxt, int64(timeout/time.Second))
 	if _err != nil {
@@ -47,9 +47,15 @@ func (reg *etcdServiceRegister) RegService(cxt context.Context, info base.Servic
 	serviceKey := fmt.Sprintf("%s%s", buildServiceKeyPrefix(info.GetServiceName()), serviceAddr)
 	logger.Debug("serviceKey is %s", serviceKey)
 	value, _ := ffjson.Marshal(&ServiceRegisterInfo{ServiceInfo: info.(*base.SimpleServiceInfo)})
-	reg.client.KV.Put(cxt, serviceKey, string(value), clientv3.WithLease(leaseGrantResponse.ID))
+	_, _err = reg.client.KV.Put(cxt, serviceKey, string(value), clientv3.WithLease(leaseGrantResponse.ID))
+	if _err != nil {
+		return nil, base.NewError(base.ErrCodeBaseSystemInit, "etcd", "注册Service Key失败,"+_err.Error())
+	}
 	return func() {
-		reg.client.KV.Delete(cxt, serviceKey)
+		_, _err = reg.client.KV.Delete(cxt, serviceKey)
+		if _err != nil {
+			logger.Error("反注册服务失败," + _err.Error())
+		}
 	}, nil
 }
 
