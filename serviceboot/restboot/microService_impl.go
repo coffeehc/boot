@@ -58,6 +58,10 @@ func (ms *_RestMicroService) Init(cxt context.Context) (*serviceboot.ServiceConf
 		return nil, err
 	}
 	ms.httpServer = httpServer
+	err = ms.service.Init(cxt, configPath, httpServer)
+	if err != nil {
+		return nil, err
+	}
 	err = ms.registerEndpoints()
 	if err != nil {
 		return nil, err
@@ -71,10 +75,6 @@ func (ms *_RestMicroService) Init(cxt context.Context) (*serviceboot.ServiceConf
 		if serviceConfig.EnableAccessInfo {
 			ms.httpServer.AddFirstFilter("/*", httpx.AccessLogFilter)
 		}
-	}
-	err = ms.service.Init(cxt, configPath, httpServer)
-	if err != nil {
-		return nil, err
 	}
 	return serviceConfig, nil
 }

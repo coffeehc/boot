@@ -27,16 +27,16 @@
 			"revisionTime": "2017-05-16T12:04:55Z"
 		},
 		{
-			"checksumSHA1": "LMfC/TmbSeFIjTiIsFrRtyZKjic=",
+			"checksumSHA1": "6FPc4RktFjalcn+6+wm8GcU1JcE=",
 			"path": "github.com/coffeehc/httpx",
-			"revision": "65a4e0983f14b1f6131379d806d6d506ef60f6c2",
-			"revisionTime": "2017-04-07T06:05:08Z"
+			"revision": "b72bcf9cadc98b02d470577071949262fa43c673",
+			"revisionTime": "2017-05-22T12:08:59Z"
 		},
 		{
 			"checksumSHA1": "x/9MkUxFC5r0z0lMf6m5U+P6/Vk=",
 			"path": "github.com/coffeehc/httpx/pprof",
-			"revision": "65a4e0983f14b1f6131379d806d6d506ef60f6c2",
-			"revisionTime": "2017-04-07T06:05:08Z"
+			"revision": "b72bcf9cadc98b02d470577071949262fa43c673",
+			"revisionTime": "2017-05-22T12:08:59Z"
 		},
 		{
 			"checksumSHA1": "99y6ZBu2zSqcSEmOh/Ld4dbOd6g=",
