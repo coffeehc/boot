@@ -8,6 +8,7 @@ import (
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 var (
@@ -93,14 +94,14 @@ func catchPanicInterceptor(ctx context.Context, req interface{}, info *grpc.Unar
 	defer func() {
 		if r := recover(); r != nil {
 			if _err, ok := r.(base.Error); ok {
-				err = grpc.Errorf(0xff, _err.Error())
+				err = status.Errorf(0xff, _err.Error())
 				return
 			}
 			if _err, ok := r.(error); ok {
-				err = grpc.Errorf(codes.Internal, _err.Error())
+				err = status.Errorf(codes.Internal, _err.Error())
 				return
 			}
-			err = grpc.Errorf(codes.Unknown, "%s", r)
+			err = status.Errorf(codes.Unknown, "%s", r)
 		}
 	}()
 	resp, err = handler(ctx, req)
