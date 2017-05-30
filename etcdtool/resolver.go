@@ -2,7 +2,6 @@ package etcdtool
 
 import (
 	"context"
-	"math/rand"
 	"sync"
 	"time"
 
@@ -10,6 +9,7 @@ import (
 	"github.com/coffeehc/microserviceboot/base"
 	"github.com/coffeehc/microserviceboot/loadbalancer"
 	"github.com/coreos/etcd/clientv3"
+	"github.com/coreos/etcd/mvcc/mvccpb"
 	"github.com/pquerna/ffjson/ffjson"
 	"google.golang.org/grpc/naming"
 )
@@ -39,24 +39,7 @@ func newEtcdResolver(client *clientv3.Client, service, tag string) (naming.Resol
 	}
 
 	// Retrieve instances immediately
-	instancesCh := make(chan []string)
-	go func() {
-		sleep := int64(time.Second * 3)
-		for {
-			instances, err := r.getInstances()
-			if err != nil {
-				logger.Warn("lb: error retrieving instances from etcd: %v", err)
-				time.Sleep(time.Duration(rand.Int63n(sleep)))
-				continue
-			}
-			logger.Debug("初始化instance is %q", instances)
-			instancesCh <- instances
-			return
-		}
-	}()
-	instances := <-instancesCh
-	r.updatesc <- r.makeUpdates(nil, instances)
-	go r.updater(instances)
+	go r.updater()
 	return r, nil
 }
 
@@ -77,11 +60,32 @@ func (r *_EtcdResolver) Close() {
 	}
 }
 
-func (r *_EtcdResolver) updater(instances []string) {
-	var err error
-	var oldInstances = instances
-	var newInstances []string
-	watchChan := r.client.Watch(context.Background(), r.registerPrefix, clientv3.WithPrefix())
+func (r *_EtcdResolver) updater() {
+	instancesCh := make(chan []string)
+	go func() {
+		for {
+			instances, err := r.getInstances()
+			if err != nil {
+				logger.Warn("lb: error retrieving instances from etcd: %v", err)
+				time.Sleep(time.Second)
+				continue
+			}
+			logger.Debug("初始化instance is %q", instances)
+			instancesCh <- instances
+			return
+		}
+	}()
+	instances := <-instancesCh
+	updates := make([]*naming.Update, 0)
+	for _, instance := range instances {
+		if instance != "" {
+			updates = append(updates, &naming.Update{Op: naming.Add, Addr: instance})
+		}
+	}
+	r.updatesc <- updates
+	//watch
+	logger.Debug("watch %s", r.registerPrefix)
+	watchChan := r.client.Watch(context.Background(), r.registerPrefix, clientv3.WithPrefix(), clientv3.WithCreatedNotify())
 	for {
 		select {
 		case <-r.quitc:
@@ -90,21 +94,27 @@ func (r *_EtcdResolver) updater(instances []string) {
 			return
 		case response, ok := <-watchChan:
 			if !ok {
-				watchChan = r.client.Watch(context.Background(), r.registerPrefix, clientv3.WithPrefix())
+				logger.Debug("re wartch")
+				watchChan = r.client.Watch(context.Background(), r.registerPrefix, clientv3.WithPrefix(), clientv3.WithCreatedNotify())
 				break
 			}
-			if response.IsProgressNotify() {
-				newInstances, err = r.getInstances()
-				if err != nil {
-					logger.Warn("lb: error retrieving instances from Consul: %v", err)
-					return
+			updates := make([]*naming.Update, 0)
+			for _, event := range response.Events {
+				switch event.Type {
+				case clientv3.EventTypePut:
+					addr := r.getServiceAddr(event.Kv)
+					if addr != "" {
+						updates = append(updates, &naming.Update{Op: naming.Add, Addr: addr})
+					}
+				case clientv3.EventTypeDelete:
+					updates = append(updates, &naming.Update{Op: naming.Delete, Addr: string(event.Kv.Key[len(r.registerPrefix):])})
+				default:
+					logger.Warn("无法识别的事件,%#v", event)
 				}
-				updates := r.makeUpdates(oldInstances, newInstances)
-				if updates == nil || len(updates) == 0 {
-					return
-				}
+
+			}
+			if len(updates) > 0 {
 				r.updatesc <- updates
-				oldInstances = newInstances
 			}
 		}
 	}
@@ -117,51 +127,37 @@ func (r *_EtcdResolver) getInstances() ([]string, error) {
 	}
 	address := []string{}
 	for _, kv := range response.Kvs {
-		logger.Debug("value is %s", kv.Value)
-		info := &ServiceRegisterInfo{}
-		err := ffjson.Unmarshal(kv.Value, info)
-		if err != nil {
-			logger.Error("Unmarshal er is %s", err)
-			continue
-		}
-		logger.Debug("info is %#v", info)
-		if info.ServiceInfo.Tag == r.tag {
+		addr := r.getServiceAddr(kv)
+		if addr != "" {
 			address = append(address, string(kv.Key[len(r.registerPrefix):]))
 		}
 	}
 	return address, nil
 }
 
-func (r *_EtcdResolver) makeUpdates(oldInstances, newInstances []string) []*naming.Update {
-	oldAddr := make(map[string]struct{}, len(oldInstances))
-	for _, instance := range oldInstances {
-		oldAddr[instance] = struct{}{}
+func (r *_EtcdResolver) getServiceAddr(kv *mvccpb.KeyValue) string {
+	logger.Debug("value is %s", kv.Value)
+	info := &ServiceRegisterInfo{}
+	err := ffjson.Unmarshal(kv.Value, info)
+	if err != nil {
+		logger.Error("Unmarshal er is %s", err)
+		return ""
 	}
-	newAddr := make(map[string]struct{}, len(newInstances))
-	for _, instance := range newInstances {
-		newAddr[instance] = struct{}{}
+	logger.Debug("info is %#v", info)
+	if info.ServiceInfo.Tag == r.tag {
+		return string(kv.Key[len(r.registerPrefix):])
 	}
-	var updates []*naming.Update
-	for addr := range newAddr {
-		if _, ok := oldAddr[addr]; !ok {
-			updates = append(updates, &naming.Update{Op: naming.Add, Addr: addr})
-		}
-	}
-	for addr := range oldAddr {
-		if _, ok := newAddr[addr]; !ok {
-			updates = append(updates, &naming.Update{Op: naming.Delete, Addr: addr})
-		}
-	}
-	return updates
+	return ""
 }
 
 func (sr *_EtcdResolver) Delete(addr loadbalancer.Address) {
-	sr.updateMutex.Lock()
-	defer sr.updateMutex.Unlock()
-	logger.Warn("delete addr [%s]", addr.Addr)
-	sr.updatesc <- []*naming.Update{&naming.Update{Op: naming.Delete, Addr: addr.Addr}}
-	sr.quitUpdate <- struct{}{}
-	time.Sleep(time.Second * 10)
-	instances := make([]string, 0)
-	go sr.updater(instances)
+	//sr.updateMutex.Lock()
+	//defer sr.updateMutex.Unlock()
+	//logger.Warn("delete addr [%s]", addr.Addr)
+	//sr.updatesc <- []*naming.Update{&naming.Update{Op: naming.Delete, Addr: addr.Addr}}
+	//sr.quitUpdate <- struct{}{}
+	//time.Sleep(time.Second * 10)
+	//instances := make([]string, 0)
+	//go sr.updater(instances)
+	time.Sleep(time.Second)
 }

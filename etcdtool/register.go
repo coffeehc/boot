@@ -76,8 +76,13 @@ func keepAlive(cxt context.Context, client *clientv3.Client, leaseId clientv3.Le
 			select {
 			case response, ok := <-leaseKeepAliveResponse:
 				//logger.Debug("Revision:%d,TTL:%ds", response.Revision, response.TTL)
-				if !ok || response == nil {
+				if !ok {
 					logger.Debug("管道关闭,重新建立链接")
+					retry()
+					return
+				}
+				if response == nil {
+					logger.Debug("获取了一个空的response")
 					retry()
 					return
 				}
