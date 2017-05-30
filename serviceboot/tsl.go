@@ -46,6 +46,6 @@ func NewDefaultTLSConfig() (*tls.Config, base.Error) {
 		ClientAuth:   tls.NoClientCert,
 		Certificates: []tls.Certificate{cert},
 		ClientCAs:    pool,
-		NextProtos:   []string{"h2"},
+		NextProtos:   []string{"h2", "http/1.1"},
 	}, nil
 }
