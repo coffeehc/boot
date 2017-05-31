@@ -32,8 +32,10 @@ func (client *_GRPCClient) NewClientConn(cxt context.Context, serviceInfo base.S
 		grpc.WithBalancer(adopterToGRPCBalancer(balancer)),
 		grpc.WithUserAgent("coffee's grpc client"),
 		grpc.WithBlock(),
+		grpc.WithTimeout(time.Second * 3),
 		grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
 			InsecureSkipVerify: true,
+			NextProtos:         []string{"h2"},
 		})),
 		grpc.WithCompressor(grpc.NewGZIPCompressor()),
 		grpc.WithDecompressor(grpc.NewGZIPDecompressor()),

@@ -80,6 +80,9 @@ func (ms *_GRPCMicroService) Init(cxt context.Context) (*serviceboot.ServiceConf
 	grpc_prometheus.Register(ms.grpcServer)
 	grpcFilter := &grpcFilter{ms.grpcServer}
 	ms.httpServer.AddFirstFilter("*", grpcFilter.filter)
+	if base.IsDevModule() && config.GetServiceConfig().EnableAccessInfo {
+		ms.httpServer.AddFirstFilter("*", httpx.AccessLogFilter)
+	}
 	return config.GetServiceConfig(), nil
 }
 

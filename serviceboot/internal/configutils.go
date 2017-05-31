@@ -17,9 +17,19 @@ type ServiceConfiguration interface {
 
 //LoadConfig 加载ServiceConfiguration的配置
 func LoadConfig(serviceConfig ServiceConfiguration) (string, base.Error) {
-	err := base.LoadConfig(*configPath, serviceConfig)
-	if err != nil {
-		return "", err
+	loaded := false
+	if base.IsDevModule() && *configPath == "./config.yml" {
+		err := base.LoadConfig("./config-dev.yml", serviceConfig)
+		if err == nil {
+			*configPath = "./config-dev.yml"
+			loaded = true
+		}
+	}
+	if !loaded {
+		err := base.LoadConfig(*configPath, serviceConfig)
+		if err != nil {
+			return "", err
+		}
 	}
 	logger.Debug("serviceboot Config is %#v", serviceConfig.GetServiceConfig())
 	if serviceConfig.GetServiceConfig().ServiceInfo == nil {

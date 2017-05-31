@@ -1,10 +1,13 @@
 package grpcboot
 
 import (
+	"time"
+
 	"github.com/coffeehc/microserviceboot/base"
 	"github.com/coffeehc/microserviceboot/serviceboot"
 	"github.com/grpc-ecosystem/go-grpc-prometheus"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/keepalive"
 )
 
 //Config grpcboot config
@@ -32,6 +35,15 @@ func (config *Config) GetGRPCOptions() []grpc.ServerOption {
 		grpc.UnaryInterceptor(_unaryServerInterceptor.Interceptor),
 		grpc.RPCCompressor(grpc.NewGZIPCompressor()),
 		grpc.RPCDecompressor(grpc.NewGZIPDecompressor()),
+		grpc.KeepaliveParams(keepalive.ServerParameters{
+			MaxConnectionIdle: time.Minute,
+			Timeout:           20 * time.Second,
+			Time:              2 * time.Hour,
+		}),
+		grpc.KeepaliveEnforcementPolicy(keepalive.EnforcementPolicy{
+			MinTime:             time.Minute * 5,
+			PermitWithoutStream: false,
+		}),
 	}
 }
 
