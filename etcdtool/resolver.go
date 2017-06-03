@@ -151,13 +151,5 @@ func (r *_EtcdResolver) getServiceAddr(kv *mvccpb.KeyValue) string {
 }
 
 func (sr *_EtcdResolver) Delete(addr loadbalancer.Address) {
-	//sr.updateMutex.Lock()
-	//defer sr.updateMutex.Unlock()
-	//logger.Warn("delete addr [%s]", addr.Addr)
-	//sr.updatesc <- []*naming.Update{&naming.Update{Op: naming.Delete, Addr: addr.Addr}}
-	//sr.quitUpdate <- struct{}{}
-	//time.Sleep(time.Second * 10)
-	//instances := make([]string, 0)
-	//go sr.updater(instances)
 	time.Sleep(time.Second)
 }

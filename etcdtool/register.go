@@ -39,38 +39,63 @@ func (reg *etcdServiceRegister) RegService(cxt context.Context, info base.Servic
 	if _, err := net.ResolveTCPAddr("tcp", serviceAddr); err != nil {
 		return nil, base.NewError(base.ErrCodeBaseSystemInit, "etcd", "服务地址不是一个标准的tcp地址,"+err.Error())
 	}
-	leaseGrantResponse, _err := reg.client.Lease.Grant(cxt, int64(timeout/time.Second))
-	if _err != nil {
-		return nil, base.NewError(base.ErrCodeBaseSystemInit, "etcd", "创建租约失败")
-	}
-	keepAlive(cxt, reg.client, leaseGrantResponse.ID)
 	serviceKey := fmt.Sprintf("%s%s", buildServiceKeyPrefix(info.GetServiceName()), serviceAddr)
 	logger.Debug("serviceKey is %s", serviceKey)
-	value, _ := ffjson.Marshal(&ServiceRegisterInfo{ServiceInfo: info.(*base.SimpleServiceInfo)})
-	_, _err = reg.client.KV.Put(cxt, serviceKey, string(value), clientv3.WithLease(leaseGrantResponse.ID))
-	if _err != nil {
-		return nil, base.NewError(base.ErrCodeBaseSystemInit, "etcd", "注册Service Key失败,"+_err.Error())
+	err = reg.register(cxt, info, serviceKey, false)
+	if err != nil {
+		return nil, err
 	}
 	return func() {
-		_, _err = reg.client.KV.Delete(cxt, serviceKey)
+		_, _err := reg.client.KV.Delete(cxt, serviceKey)
 		if _err != nil {
 			logger.Error("反注册服务失败," + _err.Error())
 		}
 	}, nil
 }
 
-func keepAlive(cxt context.Context, client *clientv3.Client, leaseId clientv3.LeaseID) base.Error {
+func (reg *etcdServiceRegister) register(cxt context.Context, info base.ServiceInfo, serviceKey string, reTry bool) base.Error {
+	leaseGrantResponse, _err := reg.client.Lease.Grant(cxt, int64(timeout/time.Second))
+	if _err != nil {
+		if reTry {
+			time.Sleep(time.Second * 3)
+			go reg.register(cxt, info, serviceKey, reTry)
+			return nil
+		}
+		return base.NewError(base.ErrCodeBaseSystemInit, "etcd", "创建租约失败")
+	}
+	value, _ := ffjson.Marshal(&ServiceRegisterInfo{ServiceInfo: info.(*base.SimpleServiceInfo)})
+	_, _err = reg.client.Put(cxt, serviceKey, string(value), clientv3.WithLease(leaseGrantResponse.ID))
+	if _err != nil {
+		if reTry {
+			time.Sleep(time.Second * 3)
+			go reg.register(cxt, info, serviceKey, reTry)
+			return nil
+		}
+		return base.NewError(base.ErrCodeBaseSystemInit, "etcd", "注册Service Key失败,"+_err.Error())
+	}
+	err := reg.keepAlive(cxt, leaseGrantResponse.ID, info, serviceKey)
+	if err != nil {
+		if reTry {
+			time.Sleep(time.Second * 3)
+			go reg.register(cxt, info, serviceKey, reTry)
+			return nil
+		}
+		return err
+	}
+	return nil
+}
+
+func (reg *etcdServiceRegister) keepAlive(cxt context.Context, leaseId clientv3.LeaseID, info base.ServiceInfo, serviceKey string) base.Error {
 	cancel, cancelFunc := context.WithCancel(cxt)
-	leaseKeepAliveResponseChe, _err := client.Lease.KeepAlive(cancel, leaseId)
+	leaseKeepAliveResponseChe, _err := reg.client.Lease.KeepAlive(cancel, leaseId)
 	if _err != nil {
 		return base.NewError(base.ErrCodeBaseSystemInit, "etcd", "KeepAlive创建租约失败")
 	}
 	go func(leaseKeepAliveResponse <-chan *clientv3.LeaseKeepAliveResponse) {
 		timer := time.NewTimer(timeout / 2)
-		var retry = func() {
+		var reRegister = func() {
 			cancelFunc()
-			time.Sleep(time.Second)
-			keepAlive(cxt, client, leaseId)
+			go reg.register(cxt, info, serviceKey, true)
 		}
 		for {
 			select {
@@ -78,18 +103,18 @@ func keepAlive(cxt context.Context, client *clientv3.Client, leaseId clientv3.Le
 				//logger.Debug("Revision:%d,TTL:%ds", response.Revision, response.TTL)
 				if !ok {
 					logger.Debug("管道关闭,重新建立链接")
-					retry()
+					reRegister()
 					return
 				}
 				if response == nil {
 					logger.Debug("获取了一个空的response")
-					retry()
+					reRegister()
 					return
 				}
 				//TODO 超时设置
 			case <-timer.C:
 				logger.Debug("超时了,重新建立连接")
-				retry()
+				reRegister()
 				return
 
 			}
