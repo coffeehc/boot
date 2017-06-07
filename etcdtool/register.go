@@ -28,7 +28,8 @@ func NewEtcdServiceRegister(client *clientv3.Client) (base.ServiceDiscoveryRegis
 }
 
 type etcdServiceRegister struct {
-	client *clientv3.Client
+	client     *clientv3.Client
+	serviceKey string
 }
 
 func (reg *etcdServiceRegister) RegService(cxt context.Context, info base.ServiceInfo, serviceAddr string) (deregister func(), err base.Error) {
@@ -36,26 +37,36 @@ func (reg *etcdServiceRegister) RegService(cxt context.Context, info base.Servic
 	if info.GetServiceName() == "" && info.GetServiceTag() == "" {
 		return nil, base.NewError(base.ErrCodeBaseSystemInit, "etcd", "没有指定ServiceInfo内容,"+err.Error())
 	}
-	if _, err := net.ResolveTCPAddr("tcp", serviceAddr); err != nil {
-		return nil, base.NewError(base.ErrCodeBaseSystemInit, "etcd", "服务地址不是一个标准的tcp地址,"+err.Error())
-	}
-	serviceKey := fmt.Sprintf("%s%s", buildServiceKeyPrefix(info.GetServiceName()), serviceAddr)
-	logger.Debug("serviceKey is %s", serviceKey)
-	err = reg.register(cxt, info, serviceKey, false)
+	err = reg.register(cxt, info, serviceAddr, false)
 	if err != nil {
 		return nil, err
 	}
 	return func() {
-		_, _err := reg.client.KV.Delete(cxt, serviceKey)
+		_, _err := reg.client.KV.Delete(cxt, reg.serviceKey)
 		if _err != nil {
 			logger.Error("反注册服务失败," + _err.Error())
 		}
 	}, nil
 }
 
-func (reg *etcdServiceRegister) register(cxt context.Context, info base.ServiceInfo, serviceKey string, reTry bool) base.Error {
-	leaseGrantResponse, _err := reg.client.Lease.Grant(cxt, int64(timeout/time.Second))
-	if _err != nil {
+func (reg *etcdServiceRegister) register(cxt context.Context, info base.ServiceInfo, serviceAddr string, reTry bool) base.Error {
+	addr, err := net.ResolveTCPAddr("tcp", serviceAddr)
+	if err != nil {
+		return base.NewError(base.ErrCodeBaseSystemInit, "etcd", fmt.Sprintf("服务地址不是一个标准的tcp地址:%s", err))
+	}
+	serverAddr := serviceAddr
+	if addr.IP.Equal(net.IPv4zero) {
+		localIp, err := base.GetLocalIP()
+		if err != nil {
+			return base.NewErrorWrapper(base.ErrCodeBaseSystemInit, "etcd", err)
+		}
+		serverAddr = fmt.Sprintf("%s:%d", localIp, addr.Port)
+	}
+	serviceKey := fmt.Sprintf("%s%s", buildServiceKeyPrefix(info.GetServiceName()), serverAddr)
+	logger.Debug("serviceKey is %s", serviceKey)
+	reg.serviceKey = serviceKey
+	leaseGrantResponse, err := reg.client.Lease.Grant(cxt, int64(timeout/time.Second))
+	if err != nil {
 		if reTry {
 			time.Sleep(time.Second * 3)
 			go reg.register(cxt, info, serviceKey, reTry)
@@ -64,28 +75,28 @@ func (reg *etcdServiceRegister) register(cxt context.Context, info base.ServiceI
 		return base.NewError(base.ErrCodeBaseSystemInit, "etcd", "创建租约失败")
 	}
 	value, _ := ffjson.Marshal(&ServiceRegisterInfo{ServiceInfo: info.(*base.SimpleServiceInfo)})
-	_, _err = reg.client.Put(cxt, serviceKey, string(value), clientv3.WithLease(leaseGrantResponse.ID))
-	if _err != nil {
-		if reTry {
-			time.Sleep(time.Second * 3)
-			go reg.register(cxt, info, serviceKey, reTry)
-			return nil
-		}
-		return base.NewError(base.ErrCodeBaseSystemInit, "etcd", "注册Service Key失败,"+_err.Error())
-	}
-	err := reg.keepAlive(cxt, leaseGrantResponse.ID, info, serviceKey)
+	_, err = reg.client.Put(cxt, serviceKey, string(value), clientv3.WithLease(leaseGrantResponse.ID))
 	if err != nil {
 		if reTry {
 			time.Sleep(time.Second * 3)
 			go reg.register(cxt, info, serviceKey, reTry)
 			return nil
 		}
-		return err
+		return base.NewError(base.ErrCodeBaseSystemInit, "etcd", "注册Service Key失败,"+err.Error())
+	}
+	baseErr := reg.keepAlive(cxt, leaseGrantResponse.ID, info, serviceKey, serviceAddr)
+	if baseErr != nil {
+		if reTry {
+			time.Sleep(time.Second * 3)
+			go reg.register(cxt, info, serviceKey, reTry)
+			return nil
+		}
+		return baseErr
 	}
 	return nil
 }
 
-func (reg *etcdServiceRegister) keepAlive(cxt context.Context, leaseId clientv3.LeaseID, info base.ServiceInfo, serviceKey string) base.Error {
+func (reg *etcdServiceRegister) keepAlive(cxt context.Context, leaseId clientv3.LeaseID, info base.ServiceInfo, serviceKey string, serviceAddr string) base.Error {
 	cancel, cancelFunc := context.WithCancel(cxt)
 	leaseKeepAliveResponseChe, _err := reg.client.Lease.KeepAlive(cancel, leaseId)
 	if _err != nil {
@@ -95,7 +106,7 @@ func (reg *etcdServiceRegister) keepAlive(cxt context.Context, leaseId clientv3.
 		timer := time.NewTimer(timeout / 2)
 		var reRegister = func() {
 			cancelFunc()
-			go reg.register(cxt, info, serviceKey, true)
+			go reg.register(cxt, info, serviceAddr, true)
 		}
 		for {
 			select {

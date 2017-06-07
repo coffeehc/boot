@@ -37,6 +37,10 @@ func (csr *consulServiceRegister) RegService(cxt context.Context, serviceInfo ba
 	}
 	addr := tcpAddr.IP.String()
 	if tcpAddr.IP.Equal(net.IPv4zero) {
+		addr, err = base.GetLocalIP()
+		if err != nil {
+			return nil, base.NewErrorWrapper(base.ErrCodeBaseSystemInit, "consul", err)
+		}
 		return nil, base.NewError(base.ErrCodeBaseSystemInit, errScopeConsulRegister, "没有指定具体的注册 IP")
 	}
 	serviceAddr = net.JoinHostPort(addr, strconv.Itoa(tcpAddr.Port))

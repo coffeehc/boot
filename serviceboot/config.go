@@ -21,7 +21,7 @@ func (sc *ServiceConfig) GetHTTPServerConfig() (*httpx.Config, base.Error) {
 		sc.HTTPConfig = new(httpx.Config)
 	}
 	if sc.HTTPConfig.ServerAddr == "" {
-		localIP, err := getLocalIP()
+		localIP, err := base.GetLocalIP()
 		if err != nil {
 			return nil, err
 		}
