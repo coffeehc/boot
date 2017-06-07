@@ -69,7 +69,7 @@ func (reg *etcdServiceRegister) register(cxt context.Context, info base.ServiceI
 	if err != nil {
 		if reTry {
 			time.Sleep(time.Second * 3)
-			go reg.register(cxt, info, serviceKey, reTry)
+			go reg.register(cxt, info, serviceAddr, reTry)
 			return nil
 		}
 		return base.NewError(base.ErrCodeBaseSystemInit, "etcd", "创建租约失败")
@@ -79,7 +79,7 @@ func (reg *etcdServiceRegister) register(cxt context.Context, info base.ServiceI
 	if err != nil {
 		if reTry {
 			time.Sleep(time.Second * 3)
-			go reg.register(cxt, info, serviceKey, reTry)
+			go reg.register(cxt, info, serviceAddr, reTry)
 			return nil
 		}
 		return base.NewError(base.ErrCodeBaseSystemInit, "etcd", "注册Service Key失败,"+err.Error())
@@ -88,7 +88,7 @@ func (reg *etcdServiceRegister) register(cxt context.Context, info base.ServiceI
 	if baseErr != nil {
 		if reTry {
 			time.Sleep(time.Second * 3)
-			go reg.register(cxt, info, serviceKey, reTry)
+			go reg.register(cxt, info, serviceAddr, reTry)
 			return nil
 		}
 		return baseErr
@@ -111,7 +111,6 @@ func (reg *etcdServiceRegister) keepAlive(cxt context.Context, leaseId clientv3.
 		for {
 			select {
 			case response, ok := <-leaseKeepAliveResponse:
-				//logger.Debug("Revision:%d,TTL:%ds", response.Revision, response.TTL)
 				if !ok {
 					logger.Debug("管道关闭,重新建立链接")
 					reRegister()
