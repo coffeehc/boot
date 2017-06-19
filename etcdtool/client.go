@@ -20,7 +20,7 @@ func NewClient(config *Config) (*clientv3.Client, base.Error) {
 	}
 	etcdClient, _err := clientv3.New(*conf)
 	if _err != nil {
-		return nil, base.NewErrorWrapper(base.ErrCode_System, "etcd", _err)
+		return nil, base.NewErrorWrapper(base.Error_System, "etcd", _err)
 	}
 	return etcdClient, nil
 }

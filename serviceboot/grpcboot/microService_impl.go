@@ -96,7 +96,7 @@ func (ms *_GRPCMicroService) Start(cxt context.Context) base.Error {
 	go func() {
 		err := <-errSign
 		if ms.httpServer != nil && err != nil {
-			panic(base.NewError(base.ErrCode_System, "GrpcMicroService start", err.Error()))
+			panic(base.NewError(base.Error_System, "GrpcMicroService start", err.Error()))
 		}
 	}()
 	return nil

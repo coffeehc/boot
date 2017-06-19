@@ -6,9 +6,9 @@ import (
 
 	"reflect"
 
+	"github.com/coffeehc/logger"
 	"github.com/coffeehc/microserviceboot/base"
 	"github.com/coffeehc/microserviceboot/pb"
-	"github.com/golang/protobuf/ptypes/any"
 	"golang.org/x/net/context"
 	spb "google.golang.org/genproto/googleapis/rpc/status"
 	"google.golang.org/grpc"
@@ -59,7 +59,7 @@ func (usi *unaryServerInterceptor) AppendInterceptor(name string, interceptor gr
 	usi.mutex.Lock()
 	defer usi.mutex.Unlock()
 	if _, ok := usi.interceptors[name]; ok {
-		return base.NewError(base.ErrCode_System, "grpc interceptor", fmt.Sprintf("%s 已经存在", name))
+		return base.NewError(base.Error_System, "grpc interceptor", fmt.Sprintf("%s 已经存在", name))
 	}
 	lastInterceptor := getLastUnaryServerInterceptor(usi.rootInterceptor)
 	lastInterceptor.next = &unaryServerInterceptorWapper{interceptor: interceptor}
@@ -83,35 +83,33 @@ func (usiw *unaryServerInterceptorWapper) handler(ctx context.Context, req inter
 	if usiw.next == nil {
 		realHandler := ctx.Value(_internalHandler)
 		if realHandler == nil {
-			return nil, base.NewError(base.ErrCode_System, "grpc handler", "没有 Handler")
+			return nil, base.NewError(base.Error_System, "grpc handler", "没有 Handler")
 		}
 		if handler, ok := realHandler.(grpc.UnaryHandler); ok {
 			return handler(ctx, req)
 		}
-		return nil, base.NewError(base.ErrCode_System, "grpc handler", "类型错误")
+		return nil, base.NewError(base.Error_System, "grpc handler", "类型错误")
 	}
 	info := ctx.Value(_internalUnaryServerInfo)
 	if info == 0 {
-		return nil, base.NewError(base.ErrCode_System, "grpc interceptor", "没有 ServerInfo")
+		return nil, base.NewError(base.Error_System, "grpc interceptor", "没有 ServerInfo")
 	}
 	if unaryServerInfo, ok := info.(*grpc.UnaryServerInfo); ok {
 		return usiw.next.interceptor(ctx, req, unaryServerInfo, usiw.next.handler)
 	}
-	return nil, base.NewError(base.ErrCode_System, "grpc interceptor", "类型错误")
+	return nil, base.NewError(base.Error_System, "grpc interceptor", "类型错误")
 }
 
 func catchPanicInterceptor(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp interface{}, err error) {
 	defer func() {
 		if r := recover(); r != nil {
 			if _err, ok := r.(base.Error); ok {
-				detail, _ := pb.MarshalAny(_errDetailTypeURL, &pb.ErrorDetail{
-					Code:  _err.GetErrorCode(),
-					Scope: _err.GetScopes(),
-				})
+				if base.IsSystemError(_err.GetCode()) {
+					logger.Error("grpc 错误:%s", base.ErrorToJson(_err))
+				}
 				err = status.ErrorProto(&spb.Status{
-					Code:    0xff,
+					Code:    _err.GetCode(),
 					Message: _err.Error(),
-					Details: []*any.Any{detail},
 				})
 				return
 			}

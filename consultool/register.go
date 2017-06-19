@@ -20,7 +20,7 @@ type consulServiceRegister struct {
 //NewConsulServiceRegister 构建一个 base.ServiceDiscoveryRegister的基于 consul 的实现实例
 func NewConsulServiceRegister(consulClient *api.Client) (base.ServiceDiscoveryRegister, base.Error) {
 	if consulClient == nil {
-		return nil, base.NewError(base.ErrCode_System, errScopeConsulRegister, "没有指定 consulClient")
+		return nil, base.NewError(base.Error_System, errScopeConsulRegister, "没有指定 consulClient")
 	}
 	return &consulServiceRegister{
 		client: consulClient,
@@ -29,25 +29,25 @@ func NewConsulServiceRegister(consulClient *api.Client) (base.ServiceDiscoveryRe
 
 func (csr *consulServiceRegister) RegService(cxt context.Context, serviceInfo base.ServiceInfo, serviceAddr string) (func(), base.Error) {
 	if serviceAddr == "" {
-		return nil, base.NewError(base.ErrCode_System, errScopeConsulRegister, "serverAddr is nil")
+		return nil, base.NewError(base.Error_System, errScopeConsulRegister, "serverAddr is nil")
 	}
 	tcpAddr, err := net.ResolveTCPAddr("tcp", serviceAddr)
 	if err != nil {
-		return nil, base.NewError(base.ErrCode_System, errScopeConsulRegister, "serviceAddr is not a tcp addr")
+		return nil, base.NewError(base.Error_System, errScopeConsulRegister, "serviceAddr is not a tcp addr")
 	}
 	addr := tcpAddr.IP.String()
 	if tcpAddr.IP.Equal(net.IPv4zero) {
 		addr, err = base.GetLocalIP()
 		if err != nil {
-			return nil, base.NewErrorWrapper(base.ErrCode_System, "consul", err)
+			return nil, base.NewErrorWrapper(base.Error_System, "consul", err)
 		}
-		return nil, base.NewError(base.ErrCode_System, errScopeConsulRegister, "没有指定具体的注册 IP")
+		return nil, base.NewError(base.Error_System, errScopeConsulRegister, "没有指定具体的注册 IP")
 	}
 	serviceAddr = net.JoinHostPort(addr, strconv.Itoa(tcpAddr.Port))
 	logger.Info("向Consul注册地址为:%s", serviceAddr)
 	_, port, err := net.SplitHostPort(serviceAddr)
 	if err != nil {
-		return nil, base.NewError(base.ErrCode_System, errScopeConsulRegister, "serviceAddr is not a tcp addr")
+		return nil, base.NewError(base.Error_System, errScopeConsulRegister, "serviceAddr is not a tcp addr")
 	}
 	p, _ := strconv.Atoi(port)
 	registration := &api.AgentServiceRegistration{
@@ -69,7 +69,7 @@ func (csr *consulServiceRegister) RegService(cxt context.Context, serviceInfo ba
 	err = csr.client.Agent().ServiceRegister(registration)
 	if err != nil {
 		logger.Error("注册服务失败:%s", err)
-		return nil, base.NewError(base.ErrCode_System, errScopeConsulRegister, err.Error())
+		return nil, base.NewError(base.Error_System, errScopeConsulRegister, err.Error())
 	}
 	return func() {
 		csr.client.Agent().ServiceDeregister(serviceAddr)

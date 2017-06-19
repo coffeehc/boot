@@ -20,7 +20,7 @@ func NewClient(config *ConsulConfig) (*api.Client, base.Error) {
 	consulClient, err := api.NewClient(warpConsulConfig(config))
 	if err != nil {
 		logger.Error("创建 Consul Client 失败")
-		return nil, base.NewError(base.ErrCode_System, "consul init", err.Error())
+		return nil, base.NewError(base.Error_System, "consul init", err.Error())
 	}
 	return consulClient, nil
 }

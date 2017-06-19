@@ -26,11 +26,11 @@ func ErrorRecover(reply httpx.Reply) {
 			statusCode = http.StatusBadRequest
 			errorResponse = e
 		case string:
-			errorResponse = base.NewError(base.ErrCode_System, errScopeRest, e)
+			errorResponse = base.NewError(base.Error_System, errScopeRest, e)
 		case error:
-			errorResponse = base.NewErrorWrapper(base.ErrCode_System, errScopeRest, e)
+			errorResponse = base.NewErrorWrapper(base.Error_System, errScopeRest, e)
 		default:
-			errorResponse = base.NewError(base.ErrCode_System, errScopeRest, fmt.Sprintf("%#v", err))
+			errorResponse = base.NewError(base.Error_System, errScopeRest, fmt.Sprintf("%#v", err))
 		}
 		//暂时统一按照400处理
 		reply.SetStatusCode(statusCode).With(errorResponse).As(httpx.DefaultRenderJSON)
@@ -72,11 +72,11 @@ func PanicErr(err error) {
 func ParsePathParamToBinary(pathFragments map[string]string, name string) []byte {
 	str, ok := pathFragments[name]
 	if !ok {
-		panic(base.NewError(base.ErrCode_Message, errScopeRest, fmt.Sprintf("没有指定%s值", name)))
+		panic(base.NewError(base.Error_Message, errScopeRest, fmt.Sprintf("没有指定%s值", name)))
 	}
 	data, err := base64.RawURLEncoding.DecodeString(str)
 	if err != nil {
-		panic(base.NewError(base.ErrCode_Message, errScopeRest, fmt.Sprintf("无法解析%s", name)))
+		panic(base.NewError(base.Error_Message, errScopeRest, fmt.Sprintf("无法解析%s", name)))
 	}
 	return data
 }

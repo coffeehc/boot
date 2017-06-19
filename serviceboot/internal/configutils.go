@@ -33,7 +33,7 @@ func LoadConfig(serviceConfig ServiceConfiguration) (string, base.Error) {
 	}
 	logger.Debug("serviceboot Config is %#v", serviceConfig.GetServiceConfig())
 	if serviceConfig.GetServiceConfig().ServiceInfo == nil {
-		return "", base.NewError(base.ErrCode_System, "load config", "没有配置ServiceInfo")
+		return "", base.NewError(base.Error_System, "load config", "没有配置ServiceInfo")
 	}
 	return *configPath, nil
 }

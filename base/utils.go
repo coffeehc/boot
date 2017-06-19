@@ -17,11 +17,11 @@ func LoadConfig(configPath string, config interface{}) Error {
 	logger.Debug("load config file %s", configPath)
 	data, err := ioutil.ReadFile(configPath)
 	if err != nil {
-		return NewError(ErrCode_System, errScopeLoadConfig, err.Error())
+		return NewError(Error_System, errScopeLoadConfig, err.Error())
 	}
 	err = yaml.Unmarshal(data, config)
 	if err != nil {
-		return NewError(ErrCode_System, errScopeLoadConfig, err.Error())
+		return NewError(Error_System, errScopeLoadConfig, err.Error())
 	}
 	return nil
 }
@@ -32,17 +32,17 @@ func GetLocalIP() (string, Error) {
 	if interfaceName, ok := os.LookupEnv(envIPInterfaceName); ok {
 		netInterface, err := net.InterfaceByName(interfaceName)
 		if err != nil {
-			return "", NewError(ErrCode_System, "serviceboot", fmt.Sprintf("获取指定网络接口[s%]失败", interfaceName))
+			return "", NewError(Error_System, "serviceboot", fmt.Sprintf("获取指定网络接口[s%]失败", interfaceName))
 		}
 		addrs, err := netInterface.Addrs()
 		if err != nil || len(addrs) == 0 {
-			return "", NewError(ErrCode_System, "serviceboot", fmt.Sprintf("获取指定网络接口[s%]地址失败", interfaceName))
+			return "", NewError(Error_System, "serviceboot", fmt.Sprintf("获取指定网络接口[s%]地址失败", interfaceName))
 		}
 		return getActiveIP(addrs)
 	}
 	addrs, err := net.InterfaceAddrs()
 	if err != nil || len(addrs) == 0 {
-		return "", NewError(ErrCode_System, "serviceboot", "获取本地Ip地址失败")
+		return "", NewError(Error_System, "serviceboot", "获取本地Ip地址失败")
 	}
 	return getActiveIP(addrs)
 }
@@ -55,5 +55,5 @@ func getActiveIP(addrs []net.Addr) (string, Error) {
 			}
 		}
 	}
-	return "", NewError(ErrCode_System, "serviceboot", "没有可用的有效 Ip")
+	return "", NewError(Error_System, "serviceboot", "没有可用的有效 Ip")
 }

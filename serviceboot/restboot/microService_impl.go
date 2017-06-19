@@ -88,7 +88,7 @@ func (ms *_RestMicroService) Start(cxt context.Context) base.Error {
 	go func() {
 		err := <-errSign
 		if err != nil {
-			panic(base.NewError(base.ErrCode_System, "RestMicroService Start", err.Error()))
+			panic(base.NewError(base.Error_System, "RestMicroService Start", err.Error()))
 		}
 	}()
 	return nil
@@ -130,7 +130,7 @@ func (ms *_RestMicroService) registerEndpoint(endPoint restbase.Endpoint) base.E
 	logger.Debug("register endpoint [%s] %s %s", metadata.Method, metadata.Path, metadata.Description)
 	err := ms.httpServer.Register(metadata.Path, metadata.Method, endPoint.HandlerFunc)
 	if err != nil {
-		return base.NewError(base.ErrCode_System, "RestMicroService register", err.Error())
+		return base.NewError(base.Error_System, "RestMicroService register", err.Error())
 	}
 	return nil
 }

@@ -15,17 +15,17 @@ import (
 func LoadEtcdConfig(configPath string) (*Config, base.Error) {
 	data, err := ioutil.ReadFile(configPath)
 	if err != nil {
-		return nil, base.NewError(base.ErrCode_System, "etcd", "加载配置文件失败")
+		return nil, base.NewError(base.Error_System, "etcd", "加载配置文件失败")
 	}
 	i := &struct {
 		EtcdConfig *Config `yaml:"etcd"`
 	}{}
 	err = yaml.Unmarshal(data, i)
 	if err != nil {
-		return nil, base.NewError(base.ErrCode_System, "etcd", "解析Etcd配置失败")
+		return nil, base.NewError(base.Error_System, "etcd", "解析Etcd配置失败")
 	}
 	if i.EtcdConfig == nil {
-		return nil, base.NewError(base.ErrCode_System, "etcd", "加载的Etcd配置为空")
+		return nil, base.NewError(base.Error_System, "etcd", "加载的Etcd配置为空")
 	}
 	logger.Debug("读取配置文件内容为:%#v", i.EtcdConfig)
 	return i.EtcdConfig, nil
@@ -42,7 +42,7 @@ type Config struct {
 
 func (config *Config) GetEtcdConfig() (*clientv3.Config, base.Error) {
 	if len(config.Endpoints) == 0 {
-		return nil, base.NewError(base.ErrCode_System, "etdc", "没有指定对应的Endpoints")
+		return nil, base.NewError(base.Error_System, "etdc", "没有指定对应的Endpoints")
 	}
 	return &clientv3.Config{
 		Endpoints:        config.Endpoints,

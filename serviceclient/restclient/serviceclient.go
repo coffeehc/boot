@@ -21,10 +21,10 @@ type ServiceClient interface {
 
 func NewServiceClient(serviceInfo base.ServiceInfo, httpClientConfig *client.HTTPClientOptions, discoveryConfig interface{}) (ServiceClient, base.Error) {
 	if serviceInfo == nil {
-		return nil, base.NewError(base.ErrCode_System, "rest client", "serviceInfo is nil")
+		return nil, base.NewError(base.Error_System, "rest client", "serviceInfo is nil")
 	}
 	if discoveryConfig == nil {
-		return nil, base.NewError(base.ErrCode_System, "rest client", "discoveryConfig is nil")
+		return nil, base.NewError(base.Error_System, "rest client", "discoveryConfig is nil")
 	}
 	if httpClientConfig == nil {
 		httpClientConfig = &client.HTTPClientOptions{}
@@ -36,7 +36,7 @@ func NewServiceClient(serviceInfo base.ServiceInfo, httpClientConfig *client.HTT
 	switch c := discoveryConfig.(type) {
 	case string: //host
 		if c == "" {
-			return nil, base.NewError(base.ErrCode_System, "rest client", "discoveryConfig is a addrs")
+			return nil, base.NewError(base.Error_System, "rest client", "discoveryConfig is a addrs")
 		}
 		balancer, err = loadbalancer.NewAddrArrayBalancer([]string{c}, serviceInfo.GetScheme() == "https")
 		if err != nil {

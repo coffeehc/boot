@@ -27,14 +27,14 @@ func StartService(service base.Service) (err base.Error) {
 				err = e
 				return
 			}
-			err = base.NewError(base.ErrCode_System, errScopeServiceHandler, fmt.Sprintf("service crash,cause is %s", err1))
+			err = base.NewError(base.Error_System, errScopeServiceHandler, fmt.Sprintf("service crash,cause is %s", err1))
 		}
 	}()
 	if service == nil {
-		panic(base.NewError(base.ErrCode_System, errScopeServiceHandler, "没有 Service 的实例"))
+		panic(base.NewError(base.Error_System, errScopeServiceHandler, "没有 Service 的实例"))
 	}
 	if service.Run == nil {
-		panic(base.NewError(base.ErrCode_System, errScopeServiceHandler, "没有指定Run方法"))
+		panic(base.NewError(base.Error_System, errScopeServiceHandler, "没有指定Run方法"))
 	}
 	err1 := service.Run()
 	if err1 != nil {

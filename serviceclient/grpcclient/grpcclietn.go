@@ -12,7 +12,10 @@ import (
 	"google.golang.org/grpc/keepalive"
 )
 
-const errScopeGRPCClient = "grpcClient"
+const (
+	errScopeGRPCClient     = "grpcClient"
+	context_serviceInfoKey = "__serviceInfo__"
+)
 
 type GRPCClient interface {
 	NewClientConn(cxt context.Context, serviceInfo base.ServiceInfo, balancer loadbalancer.Balancer, timeout time.Duration) (*grpc.ClientConn, base.Error)
@@ -44,9 +47,10 @@ func (client *_GRPCClient) NewClientConn(cxt context.Context, serviceInfo base.S
 	if timeout > 0 {
 		opts = append(opts, grpc.WithTimeout(timeout))
 	}
+	cxt = context.WithValue(cxt, context_serviceInfoKey, serviceInfo)
 	clientConn, err := grpc.DialContext(cxt, serviceInfo.GetServiceName(), opts...)
 	if err != nil {
-		return nil, base.NewErrorWrapper(0, errScopeGRPCClient, err)
+		return nil, base.NewErrorWrapper(base.Error_System, errScopeGRPCClient, err)
 	}
 	return clientConn, nil
 }

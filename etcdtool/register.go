@@ -35,7 +35,7 @@ type etcdServiceRegister struct {
 func (reg *etcdServiceRegister) RegService(cxt context.Context, info base.ServiceInfo, serviceAddr string) (deregister func(), err base.Error) {
 	// 注册格式  internal_ms.${servicename}.${tag}.${instance:port}
 	if info.GetServiceName() == "" && info.GetServiceTag() == "" {
-		return nil, base.NewError(base.ErrCode_System, "etcd", "没有指定ServiceInfo内容,"+err.Error())
+		return nil, base.NewError(base.Error_System, "etcd", "没有指定ServiceInfo内容,"+err.Error())
 	}
 	err = reg.register(cxt, info, serviceAddr, false)
 	if err != nil {
@@ -52,13 +52,13 @@ func (reg *etcdServiceRegister) RegService(cxt context.Context, info base.Servic
 func (reg *etcdServiceRegister) register(cxt context.Context, info base.ServiceInfo, serviceAddr string, reTry bool) base.Error {
 	addr, err := net.ResolveTCPAddr("tcp", serviceAddr)
 	if err != nil {
-		return base.NewError(base.ErrCode_System, "etcd", fmt.Sprintf("服务地址不是一个标准的tcp地址:%s", err))
+		return base.NewError(base.Error_System, "etcd", fmt.Sprintf("服务地址不是一个标准的tcp地址:%s", err))
 	}
 	serverAddr := serviceAddr
 	if addr.IP.Equal(net.IPv4zero) {
 		localIp, err := base.GetLocalIP()
 		if err != nil {
-			return base.NewErrorWrapper(base.ErrCode_System, "etcd", err)
+			return base.NewErrorWrapper(base.Error_System, "etcd", err)
 		}
 		serverAddr = fmt.Sprintf("%s:%d", localIp, addr.Port)
 	}
@@ -72,7 +72,7 @@ func (reg *etcdServiceRegister) register(cxt context.Context, info base.ServiceI
 			go reg.register(cxt, info, serviceAddr, reTry)
 			return nil
 		}
-		return base.NewError(base.ErrCode_System, "etcd", "创建租约失败")
+		return base.NewError(base.Error_System, "etcd", "创建租约失败")
 	}
 	value, _ := ffjson.Marshal(&ServiceRegisterInfo{ServiceInfo: info.(*base.SimpleServiceInfo)})
 	_, err = reg.client.Put(cxt, serviceKey, string(value), clientv3.WithLease(leaseGrantResponse.ID))
@@ -82,7 +82,7 @@ func (reg *etcdServiceRegister) register(cxt context.Context, info base.ServiceI
 			go reg.register(cxt, info, serviceAddr, reTry)
 			return nil
 		}
-		return base.NewError(base.ErrCode_System, "etcd", "注册Service Key失败,"+err.Error())
+		return base.NewError(base.Error_System, "etcd", "注册Service Key失败,"+err.Error())
 	}
 	baseErr := reg.keepAlive(cxt, leaseGrantResponse.ID, info, serviceKey, serviceAddr)
 	if baseErr != nil {
@@ -100,7 +100,7 @@ func (reg *etcdServiceRegister) keepAlive(cxt context.Context, leaseId clientv3.
 	cancel, cancelFunc := context.WithCancel(cxt)
 	leaseKeepAliveResponseChe, _err := reg.client.Lease.KeepAlive(cancel, leaseId)
 	if _err != nil {
-		return base.NewError(base.ErrCode_System, "etcd", "KeepAlive创建租约失败")
+		return base.NewError(base.Error_System, "etcd", "KeepAlive创建租约失败")
 	}
 	go func(leaseKeepAliveResponse <-chan *clientv3.LeaseKeepAliveResponse) {
 		timer := time.NewTimer(timeout / 2)

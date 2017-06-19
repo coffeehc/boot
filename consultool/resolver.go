@@ -141,7 +141,7 @@ func (r *_ConsulResolver) getInstances(lastIndex uint64) ([]string, uint64, erro
 		return nil, lastIndex, err
 	}
 	if len(services) == 0 {
-		return nil, lastIndex, base.NewError(base.ErrCode_System, "consul resolver", "service is no address available")
+		return nil, lastIndex, base.NewError(base.Error_System, "consul resolver", "service is no address available")
 	}
 	var instances []string
 	for _, service := range services {
