@@ -98,15 +98,16 @@ func paincInterceptor(cxt context.Context, method string, req, reply interface{}
 			}
 			serviceName = "grpc:" + serviceName
 			switch v := r.(type) {
-			case status.Status:
-				code := int32(v.Code())
-				if !base.IsBaseError(code) {
-					err = base.NewErrorWrapper(base.Error_System, serviceName, v.Err())
+			case error:
+				if s, ok := status.FromError(v); ok {
+					code := int32(s.Code())
+					if !base.IsBaseError(code) {
+						err = base.NewErrorWrapper(base.Error_System, serviceName, s.Err())
+						return
+					}
+					err = base.NewError(code, serviceName, s.Message())
 					return
 				}
-				err = base.NewError(code, serviceName, v.Message())
-				return
-			case error:
 				err = base.NewErrorWrapper(base.Error_System, serviceName, v)
 				return
 			default:

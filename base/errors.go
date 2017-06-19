@@ -56,10 +56,10 @@ func NewError(debugCode int32, scope string, errMsg string) Error {
 }
 
 //NewErrorWrapper 创建一个对普通的 error的封装
-func NewErrorWrapper(debugCode int32, scope string, err error) Error {
+func NewErrorWrapper(code int32, scope string, err error) Error {
 	if _err, ok := err.(Error); ok {
 		scope = fmt.Sprintf("%s-%s", scope, _err.GetScopes())
-		debugCode = debugCode | _err.GetCode()
+		code = code | _err.GetCode()
 	}
-	return &baseError{Scope: scope, Code: debugCode, Message: err.Error()}
+	return &baseError{Scope: scope, Code: code, Message: err.Error()}
 }
