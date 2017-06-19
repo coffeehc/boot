@@ -1,0 +1,12 @@
+syntax = "proto3";
+
+package microserviceboot;
+
+import "google/api/annotations.proto";
+
+option go_package = "github.com/coffeehc/microserviceboot/pb;pb";
+
+message ErrorDetail{
+  int64 code = 1;
+  string scope = 2;
+}

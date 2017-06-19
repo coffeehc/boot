@@ -48,7 +48,7 @@ func Launch(cxt context.Context, service base.Service, serviceBuilder MicroServi
 	startTime := time.Now()
 	if service == nil {
 		logger.Error("service is nil")
-		return nil, base.NewError(base.ErrCodeBaseSystemInit, "Launch", "service is nil")
+		return nil, base.NewError(base.ErrCode_System, "Launch", "service is nil")
 	}
 	microService, err := serviceBuilder(service)
 	if err != nil {
@@ -62,7 +62,7 @@ func Launch(cxt context.Context, service base.Service, serviceBuilder MicroServi
 	logger.Info("Service inited")
 	serviceInfo := microService.GetServiceInfo()
 	if serviceInfo == nil {
-		return nil, base.NewError(base.ErrCodeBaseSystemInit, "Launch", "没有指定 ServiceInfo")
+		return nil, base.NewError(base.ErrCode_System, "Launch", "没有指定 ServiceInfo")
 	}
 	logger.Info("ServiceName: %s", serviceInfo.GetServiceName())
 	logger.Info("Version: %s", serviceInfo.GetVersion())

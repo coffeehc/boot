@@ -70,5 +70,9 @@ func NewError(debugCode int64, scope string, errMsg string) Error {
 
 //NewErrorWrapper 创建一个对普通的 error的封装
 func NewErrorWrapper(debugCode int64, scope string, err error) Error {
-	return &baseError{Scope: scope, DebugCode: ErrCodeBaseSystemUnknown, RootError: err, Message: err.Error()}
+	if _err, ok := err.(Error); ok {
+		scope = fmt.Sprintf("%s-%s", scope, _err.GetScopes())
+		debugCode = debugCode | _err.GetErrorCode()
+	}
+	return &baseError{Scope: scope, DebugCode: debugCode, RootError: err, Message: err.Error()}
 }
