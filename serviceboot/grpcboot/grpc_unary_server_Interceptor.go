@@ -4,11 +4,8 @@ import (
 	"fmt"
 	"sync"
 
-	"reflect"
-
 	"github.com/coffeehc/logger"
 	"github.com/coffeehc/microserviceboot/base"
-	"github.com/coffeehc/microserviceboot/pb"
 	"golang.org/x/net/context"
 	spb "google.golang.org/genproto/googleapis/rpc/status"
 	"google.golang.org/grpc"
@@ -17,14 +14,9 @@ import (
 )
 
 var (
-	_errDetailTypeURL        = "grpc.errdetail"
 	_internalUnaryServerInfo = "_internal_UnaryServerInfo"
 	_internalHandler         = "_internal_handler"
 )
-
-func init() {
-	pb.RegisterType(_errDetailTypeURL, reflect.TypeOf(spb.Status{}))
-}
 
 var _unaryServerInterceptor = newUnaryServerInterceptor()
 

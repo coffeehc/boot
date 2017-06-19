@@ -4,26 +4,24 @@ import (
 	"fmt"
 	"sync"
 
-	"reflect"
-
 	"github.com/coffeehc/microserviceboot/base"
-	"github.com/coffeehc/microserviceboot/pb"
 	"golang.org/x/net/context"
-	spb "google.golang.org/genproto/googleapis/rpc/status"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/status"
 )
 
 var (
-	_errDetailTypeURL       = "grpc.errdetail"
 	_unaryClientInterceptor = newUnartClientInterceptor()
 )
 
-func init() {
-	pb.RegisterType(_errDetailTypeURL, reflect.TypeOf(spb.Status{}))
-}
-
 const _internalInvoker = "_internal_invoker"
+const context_serviceInfoKey = "__serviceInfo__"
+
+func wapperUnartClientInterceptor(serviceInfo base.ServiceInfo) grpc.UnaryClientInterceptor {
+	return func(ctx context.Context, method string, req, reply interface{}, cc *grpc.ClientConn, invoker grpc.UnaryInvoker, opts ...grpc.CallOption) (err error) {
+		return _unaryClientInterceptor.Interceptor(context.WithValue(ctx, context_serviceInfoKey, serviceInfo), method, req, reply, cc, invoker, opts...)
+	}
+}
 
 //AppendUnartClientInterceptor 追加一个UnartClientInterceptor
 func AppendUnartClientInterceptor(name string, unaryClientInterceptor grpc.UnaryClientInterceptor) base.Error {

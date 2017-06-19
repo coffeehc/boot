@@ -13,8 +13,7 @@ import (
 )
 
 const (
-	errScopeGRPCClient     = "grpcClient"
-	context_serviceInfoKey = "__serviceInfo__"
+	errScopeGRPCClient = "grpcClient"
 )
 
 type GRPCClient interface {
@@ -42,12 +41,11 @@ func (client *_GRPCClient) NewClientConn(cxt context.Context, serviceInfo base.S
 		})),
 		grpc.WithCompressor(grpc.NewGZIPCompressor()),
 		grpc.WithDecompressor(grpc.NewGZIPDecompressor()),
-		grpc.WithUnaryInterceptor(_unaryClientInterceptor.Interceptor),
+		grpc.WithUnaryInterceptor(wapperUnartClientInterceptor(serviceInfo)),
 	}
 	if timeout > 0 {
 		opts = append(opts, grpc.WithTimeout(timeout))
 	}
-	cxt = context.WithValue(cxt, context_serviceInfoKey, serviceInfo)
 	clientConn, err := grpc.DialContext(cxt, serviceInfo.GetServiceName(), opts...)
 	if err != nil {
 		return nil, base.NewErrorWrapper(base.Error_System, errScopeGRPCClient, err)

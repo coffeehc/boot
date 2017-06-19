@@ -15,9 +15,9 @@ type Error interface {
 
 //BaseError Error 接口的实现,可 json 序列化
 type baseError struct {
-	Scope     string `json:"scope"`
-	DebugCode int32  `json:"debug_code"`
-	Message   string `json:"message"`
+	Scope   string `json:"scope"`
+	Code    int32  `json:"code"`
+	Message string `json:"message"`
 }
 
 func (err *baseError) Error() string {
@@ -25,7 +25,7 @@ func (err *baseError) Error() string {
 }
 
 func (err *baseError) GetCode() int32 {
-	return err.DebugCode
+	return err.Code
 }
 func (err *baseError) GetScopes() string {
 	return err.Scope
@@ -49,9 +49,9 @@ func ErrorToJson(err Error) string {
 //NewError 构建一个新的 Error
 func NewError(debugCode int32, scope string, errMsg string) Error {
 	return &baseError{
-		Scope:     scope,
-		DebugCode: debugCode,
-		Message:   errMsg,
+		Scope:   scope,
+		Code:    debugCode,
+		Message: errMsg,
 	}
 }
 
@@ -61,5 +61,5 @@ func NewErrorWrapper(debugCode int32, scope string, err error) Error {
 		scope = fmt.Sprintf("%s-%s", scope, _err.GetScopes())
 		debugCode = debugCode | _err.GetCode()
 	}
-	return &baseError{Scope: scope, DebugCode: debugCode, Message: err.Error()}
+	return &baseError{Scope: scope, Code: debugCode, Message: err.Error()}
 }
