@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"sync"
 
+	"runtime/debug"
+
 	"github.com/coffeehc/logger"
 	"github.com/coffeehc/microserviceboot/base"
 	"golang.org/x/net/context"
@@ -95,6 +97,9 @@ func (usiw *unaryServerInterceptorWapper) handler(ctx context.Context, req inter
 func catchPanicInterceptor(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp interface{}, err error) {
 	defer func() {
 		if r := recover(); r != nil {
+			if base.IsDevModule() {
+				debug.PrintStack()
+			}
 			if _err, ok := r.(base.Error); ok {
 				if base.IsSystemError(_err.GetCode()) {
 					logger.Error("grpc 错误:%s", base.ErrorToJson(_err))
