@@ -1,8 +1,6 @@
 package base
 
 import (
-	"fmt"
-
 	"github.com/pquerna/ffjson/ffjson"
 )
 
@@ -58,8 +56,9 @@ func NewError(debugCode int32, scope string, errMsg string) Error {
 //NewErrorWrapper 创建一个对普通的 error的封装
 func NewErrorWrapper(code int32, scope string, err error) Error {
 	if _err, ok := err.(Error); ok {
-		scope = fmt.Sprintf("%s-%s", scope, _err.GetScopes())
-		code = code | _err.GetCode()
+		//scope = fmt.Sprintf("%s-%s", scope, _err.GetScopes())
+		//code = code | _err.GetCode()
+		return _err
 	}
 	return &baseError{Scope: scope, Code: code, Message: err.Error()}
 }
