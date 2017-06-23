@@ -19,38 +19,66 @@ const (
 	Error_System_RPC = Error_System | 0x4
 )
 
-func isError(srcCode, targetCode int32) bool {
+func equalError(srcCode, targetCode int32) bool {
 	return srcCode&targetCode == targetCode
 }
 
-func IsBaseError(code int32) bool {
-	return isError(code, _baseError)
+func IsBaseErrorCode(code int32) bool {
+	return equalError(code, _baseError)
 }
 
-func IsSystemError(code int32) bool {
-	return isError(code, Error_System)
+func IsBaseError(err error) bool {
+	if e, ok := err.(Error); ok {
+		return equalError(e.GetCode(), _baseError)
+	}
+	return false
 }
 
-func IsMessageError(code int32) bool {
-	return isError(code, Error_Message)
+func IsSystemError(err error) bool {
+	if e, ok := err.(Error); ok {
+		return equalError(e.GetCode(), Error_System)
+	}
+	return false
 }
 
-func IsDBError(code int32) bool {
-	return isError(code, Error_System_DB)
+func IsMessageError(err error) bool {
+	if e, ok := err.(Error); ok {
+		return equalError(e.GetCode(), Error_Message)
+	}
+	return false
 }
 
-func IsRedisErro(code int32) bool {
-	return isError(code, Error_System_Redis)
+func IsDBError(err error) bool {
+	if e, ok := err.(Error); ok {
+		return equalError(e.GetCode(), Error_System_DB)
+	}
+	return false
 }
 
-func IsRPCError(code int32) bool {
-	return isError(code, Error_System_RPC)
+func IsRedisErro(err error) bool {
+	if e, ok := err.(Error); ok {
+		return equalError(e.GetCode(), Error_System_Redis)
+	}
+	return false
 }
 
-func IsInternalError(code int32) bool {
-	return isError(code, Error_System_Internal)
+func IsRPCError(err error) bool {
+	if e, ok := err.(Error); ok {
+		return equalError(e.GetCode(), Error_System_RPC)
+	}
+	return false
 }
 
-func IsNotFountError(code int32) bool {
-	return isError(code, Error_Message_NotFount)
+func IsInternalError(err error) bool {
+	if e, ok := err.(Error); ok {
+		return equalError(e.GetCode(), Error_System_Internal)
+	}
+	return false
+}
+
+func IsNotFountError(err error) bool {
+	if e, ok := err.(Error); ok {
+		return equalError(e.GetCode(), Error_Message_NotFount)
+	}
+	return false
 }

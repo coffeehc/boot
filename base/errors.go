@@ -62,3 +62,9 @@ func NewErrorWrapper(code int32, scope string, err error) Error {
 	}
 	return &baseError{Scope: scope, Code: code, Message: err.Error()}
 }
+
+func PanicError(err error) {
+	if err != nil {
+		panic(err)
+	}
+}

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"sync"
 
+	"github.com/coffeehc/logger"
 	"github.com/coffeehc/microserviceboot/base"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
@@ -90,34 +91,41 @@ func (uciw *unaryClientInterceptorWapper) invoker(ctx context.Context, method st
 func paincInterceptor(cxt context.Context, method string, req, reply interface{}, cc *grpc.ClientConn, invoker grpc.UnaryInvoker, opts ...grpc.CallOption) (err error) {
 	defer func() {
 		if r := recover(); r != nil {
-			serviceName := "未知服务"
-			serviceInfo, ok := cxt.Value(context_serviceInfoKey).(base.ServiceInfo)
-			if ok {
-				serviceName = serviceInfo.GetServiceName()
-
-			}
-			serviceName = "grpc:" + serviceName
-			switch v := r.(type) {
-			case error:
-				if s, ok := status.FromError(v); ok {
-					code := int32(s.Code())
-					if !base.IsBaseError(code) {
-						err = base.NewErrorWrapper(base.Error_System, serviceName, s.Err())
-						return
-					}
-					err = base.NewError(code, serviceName, s.Message())
-					return
-				}
-				err = base.NewErrorWrapper(base.Error_System, serviceName, v)
-				return
-			default:
-				err = base.NewError(base.Error_System, serviceName, fmt.Sprintf("%s", r))
-			}
+			err = adapteError(cxt, r)
 		}
 	}()
-	err = invoker(cxt, method, req, reply, cc, opts...)
-	if err != nil {
-		panic(err)
+	return adapteError(cxt, invoker(cxt, method, req, reply, cc, opts...))
+}
+
+func adapteError(cxt context.Context, err interface{}) base.Error {
+	if err == nil {
+		return nil
 	}
-	return err
+	serviceName := "未知服务"
+	serviceInfo, ok := cxt.Value(context_serviceInfoKey).(base.ServiceInfo)
+	if ok {
+		serviceName = serviceInfo.GetServiceName()
+	}
+	serviceName = "grpc:" + serviceName
+	if base.IsDevModule() {
+		logger.Error("发生异常:%#v", err)
+	}
+	switch v := err.(type) {
+	case base.Error:
+		return v
+	case string:
+		return base.NewError(base.Error_System, serviceName, v)
+	case error:
+		if s, ok := status.FromError(v); ok {
+			code := int32(s.Code())
+			if !base.IsBaseErrorCode(code) {
+				return base.NewErrorWrapper(base.Error_System, serviceName, s.Err())
+			}
+			return base.NewError(code, serviceName, s.Message())
+		}
+		return base.NewErrorWrapper(base.Error_System, serviceName, v)
+	default:
+		return base.NewError(base.Error_System, serviceName, fmt.Sprintf("未知异常:%#v", v))
+	}
+
 }

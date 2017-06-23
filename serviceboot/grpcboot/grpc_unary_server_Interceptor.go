@@ -4,8 +4,6 @@ import (
 	"fmt"
 	"sync"
 
-	"runtime/debug"
-
 	"github.com/coffeehc/logger"
 	"github.com/coffeehc/microserviceboot/base"
 	"golang.org/x/net/context"
@@ -97,29 +95,35 @@ func (usiw *unaryServerInterceptorWapper) handler(ctx context.Context, req inter
 func catchPanicInterceptor(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp interface{}, err error) {
 	defer func() {
 		if r := recover(); r != nil {
-			if base.IsDevModule() {
-				debug.PrintStack()
-			}
-			if _err, ok := r.(base.Error); ok {
-				if base.IsSystemError(_err.GetCode()) {
-					logger.Error("grpc 错误:%s", base.ErrorToJson(_err))
-				}
-				err = status.ErrorProto(&spb.Status{
-					Code:    _err.GetCode(),
-					Message: _err.Error(),
-				})
-				return
-			}
-			if _err, ok := r.(error); ok {
-				err = status.Errorf(codes.Internal, _err.Error())
-				return
-			}
-			err = status.Errorf(codes.Unknown, "%s", r)
+			err = adapteError(ctx, r)
 		}
 	}()
 	resp, err = handler(ctx, req)
 	if err != nil {
-		panic(err)
+		return nil, adapteError(ctx, err)
 	}
 	return resp, nil
+}
+
+func adapteError(cxt context.Context, err interface{}) error {
+	if err == nil {
+		return nil
+	}
+	if base.IsDevModule() {
+		logger.Error("发生异常:%#v", err)
+	}
+	switch v := err.(type) {
+	case base.Error:
+		return status.ErrorProto(&spb.Status{
+			Code:    v.GetCode(),
+			Message: v.Error(),
+		})
+	case string:
+		return status.Errorf(codes.Internal, v)
+	case error:
+		return status.Errorf(codes.Internal, v.Error())
+	default:
+		return status.Errorf(codes.Unknown, "%#v", v)
+	}
+
 }
