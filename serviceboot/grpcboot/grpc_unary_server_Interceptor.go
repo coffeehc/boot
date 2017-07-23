@@ -4,6 +4,10 @@ import (
 	"fmt"
 	"sync"
 
+	"time"
+
+	"runtime/debug"
+
 	"github.com/coffeehc/logger"
 	"github.com/coffeehc/microserviceboot/base"
 	"golang.org/x/net/context"
@@ -110,7 +114,13 @@ func adapteError(cxt context.Context, err interface{}) error {
 		return nil
 	}
 	if base.IsDevModule() {
-		logger.Error("发生异常:%#v", err)
+		if e, ok := err.(base.Error); ok && base.IsMessageError(e) {
+			logger.Error("发生异常:%s", e.Error())
+		} else {
+			logger.Error("发生异常:%#v", err)
+		}
+		time.Sleep(time.Millisecond * 100)
+		debug.PrintStack()
 	}
 	switch v := err.(type) {
 	case base.Error:

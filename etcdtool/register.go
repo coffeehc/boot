@@ -62,7 +62,7 @@ func (reg *etcdServiceRegister) register(cxt context.Context, info base.ServiceI
 		}
 		serverAddr = fmt.Sprintf("%s:%d", localIp, addr.Port)
 	}
-	serviceKey := fmt.Sprintf("%s%s", buildServiceKeyPrefix(info.GetServiceName()), serverAddr)
+	serviceKey := fmt.Sprintf("%s%s", buildServiceKeyPrefix(info.GetServiceName(),info.GetServiceTag()), serverAddr)
 	logger.Debug("serviceKey is %s", serviceKey)
 	reg.serviceKey = serviceKey
 	leaseGrantResponse, err := reg.client.Lease.Grant(cxt, int64(timeout/time.Second))

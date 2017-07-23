@@ -6,11 +6,18 @@ import (
 	"io/ioutil"
 	"time"
 
+	"os"
+	"strings"
+
 	"github.com/coffeehc/logger"
 	"github.com/coffeehc/microserviceboot/base"
 	"github.com/coreos/etcd/clientv3"
 	yaml "gopkg.in/yaml.v2"
 )
+
+const envETCDEndpoints = "ENV_ETCD_ENDPOINTS"
+const envETCDUsername = "ENV_ETCD_USERNAME"
+const envETCDPassword = "ENV_ETCD_PASSWORD"
 
 func LoadEtcdConfig(configPath string) (*Config, base.Error) {
 	data, err := ioutil.ReadFile(configPath)
@@ -29,7 +36,6 @@ func LoadEtcdConfig(configPath string) (*Config, base.Error) {
 	}
 	logger.Debug("读取配置文件内容为:%#v", i.EtcdConfig)
 	return i.EtcdConfig, nil
-
 }
 
 type Config struct {
@@ -41,6 +47,16 @@ type Config struct {
 }
 
 func (config *Config) GetEtcdConfig() (*clientv3.Config, base.Error) {
+	if os.Getenv(envETCDUsername) != "" {
+		config.Username = os.Getenv(envETCDUsername)
+	}
+	if os.Getenv(envETCDPassword) != "" {
+		config.Password = os.Getenv(envETCDPassword)
+	}
+	env_endpoints := os.Getenv(envETCDEndpoints)
+	if env_endpoints != "" {
+		config.Endpoints = strings.Split(env_endpoints, ",")
+	}
 	if len(config.Endpoints) == 0 {
 		return nil, base.NewError(base.Error_System, "etdc", "没有指定对应的Endpoints")
 	}

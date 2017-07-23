@@ -4,6 +4,6 @@ import (
 	"fmt"
 )
 
-func buildServiceKeyPrefix(serviceName string) string {
-	return fmt.Sprintf("/ms/registers/%s/", serviceName)
+func buildServiceKeyPrefix(serviceName string, serviceTag string) string {
+	return fmt.Sprintf("/ms/registers/%s/%s/", serviceName, serviceTag)
 }

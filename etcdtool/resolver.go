@@ -31,7 +31,7 @@ func newEtcdResolver(client *clientv3.Client, service, tag string) (naming.Resol
 		client:         client,
 		service:        service,
 		tag:            tag,
-		registerPrefix: buildServiceKeyPrefix(service),
+		registerPrefix: buildServiceKeyPrefix(service, tag),
 		quitc:          make(chan struct{}),
 		quitUpdate:     make(chan struct{}),
 		updatesc:       make(chan []*naming.Update, 1),
