@@ -6,7 +6,10 @@ import (
 	"net"
 	"os"
 
+	"context"
+
 	"github.com/coffeehc/logger"
+	xcontext "golang.org/x/net/context"
 	"gopkg.in/yaml.v2"
 )
 
@@ -56,4 +59,12 @@ func getActiveIP(addrs []net.Addr) (string, Error) {
 		}
 	}
 	return "", NewError(Error_System, "serviceboot", "没有可用的有效 Ip")
+}
+
+func ContextToXContext(cxt context.Context) xcontext.Context {
+	return cxt.(xcontext.Context)
+}
+
+func XContextToContext(cxt xcontext.Context) context.Context {
+	return cxt.(context.Context)
 }
