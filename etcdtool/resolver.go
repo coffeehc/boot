@@ -88,9 +88,13 @@ func (r *_EtcdResolver) updater() {
 	watchChan := r.client.Watch(context.Background(), r.registerPrefix, clientv3.WithPrefix(), clientv3.WithCreatedNotify())
 	for {
 		select {
-		case <-r.quitc:
+		case _, ok := <-r.quitc:
+			if !ok {
+				return
+			}
 			break
 		case <-r.quitUpdate:
+			logger.Warn("quitUpdate")
 			return
 		case response, ok := <-watchChan:
 			if !ok {

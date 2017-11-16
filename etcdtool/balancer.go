@@ -9,9 +9,9 @@ import (
 )
 
 func NewEtcdBalancer(cxt context.Context, client *clientv3.Client, serviceInfo base.ServiceInfo) (loadbalancer.Balancer, base.Error) {
-	consulRecolver, err := newEtcdResolver(client, serviceInfo.GetServiceName(), serviceInfo.GetServiceTag())
+	etcdRecolver, err := newEtcdResolver(client, serviceInfo.GetServiceName(), serviceInfo.GetServiceTag())
 	if err != nil {
 		return nil, err
 	}
-	return loadbalancer.RoundRobin(consulRecolver), nil
+	return loadbalancer.RoundRobin(etcdRecolver), nil
 }
