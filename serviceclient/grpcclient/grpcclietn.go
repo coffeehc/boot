@@ -42,7 +42,7 @@ func (client *_GRPCClient) NewClientConn(cxt context.Context, serviceInfo base.S
 		grpc.WithDecompressor(grpc.NewGZIPDecompressor()),
 		grpc.WithUnaryInterceptor(wapperUnartClientInterceptor(serviceInfo)),
 	}
-	if !async {
+	if block {
 		opts = append(opts, grpc.WithBlock())
 	}
 	if timeout > 0 {
