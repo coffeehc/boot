@@ -35,7 +35,7 @@ type etcdServiceRegister struct {
 func (reg *etcdServiceRegister) RegService(cxt context.Context, info base.ServiceInfo, serviceAddr string) (deregister func(), err base.Error) {
 	// 注册格式  internal_ms.${servicename}.${tag}.${instance:port}
 	if info.GetServiceName() == "" && info.GetServiceTag() == "" {
-		return nil, base.NewError(base.Error_System, "etcd", "没有指定ServiceInfo内容,"+err.Error())
+		return nil, base.NewError(base.Error_System, "etcd", "没有指定ServiceName或者Tag内容")
 	}
 	err = reg.register(cxt, info, serviceAddr, false)
 	if err != nil {

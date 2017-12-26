@@ -33,3 +33,7 @@ func (r *_HTTPResponse) GetContentType() string {
 func (r *_HTTPResponse) GetStatusCode() int {
 	return r.resp.StatusCode
 }
+
+func (r *_HTTPResponse) GetCookies() []*http.Cookie {
+	return r.resp.Cookies()
+}

@@ -313,15 +313,14 @@ func doFollowingRedirects(timeout time.Duration, _req *_HTTPRequest, shouldRedir
 			}
 			return nil, uerr(err)
 		}
-
-		if !shouldRedirect(resp.StatusCode) {
-			return resp, nil
-		}
 		if len(resp.Cookies()) > 0 {
 			if _req.cookieJar == nil {
 				_req.cookieJar, _ = cookiejar.New(nil)
 			}
 			_req.cookieJar.SetCookies(resp.Request.URL, resp.Cookies())
+		}
+		if !shouldRedirect(resp.StatusCode) {
+			return resp, nil
 		}
 	}
 }

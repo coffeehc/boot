@@ -6,8 +6,9 @@ import (
 )
 
 const (
-	ContentTypeJson   = "application/json"
-	ContentTypeStream = "application/octet-stream"
+	ContentTypeJson          = "application/json"
+	ContentTypeStream        = "application/octet-stream"
+	ContentTypeFormUrlencode = "application/x-www-form-urlencoded"
 )
 
 type HTTPClient interface {
@@ -44,6 +45,7 @@ type HTTPResponse interface {
 	GetHeader() http.Header
 	GetContentType() string
 	GetStatusCode() int
+	GetCookies() []*http.Cookie
 }
 
 type CookieJarManager interface {

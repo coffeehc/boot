@@ -9,40 +9,40 @@
 			"revisionTime": "2016-08-04T10:47:26Z"
 		},
 		{
-			"checksumSHA1": "sMCKM39Zhk54AEfZSY2/0xOjDtE=",
+			"checksumSHA1": "KxMgNX77eGzkqTIGCLMBXiYWdgw=",
 			"path": "github.com/coffeehc/commons",
-			"revision": "8cffcfc06177c4a946c7f8dd6d7af5a36f9df4ca",
-			"revisionTime": "2017-05-16T12:04:55Z"
+			"revision": "ef77ca88cb23e7f098050a250e7fdf8bd9026d01",
+			"revisionTime": "2017-10-11T17:09:39Z"
 		},
 		{
 			"checksumSHA1": "G57VZTUHL6OTsqwW+nmECYHWsrw=",
 			"path": "github.com/coffeehc/commons/convers",
-			"revision": "8cffcfc06177c4a946c7f8dd6d7af5a36f9df4ca",
-			"revisionTime": "2017-05-16T12:04:55Z"
+			"revision": "ef77ca88cb23e7f098050a250e7fdf8bd9026d01",
+			"revisionTime": "2017-10-11T17:09:39Z"
 		},
 		{
-			"checksumSHA1": "Nx40uXNNLo08iDDbvN/Sj3jvBXs=",
+			"checksumSHA1": "FPA65lA1N6Cc50TXi4C6hES8ar4=",
 			"path": "github.com/coffeehc/commons/https/client",
-			"revision": "8cffcfc06177c4a946c7f8dd6d7af5a36f9df4ca",
-			"revisionTime": "2017-05-16T12:04:55Z"
+			"revision": "ef77ca88cb23e7f098050a250e7fdf8bd9026d01",
+			"revisionTime": "2017-10-11T17:09:39Z"
 		},
 		{
-			"checksumSHA1": "19sDFxULG8AvcHQzDCVzoqbFRhQ=",
+			"checksumSHA1": "gFe8SMTwWvoV18b4vEPEO3I5WmI=",
 			"path": "github.com/coffeehc/httpx",
-			"revision": "46c125a772cf3dd8fd86c57b0df95d6862880504",
-			"revisionTime": "2017-06-05T07:02:55Z"
+			"revision": "abfcc2cd89ee40621dafad1986c5a03fea4769f8",
+			"revisionTime": "2017-06-28T14:49:41Z"
 		},
 		{
 			"checksumSHA1": "x/9MkUxFC5r0z0lMf6m5U+P6/Vk=",
 			"path": "github.com/coffeehc/httpx/pprof",
-			"revision": "46c125a772cf3dd8fd86c57b0df95d6862880504",
-			"revisionTime": "2017-06-05T07:02:55Z"
+			"revision": "abfcc2cd89ee40621dafad1986c5a03fea4769f8",
+			"revisionTime": "2017-06-28T14:49:41Z"
 		},
 		{
-			"checksumSHA1": "99y6ZBu2zSqcSEmOh/Ld4dbOd6g=",
+			"checksumSHA1": "Dkh+KZC46I8CzIaY33RrhDIzGTs=",
 			"path": "github.com/coffeehc/logger",
-			"revision": "5dad887038db5073642da27e38e209c4c8e85367",
-			"revisionTime": "2017-02-13T03:43:02Z"
+			"revision": "ee2d67e163e10ed4a052fb264a05da373fed457b",
+			"revisionTime": "2017-12-26T12:57:39Z"
 		},
 		{
 			"checksumSHA1": "7BC2/27NId9xaPDB5w3nWN2mn9A=",
@@ -245,13 +245,13 @@
 			"revisionTime": "2017-04-21T08:09:44Z"
 		},
 		{
-			"checksumSHA1": "9cg4nSGfKTIWKb6bWV7U4lnuFKA=",
+			"checksumSHA1": "7kYqxy64WhMjFIFZgN7tJ3lbKxM=",
 			"path": "golang.org/x/text/encoding/internal/identifier",
 			"revision": "19e51611da83d6be54ddafce4a4af510cb3e9ea4",
 			"revisionTime": "2017-04-21T08:09:44Z"
 		},
 		{
-			"checksumSHA1": "55UdScb+EMOCPr7OW0hCwDsVxpg=",
+			"checksumSHA1": "mTuZi5urYwgDIO8+Gfql2pv8Vwg=",
 			"path": "golang.org/x/text/encoding/simplifiedchinese",
 			"revision": "19e51611da83d6be54ddafce4a4af510cb3e9ea4",
 			"revisionTime": "2017-04-21T08:09:44Z"
@@ -269,19 +269,19 @@
 			"revisionTime": "2017-04-21T08:09:44Z"
 		},
 		{
-			"checksumSHA1": "KG+XZAbxdkpBm3Fa3bJ3Ylq8CKI=",
+			"checksumSHA1": "MRLtTu/vpd18le8/HPLxOdjO5RE=",
 			"path": "golang.org/x/text/unicode/bidi",
 			"revision": "19e51611da83d6be54ddafce4a4af510cb3e9ea4",
 			"revisionTime": "2017-04-21T08:09:44Z"
 		},
 		{
-			"checksumSHA1": "Anof4bt0AU+Sa3R8Rq0KBnlpbaQ=",
+			"checksumSHA1": "kKylzIrLEnH8NKyeVAL0dq5gjVQ=",
 			"path": "golang.org/x/text/unicode/norm",
 			"revision": "19e51611da83d6be54ddafce4a4af510cb3e9ea4",
 			"revisionTime": "2017-04-21T08:09:44Z"
 		},
 		{
-			"checksumSHA1": "/kqvbsH5mRknhs6xf7cJii0wQos=",
+			"checksumSHA1": "aCXemG0knLp8YJedta7fYAIiX/8=",
 			"path": "golang.org/x/text/width",
 			"revision": "19e51611da83d6be54ddafce4a4af510cb3e9ea4",
 			"revisionTime": "2017-04-21T08:09:44Z"

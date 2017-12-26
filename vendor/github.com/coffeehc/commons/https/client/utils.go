@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	"github.com/coffeehc/logger"
+	"github.com/pquerna/ffjson/ffjson"
 	"golang.org/x/text/encoding/simplifiedchinese"
 )
 
@@ -45,6 +46,18 @@ func ReadBody(resp HTTPResponse, charset string) ([]byte, error) {
 		logger.Debug("code is %d,body is %s", resp.GetStatusCode(), data)
 	}
 	return data, nil
+}
+
+func ReaderBodyByJson(resp HTTPResponse, t interface{}) error {
+	data, err := ReadBody(resp, "")
+	if err != nil {
+		return err
+	}
+	err = ffjson.Unmarshal(data, t)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 func BuildValues(k, v string) url.Values {
