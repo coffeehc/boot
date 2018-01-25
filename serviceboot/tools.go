@@ -39,7 +39,7 @@ func serviceDiscoverRegister(cxt context.Context, service base.Service, serviceI
 func launchError(err error) {
 	if base.IsBaseError(err) {
 		berr := err.(base.Error)
-		logger.Error("启动失败:[%s][%s]%s", berr.GetCode(), berr.GetScopes(), err.Error())
+		logger.Error("启动失败:[%d][%s]%s", berr.GetCode(), berr.GetScopes(), err.Error())
 	} else {
 		logger.Error("启动失败:%s", err.Error())
 	}
