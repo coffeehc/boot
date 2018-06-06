@@ -2,8 +2,10 @@ syntax = "proto3";
 
 package simplemodel;
 
+option go_package = "git.xiagaogao.com/coffee/boot/simple/simplemodel;simplemodel";
+
 service Greeter {
-	rpc SayHello (Request) returns (Response);
+	rpc SayHello (Request) returns (Response){};
 }
 
 message Request {

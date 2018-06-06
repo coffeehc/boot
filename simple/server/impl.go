@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/coffeehc/microserviceboot/simple/simplemodel"
+	"git.xiagaogao.com/coffee/boot/simple/simplemodel"
 	"golang.org/x/net/context"
 )
 

@@ -1,13 +1,13 @@
 package loadbalancer
 
-//代码是从 grpc 的 balancer 里面拷贝过来的
+//代码是从 grpcserver 的 balancer 里面拷贝过来的
 import (
 	"errors"
 	"fmt"
 	"sync"
 
-	"github.com/coffeehc/logger"
-	"github.com/coffeehc/microserviceboot/base"
+	"git.xiagaogao.com/coffee/boot/logs"
+	"go.uber.org/zap"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/naming"
@@ -72,11 +72,13 @@ type addrInfo struct {
 }
 
 //RoundRobin 构建RoundRobin方式的 balancer
-func RoundRobin(r naming.Resolver) Balancer {
-	return &roundRobin{r: r}
+func RoundRobin(ctx context.Context, r naming.Resolver) Balancer {
+	logger := logs.GetLogger(ctx)
+	return &roundRobin{r: r, logger: logger}
 }
 
 type roundRobin struct {
+	logger *zap.Logger
 	r      naming.Resolver
 	w      naming.Watcher
 	addrs  []*addrInfo // all the addresses the client should potentially connect
@@ -90,7 +92,7 @@ type roundRobin struct {
 func (rr *roundRobin) watchAddrUpdates() error {
 	updates, err := rr.w.Next()
 	if err != nil {
-		logger.Error("the naming watcher stops working due to %v.\n", err)
+		rr.logger.Error("the naming watcher stops working due to", zap.String(logs.K_Cause, err.Error()))
 		return err
 	}
 	rr.mu.Lock()
@@ -106,7 +108,7 @@ func (rr *roundRobin) watchAddrUpdates() error {
 			for _, v := range rr.addrs {
 				if addr == v.addr {
 					exist = true
-					logger.Debug("The name resolver wanted to add an existing address: ", addr)
+					rr.logger.Debug(fmt.Sprintf("The name resolver wanted to add an existing address: ", addr))
 					break
 				}
 			}
@@ -123,7 +125,7 @@ func (rr *roundRobin) watchAddrUpdates() error {
 				}
 			}
 		default:
-			logger.Error("Unknown update.Op ", update.Op)
+			rr.logger.Error(fmt.Sprintf("Unknown update.Op:%#v", update.Op))
 		}
 	}
 	// Make a copy of rr.addrs and write it onto rr.addrCh so that gRPC internals gets notified.
@@ -242,7 +244,7 @@ func (rr *roundRobin) Get(ctx context.Context, opts BalancerGetOptions) (addr Ad
 	if !opts.BlockingWait {
 		if len(rr.addrs) == 0 {
 			rr.mu.Unlock()
-			err = base.NewError(-1, errScopeBalance, "there is no address available")
+			err = errors.NewError(-1, errScopeBalance, "there is no address available")
 			return
 		}
 		// Returns the next addr on rr.addrs for failfast RPCs.

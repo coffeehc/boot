@@ -1,32 +1,75 @@
 package serviceboot
 
 import (
-	"fmt"
+	"context"
+	"flag"
 
-	"github.com/coffeehc/httpx"
-	"github.com/coffeehc/microserviceboot/base"
+	"git.xiagaogao.com/coffee/boot"
+	"git.xiagaogao.com/coffee/boot/bootutils"
+	"git.xiagaogao.com/coffee/boot/errors"
 )
+
+var configPath = flag.String("config", "./config.yml", "配置文件路径")
 
 // ServiceConfig 服务配置
 type ServiceConfig struct {
-	ServiceInfo            *base.SimpleServiceInfo `yaml:"service_info"`
-	EnableAccessInfo       bool                    `yaml:"enableAccessInfo"`
-	DisableServiceRegister bool                    `yaml:"disable_service_register"`
-	HTTPConfig             *httpx.Config           `yaml:"http_config"`
+	ServiceInfo            *SimpleServiceInfo `yaml:"service_info"`
+	EnableAccessInfo       bool               `yaml:"enableAccessInfo"`
+	DisableServiceRegister bool               `yaml:"disable_service_register"`
+	ServerAddr             string             `yaml:"server_addr"`
 }
 
-//GetHTTPServerConfig 获取 HTTP config
-func (sc *ServiceConfig) GetHTTPServerConfig() (*httpx.Config, base.Error) {
-	if sc.HTTPConfig == nil {
-		sc.HTTPConfig = new(httpx.Config)
-	}
-	if sc.HTTPConfig.ServerAddr == "" {
-		localIP, err := base.GetLocalIP()
-		if err != nil {
-			return nil, err
+//LoadConfig 加载ServiceConfiguration的配置
+func loadServiceConfig(ctx context.Context) (*ServiceConfig, string, errors.Error) {
+	errorService := errors.GetRootErrorService(ctx)
+	errorService = errorService.NewService("config")
+	config := &ServiceConfig{}
+	loaded := false
+	if boot.IsDevModule() && *configPath == "./config.yml" {
+		err := bootutils.LoadConfig(ctx, "./config-dev.yml", config)
+		if err == nil {
+			*configPath = "./config-dev.yml"
+			loaded = true
 		}
-		sc.HTTPConfig.ServerAddr = fmt.Sprintf("%s:8888", localIP)
 	}
-	sc.HTTPConfig.DefaultRender = httpx.DefaultRenderJSON
-	return sc.HTTPConfig, nil
+	if !loaded {
+		err := bootutils.LoadConfig(ctx, *configPath, config)
+		if err != nil {
+			return nil, "", err
+		}
+	}
+	if config.ServiceInfo == nil {
+		return nil, "", errorService.BuildMessageError("没有配置ServiceInfo")
+	}
+	err := checkServiceInfoConfig(ctx, config.ServiceInfo, errorService)
+	if err != nil {
+		return nil, "", err
+	}
+	if config.ServerAddr == "" {
+		return nil, "", errorService.BuildMessageError("没有配置ServiceAddr")
+	}
+	config.ServerAddr, err = bootutils.WarpServerAddr(config.ServerAddr)
+	if err != nil {
+		return nil, "", err
+	}
+	return config, *configPath, nil
+}
+
+func checkServiceInfoConfig(ctx context.Context, serviceInfo ServiceInfo, errorService errors.Service) errors.Error {
+	if serviceInfo == nil {
+		return errorService.BuildMessageError("没有配置 ServiceInfo")
+	}
+	if serviceInfo.GetServiceName() == "" {
+		return errorService.BuildMessageError("没有配置 ServiceName")
+	}
+	if serviceInfo.GetServiceTag() == "" {
+		return errorService.BuildMessageError("没有配置 ServiceTag")
+	}
+	if serviceInfo.GetVersion() == "" {
+		return errorService.BuildMessageError("没有配置 ServiceVersion")
+	}
+	if serviceInfo.GetServiceName() != GetServiceName(ctx) {
+		return errorService.BuildMessageError("服务名配置错误")
+	}
+	return nil
 }

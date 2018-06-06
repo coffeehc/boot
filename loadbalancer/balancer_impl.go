@@ -5,7 +5,7 @@ import (
 	"net"
 	"time"
 
-	"github.com/coffeehc/microserviceboot/base"
+	"git.xiagaogao.com/coffee/boot/errors"
 	"google.golang.org/grpc/naming"
 )
 
@@ -13,12 +13,12 @@ var defaultTlsConfig = &tls.Config{
 	InsecureSkipVerify: true,
 }
 
-func NewAddrArrayBalancer(addrs []string, ssl bool) (Balancer, base.Error) {
+func NewAddrArrayBalancer(ctx, addrs []string, ssl bool) (Balancer, errors.Error) {
 	r, err := newAddrArrayResolver(addrs, ssl)
 	if err != nil {
 		return nil, err
 	}
-	return RoundRobin(r), nil
+	return RoundRobin(ctx, r), nil
 }
 
 type addrArrayResolver struct {
@@ -27,9 +27,9 @@ type addrArrayResolver struct {
 	ssl         bool
 }
 
-func newAddrArrayResolver(addrs []string, ssl bool) (*addrArrayResolver, base.Error) {
+func newAddrArrayResolver(addrs []string, ssl bool) (*addrArrayResolver, errors.Error) {
 	if addrs == nil || len(addrs) == 0 {
-		return nil, base.NewError(-1, errScopeBalance, "addrs is nil")
+		return nil, errors.NewError(-1, errScopeBalance, "addrs is nil")
 	}
 	resolver := &addrArrayResolver{
 		updatesc:    make(chan []*naming.Update, 1),
