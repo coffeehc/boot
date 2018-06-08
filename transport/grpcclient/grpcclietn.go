@@ -9,6 +9,8 @@ import (
 	"git.xiagaogao.com/coffee/boot/errors"
 	"git.xiagaogao.com/coffee/boot/logs"
 	"git.xiagaogao.com/coffee/boot/sd/etcdsd"
+	_ "git.xiagaogao.com/coffee/boot/transport"
+	"github.com/coreos/etcd/clientv3"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/balancer/roundrobin"
@@ -27,12 +29,13 @@ type GRPCConnFactory interface {
 }
 
 type grpcClientImpl struct {
-	options []grpc.DialOption
+	options    []grpc.DialOption
+	etcdClient *clientv3.Client
 }
 
-func NewGRPCConnFactory(cxt context.Context, serviceInfo boot.ServiceInfo) GRPCConnFactory {
+func NewGRPCConnFactory(cxt context.Context, etcdClient *clientv3.Client, serviceInfo boot.ServiceInfo) GRPCConnFactory {
 	logger = logs.GetLogger(cxt)
-	grpc.WithDefaultCallOptions(grpc.UseCompressor("gzip"))
+	//grpc.WithDefaultCallOptions(grpc.UseCompressor("gzip"))
 	opts := []grpc.DialOption{
 		grpc.WithBackoffMaxDelay(time.Second * 10),
 		grpc.WithKeepaliveParams(keepalive.ClientParameters{Time: time.Second * 5, Timeout: time.Second * 10, PermitWithoutStream: true}),
@@ -40,15 +43,15 @@ func NewGRPCConnFactory(cxt context.Context, serviceInfo boot.ServiceInfo) GRPCC
 		grpc.WithUserAgent("coffee's grpcserver client"),
 		grpc.WithInsecure(),
 		grpc.WithUnaryInterceptor(wapperUnartClientInterceptor(serviceInfo)),
+		//grpc.NewGZIPDecompressor()
 	}
-	return &grpcClientImpl{options: opts}
+	return &grpcClientImpl{options: opts, etcdClient: etcdClient}
 }
 
 func (client *grpcClientImpl) NewClientConn(ctx context.Context, serviceInfo boot.ServiceInfo, block bool) (*grpc.ClientConn, errors.Error) {
 	target := fmt.Sprintf("%s://%s/%s", etcdsd.MicorScheme, serviceInfo.GetServiceTag(), serviceInfo.GetServiceName())
 	if resolver.Get(target) == nil {
-		etcdClient := boot.GetEtcdClient(ctx)
-		err := etcdsd.RegisterResolver(ctx, etcdClient, serviceInfo)
+		err := etcdsd.RegisterResolver(ctx, client.etcdClient, serviceInfo)
 		if err != nil {
 			return nil, err
 		}

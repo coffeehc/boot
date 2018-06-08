@@ -80,32 +80,5 @@ func Launch(ctx context.Context, service Service, serviceConfig *ServiceConfig, 
 		return nil, err
 	}
 	logger.Debug(fmt.Sprintf("核心服务启动成功,服务地址:%s,启动耗时:%s", serviceConfig.ServerAddr, time.Since(startTime)))
-	//注册是在服务完全启动之后
-	deregisterFunc, err := serviceDiscoverRegister(ctx, microService.GetService(), serviceConfig.ServiceInfo, serviceConfig)
-	if err != nil {
-		logger.Error(err.Error(), err.GetFields()...)
-		return nil, err
-	}
-	microService.AddCleanFunc(deregisterFunc)
 	return microService, nil
-}
-
-func serviceDiscoverRegister(ctx context.Context, service Service, serviceInfo boot.ServiceInfo, serviceConfig *ServiceConfig) (func(), errors.Error) {
-	errorService := errors.GetRootErrorService(ctx)
-	serviceDiscoveryRegister, err := service.GetServiceDiscoveryRegister()
-	if err != nil {
-		return nil, errorService.BuildSystemError("获取serviceDiscoveryRegister失败", zap.String(logs.K_ServiceName, serviceInfo.GetServiceName()))
-	}
-
-	if !serviceConfig.DisableServiceRegister {
-		if serviceDiscoveryRegister == nil {
-			return nil, errorService.BuildSystemError("没有指定serviceDiscoveryRegister", zap.String(logs.K_ServiceName, serviceInfo.GetServiceName()))
-		}
-		deregister, registerError := serviceDiscoveryRegister.RegService(ctx, serviceInfo, serviceConfig.ServerAddr)
-		if registerError != nil {
-			return nil, errorService.BuildSystemError("注册服务失败", zap.String(logs.K_ServiceName, serviceInfo.GetServiceName()), zap.String(logs.K_Cause, err.Error()))
-		}
-		return deregister, nil
-	}
-	return func() {}, nil
 }

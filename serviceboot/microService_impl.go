@@ -9,6 +9,7 @@ import (
 	"git.xiagaogao.com/coffee/boot/errors"
 	"git.xiagaogao.com/coffee/boot/logs"
 	"git.xiagaogao.com/coffee/boot/sd/etcdsd"
+	"git.xiagaogao.com/coffee/boot/transport/grpcclient"
 	"git.xiagaogao.com/coffee/boot/transport/grpcserver"
 	"github.com/coreos/etcd/clientv3"
 	"go.uber.org/zap"
@@ -51,7 +52,17 @@ func (ms *grpcMicroServiceImpl) Start(ctx context.Context, serviceConfig *Servic
 		return err
 	}
 	ctx = boot.SetEtcdClient(ctx, etcdClient)
-	err = ms.service.Init(ctx, configPath, serviceConfig)
+	serviceBoot := &serviceBootImpl{
+		logger:            logger,
+		errorService:      errors.GetRootErrorService(ctx),
+		loggerService:     logs.GetLoggerService(ctx),
+		etcdClient:        etcdClient,
+		serviceInfo:       serviceConfig.ServiceInfo,
+		grpcClientFactory: grpcclient.NewGRPCConnFactory(ctx, etcdClient, serviceConfig.ServiceInfo),
+		ctx:               ctx,
+		serverAddr:        serviceConfig.ServerAddr,
+	}
+	err = ms.service.Init(ctx, serviceBoot)
 	if err != nil {
 		return err
 	}

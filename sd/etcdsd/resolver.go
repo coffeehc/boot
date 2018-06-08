@@ -80,7 +80,6 @@ type etcdResolver struct {
 }
 
 func (impl *etcdResolver) ResolveNow(ro resolver.ResolveNowOption) {
-	logger.Debug("do ResolveNow")
 }
 
 // Close closes the resolver.
@@ -97,6 +96,9 @@ func (r *etcdResolver) initServerAddr() []resolver.Address {
 	if err != nil {
 		logger.Error("etcd获取服务节点信息失败:%s", zap.Any(logs.K_Cause, err))
 	} else {
+		if getResp.Count == 0 {
+			logger.Warn(fmt.Sprintf("服务[%s]没有足够的节点使用", r.target.Endpoint))
+		}
 		for _, kv := range getResp.Kvs {
 			addrList = append(addrList, *r.getServiceAddr(kv))
 		}
@@ -153,6 +155,9 @@ func (r *etcdResolver) getServiceAddr(kv *mvccpb.KeyValue) *resolver.Address {
 		return nil
 	}
 	if info.ServiceInfo.GetServiceTag() == r.target.Authority {
+		if info.ServerAddr == "" {
+			return &resolver.Address{Addr: string(kv.Key[len(r.keyPrefix):])}
+		}
 		return &resolver.Address{Addr: info.ServerAddr}
 	}
 	return nil

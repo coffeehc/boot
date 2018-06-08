@@ -2,9 +2,9 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"time"
 
+	"git.xiagaogao.com/baseservices/baseservice/baseservicecommon"
 	"git.xiagaogao.com/coffee/boot"
 	"git.xiagaogao.com/coffee/boot/errors"
 	"git.xiagaogao.com/coffee/boot/logs"
@@ -22,7 +22,8 @@ func main() {
 	ctx = logs.SetLogger(ctx, logger)
 	errorService := errors.NewService("simple")
 	ctx = errors.SetRootErrorService(ctx, errorService)
-	serviceInfo := boot.NewSimpleServiceInfo("simple_service", "0.0.1", "dev", "http", "", "")
+	serviceInfo := boot.NewSimpleServiceInfo("baseservice", "0.0.1", "dev", "http", "", "")
+	serviceInfo_server := boot.NewSimpleServiceInfo("simple_service", "0.0.1", "dev", "http", "", "")
 	serviceInfo_client := boot.NewSimpleServiceInfo("simple_client", "0.0.1", "dev", "http", "", "")
 	etcdClient, err := etcdsd.NewClient(ctx, &etcdsd.Config{
 		Endpoints:        []string{"127.0.0.1:2379"},
@@ -33,21 +34,31 @@ func main() {
 		logger.Error(err.Error(), err.GetFields()...)
 	}
 	ctx = boot.SetEtcdClient(ctx, etcdClient)
-	grpcFactory := grpcclient.NewGRPCConnFactory(ctx, serviceInfo_client)
+	grpcFactory := grpcclient.NewGRPCConnFactory(ctx, etcdClient, serviceInfo_client)
 	grpcConn, err := grpcFactory.NewClientConn(ctx, serviceInfo, false)
 	if err != nil {
 		logger.Error(err.Error(), err.GetFields()...)
 	}
-	greeterClient := simplemodel.NewGreeterClient(grpcConn)
-	request := new(simplemodel.Request)
-	request.Name = time.Now().String()
-	response, err1 := greeterClient.SayHello(context.Background(), request)
+	sequenceServiceClient := baseservicecommon.NewSequenceServiceClient(grpcConn)
+	simplemodelGrpcConn, err := grpcFactory.NewClientConn(ctx, serviceInfo_server, false)
+	if err != nil {
+		logger.Error(err.Error(), err.GetFields()...)
+	}
+	resp, err1 := sequenceServiceClient.GenerateSequence(ctx, &baseservicecommon.SequenceGenerate{})
 	if err1 != nil {
-
 		logger.Error(err1.Error())
 		time.Sleep(time.Millisecond * 300)
 		return
 	}
-	logger.Debug(fmt.Sprintf("response is %s", response.Message))
-	time.Sleep(time.Millisecond * 300)
+	logger.Debug("result", logs.F_ExtendData(resp))
+	client1 := simplemodel.NewGreeterClient(simplemodelGrpcConn)
+	request := new(simplemodel.Request)
+	request.Name = time.Now().String()
+	resp1, err1 := client1.SayHello(ctx, request)
+	if err1 != nil {
+		logger.Error(err1.Error())
+		time.Sleep(time.Millisecond * 300)
+		return
+	}
+	logger.Debug("result", logs.F_ExtendData(resp1))
 }

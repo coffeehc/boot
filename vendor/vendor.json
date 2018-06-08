@@ -3,6 +3,18 @@
 	"ignore": "test",
 	"package": [
 		{
+			"checksumSHA1": "5aJoRkq5HjNUOowIjvpolmmGfBU=",
+			"path": "git.xiagaogao.com/baseservices/baseservice/baseserviceclient",
+			"revision": "f02cd3d0a1af498ae6af475b82acd2f157dda7a1",
+			"revisionTime": "2018-05-04T18:25:07Z"
+		},
+		{
+			"checksumSHA1": "UOllLBrqJEtqujgbUSjjFLukuC8=",
+			"path": "git.xiagaogao.com/baseservices/baseservice/baseservicecommon",
+			"revision": "f02cd3d0a1af498ae6af475b82acd2f157dda7a1",
+			"revisionTime": "2018-05-04T18:25:07Z"
+		},
+		{
 			"checksumSHA1": "spyv5/YFBjYyZLZa1U2LBfDR8PM=",
 			"path": "github.com/beorn7/perks/quantile",
 			"revision": "4c0e84591b9aa9e6dcfdf3e020114cd81f89d5f9",
@@ -20,6 +32,27 @@
 			"path": "github.com/coffeehc/logger",
 			"revision": "abfcc2cd89ee40621dafad1986c5a03fea4769f8",
 			"revisionTime": "2017-06-28T14:49:41Z"
+		},
+		{
+			"checksumSHA1": "XLm1anitow9P+cA+TspW+1tjYp4=",
+			"origin": "git.xiagaogao.com/baseservices/baseservice/vendor/github.com/coffeehc/microserviceboot/base",
+			"path": "github.com/coffeehc/microserviceboot/base",
+			"revision": "f02cd3d0a1af498ae6af475b82acd2f157dda7a1",
+			"revisionTime": "2018-05-04T18:25:07Z"
+		},
+		{
+			"checksumSHA1": "c6Wu8nbsYEM4qxqrtfsezVMKQY4=",
+			"origin": "git.xiagaogao.com/baseservices/baseservice/vendor/github.com/coffeehc/microserviceboot/loadbalancer",
+			"path": "github.com/coffeehc/microserviceboot/loadbalancer",
+			"revision": "f02cd3d0a1af498ae6af475b82acd2f157dda7a1",
+			"revisionTime": "2018-05-04T18:25:07Z"
+		},
+		{
+			"checksumSHA1": "n7YiF9Ep8zeum+3O6jJ5O17KEUY=",
+			"origin": "git.xiagaogao.com/baseservices/baseservice/vendor/github.com/coffeehc/microserviceboot/serviceclient/grpcclient",
+			"path": "github.com/coffeehc/microserviceboot/serviceclient/grpcclient",
+			"revision": "f02cd3d0a1af498ae6af475b82acd2f157dda7a1",
+			"revisionTime": "2018-05-04T18:25:07Z"
 		},
 		{
 			"checksumSHA1": "SVDbxtq6zlRJ/mB0EAau/f9r4Hc=",
@@ -80,6 +113,13 @@
 			"path": "github.com/golang/protobuf/proto",
 			"revision": "64db29d85ff91ba669cfaf009d5f400a4da8a55f",
 			"revisionTime": "2018-06-06T02:01:39Z"
+		},
+		{
+			"checksumSHA1": "XNHQiRltA7NQJV0RvUroY+cf+zg=",
+			"origin": "git.xiagaogao.com/baseservices/baseservice/vendor/github.com/golang/protobuf/protoc-gen-go/descriptor",
+			"path": "github.com/golang/protobuf/protoc-gen-go/descriptor",
+			"revision": "f02cd3d0a1af498ae6af475b82acd2f157dda7a1",
+			"revisionTime": "2018-05-04T18:25:07Z"
 		},
 		{
 			"checksumSHA1": "tkJPssYejSjuAwE2tdEnoEIj93Q=",
@@ -262,6 +302,13 @@
 			"revisionTime": "2018-05-30T06:29:46Z"
 		},
 		{
+			"checksumSHA1": "3xyuaSNmClqG4YWC7g0isQIbUTc=",
+			"origin": "git.xiagaogao.com/baseservices/baseservice/vendor/golang.org/x/net/lex/httplex",
+			"path": "golang.org/x/net/lex/httplex",
+			"revision": "f02cd3d0a1af498ae6af475b82acd2f157dda7a1",
+			"revisionTime": "2018-05-04T18:25:07Z"
+		},
+		{
 			"checksumSHA1": "rJn3m/27kO+2IU6KCCZ74Miby+8=",
 			"path": "golang.org/x/net/trace",
 			"revision": "1e491301e022f8f977054da4c2d852decd59571f",
@@ -290,6 +337,13 @@
 			"path": "golang.org/x/text/unicode/norm",
 			"revision": "5c1cf69b5978e5a34c5f9ba09a83e56acc4b7877",
 			"revisionTime": "2018-05-10T04:57:31Z"
+		},
+		{
+			"checksumSHA1": "GkjRB7ms/necD0ePmzqT6gDsu+4=",
+			"origin": "git.xiagaogao.com/baseservices/baseservice/vendor/google.golang.org/genproto/googleapis/api/annotations",
+			"path": "google.golang.org/genproto/googleapis/api/annotations",
+			"revision": "f02cd3d0a1af498ae6af475b82acd2f157dda7a1",
+			"revisionTime": "2018-05-04T18:25:07Z"
 		},
 		{
 			"checksumSHA1": "2iGEpqdA3KpuCNSWW6KPCIhpXl4=",
@@ -356,6 +410,13 @@
 			"path": "google.golang.org/grpc/encoding/proto",
 			"revision": "96cefb43cfc8b2cd3fed9f19f59830bc69e30093",
 			"revisionTime": "2018-06-06T01:04:12Z"
+		},
+		{
+			"checksumSHA1": "H7SuPUqbPcdbNqgl+k3ohuwMAwE=",
+			"origin": "git.xiagaogao.com/baseservices/baseservice/vendor/google.golang.org/grpc/grpclb/grpc_lb_v1/messages",
+			"path": "google.golang.org/grpc/grpclb/grpc_lb_v1/messages",
+			"revision": "f02cd3d0a1af498ae6af475b82acd2f157dda7a1",
+			"revisionTime": "2018-05-04T18:25:07Z"
 		},
 		{
 			"checksumSHA1": "ZPPSFisPDz2ANO4FBZIft+fRxyk=",

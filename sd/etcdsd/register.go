@@ -53,5 +53,6 @@ func RegisterService(ctx context.Context, client *clientv3.Client, info boot.Ser
 			logger.Error("注册服务发生了错误", logs.F_Error(err))
 		}
 	}()
+	logger.Debug("向Etcd注册服务成功:" + info.GetServiceName())
 	return nil
 }
