@@ -3,12 +3,6 @@
 	"ignore": "test",
 	"package": [
 		{
-			"checksumSHA1": "Gyi8Xi6zHfn6Cx6AIwUBqWSGvqk=",
-			"path": "git.xiagaogao.com/base/cloudcommons/mqservice",
-			"revision": "745cd17cee84a9a418f10f59514c04d34fcbc53d",
-			"revisionTime": "2018-05-02T06:27:42Z"
-		},
-		{
 			"checksumSHA1": "spyv5/YFBjYyZLZa1U2LBfDR8PM=",
 			"path": "github.com/beorn7/perks/quantile",
 			"revision": "4c0e84591b9aa9e6dcfdf3e020114cd81f89d5f9",
@@ -21,11 +15,11 @@
 			"revisionTime": "2017-06-28T14:49:41Z"
 		},
 		{
-			"checksumSHA1": "X8aXdP5xXmDD3BQZvYl5IRv0Fg8=",
-			"origin": "git.xiagaogao.com/base/cloudcommons/vendor/github.com/coffeehc/logger",
+			"checksumSHA1": "+V4S/lM1dNnRXlaRp1SSdW+lWgo=",
+			"origin": "github.com/coffeehc/httpx/vendor/github.com/coffeehc/logger",
 			"path": "github.com/coffeehc/logger",
-			"revision": "745cd17cee84a9a418f10f59514c04d34fcbc53d",
-			"revisionTime": "2018-05-02T06:27:42Z"
+			"revision": "abfcc2cd89ee40621dafad1986c5a03fea4769f8",
+			"revisionTime": "2017-06-28T14:49:41Z"
 		},
 		{
 			"checksumSHA1": "SVDbxtq6zlRJ/mB0EAau/f9r4Hc=",
@@ -182,13 +176,6 @@
 			"path": "github.com/prometheus/procfs/xfs",
 			"revision": "a1dba9ce8baed984a2495b658c82687f8157b98f",
 			"revisionTime": "2017-02-16T22:32:56Z"
-		},
-		{
-			"checksumSHA1": "cTGN45d+k6ukyeaeeuJHPQkhpsM=",
-			"origin": "git.xiagaogao.com/base/cloudcommons/vendor/github.com/streadway/amqp",
-			"path": "github.com/streadway/amqp",
-			"revision": "745cd17cee84a9a418f10f59514c04d34fcbc53d",
-			"revisionTime": "2018-05-02T06:27:42Z"
 		},
 		{
 			"checksumSHA1": "VrTiQbtu3FoRCY9h3HwjvtGVksw=",

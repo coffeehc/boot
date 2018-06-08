@@ -6,8 +6,6 @@ import (
 
 	"git.xiagaogao.com/coffee/boot"
 	"git.xiagaogao.com/coffee/boot/errors"
-	"git.xiagaogao.com/coffee/boot/serviceboot"
-	"github.com/coffeehc/logger"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/status"
@@ -20,7 +18,7 @@ var (
 const _internalInvoker = "_internal_invoker"
 const context_serviceInfoKey = "__serviceInfo__"
 
-func wapperUnartClientInterceptor(serviceInfo serviceboot.ServiceInfo) grpc.UnaryClientInterceptor {
+func wapperUnartClientInterceptor(serviceInfo boot.ServiceInfo) grpc.UnaryClientInterceptor {
 	return func(ctx context.Context, method string, req, reply interface{}, cc *grpc.ClientConn, invoker grpc.UnaryInvoker, opts ...grpc.CallOption) (err error) {
 		return _unaryClientInterceptor.Interceptor(context.WithValue(ctx, context_serviceInfoKey, serviceInfo), method, req, reply, cc, invoker, opts...)
 	}
@@ -48,7 +46,7 @@ type unartClientInterceptor struct {
 }
 
 func (uci *unartClientInterceptor) Interceptor(ctx context.Context, method string, req, reply interface{}, cc *grpc.ClientConn, invoker grpc.UnaryInvoker, opts ...grpc.CallOption) (err error) {
-	opts = append(opts, grpc.FailFast(false))
+	opts = append(opts, grpc.FailFast(true))
 	return uci.rootInterceptor.interceptor(context.WithValue(ctx, _internalInvoker, invoker), method, req, reply, cc, uci.rootInterceptor.invoker, opts...)
 }
 
@@ -104,14 +102,11 @@ func adapteError(cxt context.Context, err interface{}) errors.Error {
 		return nil
 	}
 	serviceName := "未知服务"
-	serviceInfo, ok := cxt.Value(context_serviceInfoKey).(serviceboot.ServiceInfo)
+	serviceInfo, ok := cxt.Value(context_serviceInfoKey).(boot.ServiceInfo)
 	if ok {
 		serviceName = serviceInfo.GetServiceName()
 	}
 	serviceName = "grpcserver:" + serviceName
-	if boot.IsDevModule() {
-		logger.Error("发生异常:%#v", err)
-	}
 	switch v := err.(type) {
 	case errors.Error:
 		return v

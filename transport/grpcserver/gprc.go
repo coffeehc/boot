@@ -10,7 +10,6 @@ import (
 	"git.xiagaogao.com/coffee/boot/logs"
 	"github.com/grpc-ecosystem/go-grpc-prometheus"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/grpclog"
 	"google.golang.org/grpc/keepalive"
 	"google.golang.org/grpc/tap"
 )
@@ -36,7 +35,7 @@ func NewServer(ctx context.Context, configPath string) (*grpc.Server, errors.Err
 
 func BuildGRPCOptions(ctx context.Context, config *GRPCConfig) []grpc.ServerOption {
 	logger := logs.GetLogger(ctx)
-	grpclog.SetLoggerV2(nil)
+	//grpclog.SetLoggerV2(grpclog.NewLoggerV2(os.Stdout, os.Stdout, os.Stdout))
 	unaryServerInterceptor := newUnaryServerInterceptor(ctx)
 	grpc.WithDefaultCallOptions(grpc.UseCompressor("gzip"))
 	//初始化Server
@@ -47,6 +46,8 @@ func BuildGRPCOptions(ctx context.Context, config *GRPCConfig) []grpc.ServerOpti
 	}
 	unaryServerInterceptor.AppendInterceptor("prometheus", grpc_prometheus.UnaryServerInterceptor)
 	return []grpc.ServerOption{
+		grpc.InitialWindowSize(4096),
+		grpc.InitialConnWindowSize(100),
 		grpc.MaxConcurrentStreams(config.MaxConcurrentStreams),
 		grpc.MaxRecvMsgSize(config.MaxMsgSize),
 		grpc.MaxSendMsgSize(config.MaxMsgSize),
@@ -61,9 +62,9 @@ func BuildGRPCOptions(ctx context.Context, config *GRPCConfig) []grpc.ServerOpti
 			MinTime:             time.Minute * 5,
 			PermitWithoutStream: false,
 		}),
-		grpc.InTapHandle(func(ctx context.Context, info *tap.Info) (context.Context, error) {
-			ctx = logs.SetLogger(ctx, logger)
-			ctx = context.WithValue(ctx, boot.Ctx_Key_serviceName, ctx.Value(boot.Ctx_Key_serviceName))
+		grpc.InTapHandle(func(ctx1 context.Context, info *tap.Info) (context.Context, error) {
+			ctx1 = logs.SetLogger(ctx1, logger)
+			ctx1 = boot.SetServiceInfo(ctx1, boot.GetServiceInfo(ctx))
 			return ctx, nil
 		}),
 	}

@@ -12,7 +12,7 @@ import (
 type ServiceImpl struct {
 }
 
-func (service *ServiceImpl) Init(cxt context.Context, configPath string, serviceConfig *serviceboot.ServiceConfig, server *grpc.Server) errors.Error {
+func (service *ServiceImpl) Init(cxt context.Context, configPath string, serviceConfig *serviceboot.ServiceConfig) errors.Error {
 	return nil
 }
 func (service *ServiceImpl) RegisterServer(s *grpc.Server) errors.Error {

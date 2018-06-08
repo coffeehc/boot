@@ -1,9 +1,6 @@
 package logger
 
-import (
-	"flag"
-	"os"
-)
+import "flag"
 
 var flagLoggerLevel = flag.String("logger_level", DefaultLevel, "默认日志级别")
 
@@ -11,9 +8,6 @@ var flagLoggerLevel = flag.String("logger_level", DefaultLevel, "默认日志级
 func InitLogger() {
 	if !flag.Parsed() {
 		flag.Parse()
-	}
-	if env_level, ok := os.LookupEnv("LOGGER_LEVEL"); ok {
-		*flagLoggerLevel = env_level
 	}
 	SetDefaultLevel("/", getLevel(*flagLoggerLevel))
 	Info("设置默认日志级别为:%s", *flagLoggerLevel)

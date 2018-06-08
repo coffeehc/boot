@@ -7,5 +7,5 @@ import (
 )
 
 func main() {
-	serviceboot.ServiceLaunch("simple_service", context.Background(), &ServiceImpl{})
+	serviceboot.ServiceLaunch(context.Background(), &ServiceImpl{})
 }

@@ -4,11 +4,6 @@ import (
 	"flag"
 )
 
-const (
-	Ctx_Key_serviceName = "_serviceName"
-	Ctx_Key_serviceInfo = "_serviceInfo"
-)
-
 var (
 	devModule = flag.Bool("dev", true, "运行模式")
 )

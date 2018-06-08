@@ -7,22 +7,25 @@ import (
 	"git.xiagaogao.com/coffee/boot"
 	"git.xiagaogao.com/coffee/boot/bootutils"
 	"git.xiagaogao.com/coffee/boot/errors"
+	"git.xiagaogao.com/coffee/boot/sd/etcdsd"
+	"git.xiagaogao.com/coffee/boot/transport/grpcserver"
 )
 
 var configPath = flag.String("config", "./config.yml", "配置文件路径")
 
 // ServiceConfig 服务配置
 type ServiceConfig struct {
-	ServiceInfo            *SimpleServiceInfo `yaml:"service_info"`
-	EnableAccessInfo       bool               `yaml:"enableAccessInfo"`
-	DisableServiceRegister bool               `yaml:"disable_service_register"`
-	ServerAddr             string             `yaml:"server_addr"`
+	ServiceInfo            *boot.SimpleServiceInfo `yaml:"service_info"`
+	EnableAccessInfo       bool                    `yaml:"enableAccessInfo"`
+	DisableServiceRegister bool                    `yaml:"disable_service_register"`
+	ServerAddr             string                  `yaml:"server_addr"`
+	GrpcConfig             *grpcserver.GRPCConfig  `yaml:"grpc_config"`
+	EtcdConfig             *etcdsd.Config          `yaml:"etcd_config"`
 }
 
 //LoadConfig 加载ServiceConfiguration的配置
 func loadServiceConfig(ctx context.Context) (*ServiceConfig, string, errors.Error) {
-	errorService := errors.GetRootErrorService(ctx)
-	errorService = errorService.NewService("config")
+	errorService := errors.NewService("boot.config")
 	config := &ServiceConfig{}
 	loaded := false
 	if boot.IsDevModule() && *configPath == "./config.yml" {
@@ -55,7 +58,7 @@ func loadServiceConfig(ctx context.Context) (*ServiceConfig, string, errors.Erro
 	return config, *configPath, nil
 }
 
-func checkServiceInfoConfig(ctx context.Context, serviceInfo ServiceInfo, errorService errors.Service) errors.Error {
+func checkServiceInfoConfig(ctx context.Context, serviceInfo boot.ServiceInfo, errorService errors.Service) errors.Error {
 	if serviceInfo == nil {
 		return errorService.BuildMessageError("没有配置 ServiceInfo")
 	}
@@ -67,9 +70,6 @@ func checkServiceInfoConfig(ctx context.Context, serviceInfo ServiceInfo, errorS
 	}
 	if serviceInfo.GetVersion() == "" {
 		return errorService.BuildMessageError("没有配置 ServiceVersion")
-	}
-	if serviceInfo.GetServiceName() != GetServiceName(ctx) {
-		return errorService.BuildMessageError("服务名配置错误")
 	}
 	return nil
 }

@@ -1,9 +1,8 @@
-package etcdtool
+package etcdsd
 
 import (
 	"context"
 	"crypto/tls"
-	"io/ioutil"
 	"time"
 
 	"os"
@@ -11,31 +10,11 @@ import (
 
 	"git.xiagaogao.com/coffee/boot/errors"
 	"github.com/coreos/etcd/clientv3"
-	yaml "gopkg.in/yaml.v2"
 )
 
 const envETCDEndpoints = "ENV_ETCD_ENDPOINTS"
 const envETCDUsername = "ENV_ETCD_USERNAME"
 const envETCDPassword = "ENV_ETCD_PASSWORD"
-
-func LoadEtcdConfig(configPath string) (*Config, errors.Error) {
-	data, err := ioutil.ReadFile(configPath)
-	if err != nil {
-		return nil, errors.NewError(errors.Error_System, "etcd", "加载配置文件失败")
-	}
-	i := &struct {
-		EtcdConfig *Config `yaml:"etcd"`
-	}{}
-	err = yaml.Unmarshal(data, i)
-	if err != nil {
-		return nil, errors.NewError(errors.Error_System, "etcd", "解析Etcd配置失败")
-	}
-	if i.EtcdConfig == nil {
-		return nil, errors.NewError(errors.Error_System, "etcd", "加载的Etcd配置为空")
-	}
-	logger.Debug("读取配置文件内容为:%#v", i.EtcdConfig)
-	return i.EtcdConfig, nil
-}
 
 type Config struct {
 	Endpoints        []string `yaml:"endpoints"`
@@ -57,7 +36,7 @@ func (config *Config) GetEtcdConfig() (*clientv3.Config, errors.Error) {
 		config.Endpoints = strings.Split(env_endpoints, ",")
 	}
 	if len(config.Endpoints) == 0 {
-		return nil, baerrorsse.NewError(errors.Error_System, "etdc", "没有指定对应的Endpoints")
+		return nil, errors.NewError(errors.Error_System, "etdc", "没有指定对应的Endpoints")
 	}
 	return &clientv3.Config{
 		Endpoints:        config.Endpoints,

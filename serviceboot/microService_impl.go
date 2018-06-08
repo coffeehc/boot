@@ -5,9 +5,12 @@ import (
 	"fmt"
 	"net"
 
+	"git.xiagaogao.com/coffee/boot"
 	"git.xiagaogao.com/coffee/boot/errors"
 	"git.xiagaogao.com/coffee/boot/logs"
+	"git.xiagaogao.com/coffee/boot/sd/etcdsd"
 	"git.xiagaogao.com/coffee/boot/transport/grpcserver"
+	"github.com/coreos/etcd/clientv3"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
 )
@@ -32,16 +35,27 @@ type grpcMicroServiceImpl struct {
 	cleanFuncs    []func()
 	listener      net.Listener
 	serviceConfig *ServiceConfig
+	etcdClient    *clientv3.Client
 }
 
 func (ms *grpcMicroServiceImpl) Start(ctx context.Context, serviceConfig *ServiceConfig, configPath string) (err errors.Error) {
 	ms.serviceConfig = serviceConfig
 	logger := logs.GetLogger(ctx)
 	server, err := grpcserver.NewServer(ctx, configPath)
-	err = ms.service.Init(ctx, configPath, serviceConfig, server)
 	if err != nil {
 		return err
 	}
+	ctx = boot.SetGRPCServer(ctx, server)
+	etcdClient, err := etcdsd.NewClient(ctx, serviceConfig.EtcdConfig)
+	if err != nil {
+		return err
+	}
+	ctx = boot.SetEtcdClient(ctx, etcdClient)
+	err = ms.service.Init(ctx, configPath, serviceConfig)
+	if err != nil {
+		return err
+	}
+	ms.etcdClient = etcdClient
 	ms.grpcServer = server
 	defer func() {
 		if err1 := recover(); err1 != nil {
@@ -66,9 +80,9 @@ func (ms *grpcMicroServiceImpl) Start(ctx context.Context, serviceConfig *Servic
 	}
 	ms.listener = lis
 	go ms.grpcServer.Serve(lis)
-	logger.Info("服务已正常启动")
-
-	return nil
+	logger.Debug("服务已正常启动")
+	//注册服务
+	return etcdsd.RegisterService(ctx, etcdClient, serviceConfig.ServiceInfo, serviceConfig.ServerAddr)
 }
 
 func (ms *grpcMicroServiceImpl) AddCleanFunc(f func()) {
@@ -76,6 +90,9 @@ func (ms *grpcMicroServiceImpl) AddCleanFunc(f func()) {
 }
 
 func (ms *grpcMicroServiceImpl) Stop(ctx context.Context) {
+	if ms.etcdClient != nil {
+		ms.etcdClient.Close()
+	}
 	logger := logs.GetLogger(ctx)
 	if ms.grpcServer != nil {
 		ms.grpcServer.GracefulStop()
@@ -87,7 +104,7 @@ func (ms *grpcMicroServiceImpl) Stop(ctx context.Context) {
 	if service != nil && service.Stop != nil {
 		stopErr := service.Stop(ctx)
 		if stopErr != nil {
-			stopErr.PrintLog(ctx)
+			logger.Error(stopErr.Error(), stopErr.GetFields()...)
 		}
 	}
 	for _, f := range ms.cleanFuncs {
@@ -106,6 +123,6 @@ func (ms *grpcMicroServiceImpl) GetService() Service {
 	return ms.service
 }
 
-func (ms *grpcMicroServiceImpl) GetServiceInfo() ServiceInfo {
+func (ms *grpcMicroServiceImpl) GetServiceInfo() boot.ServiceInfo {
 	return ms.serviceConfig.ServiceInfo
 }

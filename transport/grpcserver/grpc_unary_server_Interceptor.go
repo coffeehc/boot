@@ -112,12 +112,11 @@ func adapteError(ctx context.Context, err interface{}) error {
 	if err == nil {
 		return nil
 	}
-
 	if boot.IsDevModule() {
+		logger := logs.GetLogger(ctx)
 		if e, ok := err.(errors.Error); ok && errors.IsMessageError(e) {
-			e.PrintLog(ctx)
+			logger.Error(e.Error(), e.GetFields()...)
 		} else {
-			logger := logs.GetLogger(ctx)
 			logger.Error("rpc内部异常", zap.Any(logs.K_Cause, err))
 		}
 		time.Sleep(time.Millisecond * 100)

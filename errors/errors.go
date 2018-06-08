@@ -1,8 +1,6 @@
 package errors
 
 import (
-	"context"
-
 	"git.xiagaogao.com/coffee/boot/logs"
 	"github.com/pquerna/ffjson/ffjson"
 	"go.uber.org/zap"
@@ -14,7 +12,6 @@ type Error interface {
 	GetCode() int32
 	GetScopes() string
 	GetFields() []zap.Field
-	PrintLog(ctx context.Context)
 	AddFields(...zap.Field)
 }
 
@@ -84,8 +81,4 @@ func PanicError(err error) {
 	if err != nil {
 		panic(err)
 	}
-}
-
-func (err *baseError) PrintLog(ctx context.Context) {
-	logs.GetLogger(ctx).Error(err.Error(), err.GetFields()...)
 }

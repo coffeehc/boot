@@ -24,15 +24,22 @@ func NewService(scope string) Service {
 	}
 	return &serviceImpl{
 		scope: scope,
+		child: make(map[string]Service, 0),
 	}
 }
 
 type serviceImpl struct {
 	scope string
+	child map[string]Service
 }
 
 func (impl *serviceImpl) NewService(childScope string) Service {
-	return NewService(fmt.Sprintf("%s.%s", impl.scope, childScope))
+	if service, ok := impl.child[childScope]; ok {
+		return service
+	}
+	service := NewService(fmt.Sprintf("%s.%s", impl.scope, childScope))
+	impl.child[childScope] = service
+	return service
 }
 
 func (impl *serviceImpl) BuildError(errorCode int32, message string, fields ...zap.Field) Error {

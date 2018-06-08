@@ -16,34 +16,40 @@ import (
 )
 
 //serviceLaunch Service 启动
-func ServiceLaunch(serviceName string, ctx context.Context, service Service) {
+func ServiceLaunch(ctx context.Context, service Service) {
 	if !flag.Parsed() {
 		flag.Parse()
 	}
-	ctx = context.WithValue(ctx, boot.Ctx_Key_serviceName, serviceName)
-	var errorService = errors.NewService(serviceName)
-	ctx = errors.SetRootErrorService(ctx, errorService)
-	logger, _ := zap.NewDevelopment()
-	logService, err := logs.NewService()
-	if err != nil {
-		logger.Panic("创建logService失败", zap.String(logs.K_Cause, err.Error()))
-		return
-	}
-	logger = logService.GetLogger()
-	ctx = logs.SetLoggerService(ctx, logService)
-	ctx = logs.SetLogger(ctx, logger)
 	if flag.Lookup("help") != nil {
 		flag.PrintDefaults()
 		os.Exit(0)
 	}
+	logger, _ := zap.NewDevelopment()
+	serviceConfig, configPath, err := loadServiceConfig(ctx)
+	if err != nil {
+		logger.Error("加载基础配置失败", zap.String(logs.K_Cause, err.Error()))
+		return
+	}
+	serviceInfo := serviceConfig.ServiceInfo
+	ctx = boot.SetServiceInfo(ctx, serviceInfo)
+	var errorService = errors.NewService(serviceInfo.GetServiceName())
+	ctx = errors.SetRootErrorService(ctx, errorService)
+	logService, err1 := logs.NewService()
+	if err != nil {
+		logger.Panic("创建logService失败", zap.String(logs.K_Cause, err1.Error()))
+		return
+	}
+	ctx = logs.SetLoggerService(ctx, logService)
+	logger = logService.GetLogger()
+	ctx = logs.SetLogger(ctx, logger)
 	if boot.IsDevModule() {
 		logger.Debug("当前为:开发模式")
 	} else {
 		logger.Debug("当前为:生产模式")
 	}
-	microService, err := Launch(ctx, service)
+	microService, err := Launch(ctx, service, serviceConfig, configPath)
 	if err != nil {
-		logger.Error("启动服务失败", zap.String(logs.K_ServiceName, serviceName), zap.String(logs.K_Cause, err.Error()))
+		logger.Error("启动服务失败", zap.String(logs.K_ServiceName, serviceInfo.GetServiceName()), zap.String(logs.K_Cause, err.Error()))
 		return
 	}
 	defer func() {
@@ -56,18 +62,15 @@ func ServiceLaunch(serviceName string, ctx context.Context, service Service) {
 }
 
 //Launch 纯粹的启动微服务,不做系统信令监听
-func Launch(ctx context.Context, service Service) (MicroService, errors.Error) {
+func Launch(ctx context.Context, service Service, serviceConfig *ServiceConfig, configPath string) (MicroService, errors.Error) {
 	logger := logs.GetLogger(ctx)
 	errorService := errors.GetRootErrorService(ctx)
 	startTime := time.Now()
 	if service == nil {
 		return nil, errorService.BuildSystemError("serviceboot is nil")
 	}
-	serviceConfig, configPath, err := loadServiceConfig(ctx)
-	if err != nil {
-		return nil, err
-	}
-	ctx = context.WithValue(ctx, boot.Ctx_Key_serviceInfo, serviceConfig.ServiceInfo)
+
+	ctx = boot.SetServiceInfo(ctx, serviceConfig.ServiceInfo)
 	microService, err := newMicroService(ctx, service)
 	if err != nil {
 		return nil, err
@@ -80,14 +83,14 @@ func Launch(ctx context.Context, service Service) (MicroService, errors.Error) {
 	//注册是在服务完全启动之后
 	deregisterFunc, err := serviceDiscoverRegister(ctx, microService.GetService(), serviceConfig.ServiceInfo, serviceConfig)
 	if err != nil {
-		err.PrintLog(ctx)
+		logger.Error(err.Error(), err.GetFields()...)
 		return nil, err
 	}
 	microService.AddCleanFunc(deregisterFunc)
 	return microService, nil
 }
 
-func serviceDiscoverRegister(ctx context.Context, service Service, serviceInfo ServiceInfo, serviceConfig *ServiceConfig) (func(), errors.Error) {
+func serviceDiscoverRegister(ctx context.Context, service Service, serviceInfo boot.ServiceInfo, serviceConfig *ServiceConfig) (func(), errors.Error) {
 	errorService := errors.GetRootErrorService(ctx)
 	serviceDiscoveryRegister, err := service.GetServiceDiscoveryRegister()
 	if err != nil {
