@@ -3,18 +3,15 @@ package serviceboot
 import (
 	"context"
 
-	"github.com/coffeehc/microserviceboot/base"
+	"git.xiagaogao.com/coffee/boot"
+	"git.xiagaogao.com/coffee/boot/errors"
 )
 
-//MicroService micro service interface define
+//MicroService micro serviceboot interface define
 type MicroService interface {
-	Init(context.Context) (*ServiceConfig, base.Error)
-	Start(context.Context) base.Error
-	Stop()
-	GetService() base.Service
-	GetServiceInfo() base.ServiceInfo
+	Start(ctx context.Context, serviceConfig *ServiceConfig, configPath string) errors.Error
+	Stop(context.Context)
+	GetService() Service
+	GetServiceInfo() boot.ServiceInfo
 	AddCleanFunc(func())
 }
-
-//MicroServiceBuilder MicroService Builder function define
-type MicroServiceBuilder func(base.Service) (MicroService, base.Error)

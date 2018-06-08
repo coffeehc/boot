@@ -1,20 +1,37 @@
+/*
+ *
+ * Copyright 2017 gRPC authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+
 package grpc
 
 import (
-	"math/rand"
 	"time"
+
+	"google.golang.org/grpc/internal/grpcrand"
 )
 
 // DefaultBackoffConfig uses values specified for backoff in
 // https://github.com/grpc/grpc/blob/master/doc/connection-backoff.md.
-var (
-	DefaultBackoffConfig = BackoffConfig{
-		MaxDelay:  120 * time.Second,
-		baseDelay: 1.0 * time.Second,
-		factor:    1.6,
-		jitter:    0.2,
-	}
-)
+var DefaultBackoffConfig = BackoffConfig{
+	MaxDelay:  120 * time.Second,
+	baseDelay: 1.0 * time.Second,
+	factor:    1.6,
+	jitter:    0.2,
+}
 
 // backoffStrategy defines the methodology for backing off after a grpc
 // connection failure.
@@ -72,7 +89,7 @@ func (bc BackoffConfig) backoff(retries int) time.Duration {
 	}
 	// Randomize backoff delays so that if a cluster of requests start at
 	// the same time, they won't operate in lockstep.
-	backoff *= 1 + bc.jitter*(rand.Float64()*2-1)
+	backoff *= 1 + bc.jitter*(grpcrand.Float64()*2-1)
 	if backoff < 0 {
 		return 0
 	}

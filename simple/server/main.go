@@ -3,10 +3,9 @@ package main
 import (
 	"context"
 
-	"github.com/coffeehc/microserviceboot/serviceboot"
-	"github.com/coffeehc/microserviceboot/serviceboot/grpcboot"
+	"git.xiagaogao.com/coffee/boot/serviceboot"
 )
 
 func main() {
-	serviceboot.ServiceLaunch(context.Background(), &_Service{}, grpcboot.GRPCMicroServiceBuilder)
+	serviceboot.ServiceLaunch(context.Background(), &ServiceImpl{})
 }

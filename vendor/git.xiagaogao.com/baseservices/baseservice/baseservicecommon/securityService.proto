@@ -1,0 +1,73 @@
+syntax = "proto3";
+
+package baseservice.security;
+
+option go_package = "git.xiagaogao.com/baseservices/baseservice/baseservicecommon;baseservicecommon";
+
+import "google/api/annotations.proto";
+
+enum StorageType {
+    PERMANENTLY = 0;
+    ONCE = 1;
+    TEMP = 2;
+}
+
+message KeyGenerate {
+    string scope = 1;
+    int32 bits = 2; //key的位数
+    StorageType type = 3; //key存储类型
+    int64 expire_ms = 4; // 计算存储的毫秒数
+}
+
+message KeyQuery {
+    string scope = 1;
+    int64 keyId = 2;
+    StorageType type = 3; //key存储类型
+}
+
+message KeyInfo {
+    int64 keyId = 1; //keyId
+    bytes key = 2; //签名的 Key
+    int64 expire_ms = 3; //过期时间
+    int64 createTime = 4; //创建时间
+    StorageType type = 5; //key存储类型
+}
+
+message CaptchaRequest{
+
+}
+
+message Captcha{
+
+}
+
+service SecurityService {
+    //创建一个 SRA Key
+    rpc GenerateRSAKey (KeyGenerate) returns (KeyInfo) {
+      option (google.api.http) = {
+            post: "baseservice/api/v1/generate/srakey"
+            body: "*"
+        };
+    }
+    //一句 KeyId 获取创建的 Key 信息,失效或者没有,返回异常
+    rpc GetRSAKey (KeyQuery) returns (KeyInfo) {
+      option (google.api.http) = {
+            get: "baseservice/api/v1/rsakey"
+            body: "*"
+        };
+    }
+    //创建一个随机 Key
+    rpc GenerateRandKey (KeyGenerate) returns (KeyInfo) {
+      option (google.api.http) = {
+            post: "baseservice/api/v1/generate/randkey"
+            body: "*"
+        };
+    }
+    //根据 KeyId 获取随机 Key 信息
+    rpc GetRandKey (KeyQuery) returns (KeyInfo) {
+      option (google.api.http) = {
+            get: "baseservice/api/v1/randkey"
+            body: "*"
+        };
+    }
+}

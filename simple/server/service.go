@@ -1,37 +1,27 @@
 package main
 
 import (
-	"github.com/coffeehc/httpx"
-	"github.com/coffeehc/microserviceboot/base"
-	"github.com/coffeehc/microserviceboot/consultool"
-	"github.com/coffeehc/microserviceboot/simple/simplemodel"
+	"context"
+
+	"git.xiagaogao.com/coffee/boot/errors"
+	"git.xiagaogao.com/coffee/boot/serviceboot"
+	"git.xiagaogao.com/coffee/boot/simple/simplemodel"
 	"google.golang.org/grpc"
 )
 
-type _Service struct {
+type ServiceImpl struct {
 }
 
-func (service *_Service) GetGrpcOptions() []grpc.ServerOption {
+func (service *ServiceImpl) Init(cxt context.Context, serviceBoot serviceboot.ServiceBoot) errors.Error {
 	return nil
 }
-func (service *_Service) Init(configPath string, httpServer httpx.Server) base.Error {
-	return nil
-}
-func (service *_Service) RegisterServer(s *grpc.Server) base.Error {
+func (service *ServiceImpl) RegisterServer(s *grpc.Server) errors.Error {
 	simplemodel.RegisterGreeterServer(s, &_GreeterServer{})
 	return nil
 }
-func (service *_Service) Run() base.Error {
+func (service *ServiceImpl) Run(cxt context.Context) errors.Error {
 	return nil
 }
-func (service *_Service) Stop() base.Error {
+func (service *ServiceImpl) Stop(cxt context.Context) errors.Error {
 	return nil
-}
-
-func (service *_Service) GetServiceDiscoveryRegister() (base.ServiceDiscoveryRegister, base.Error) {
-	consulClient, err := consultool.NewClient(&consultool.ConsulConfig{})
-	if err != nil {
-		return nil, err
-	}
-	return consultool.NewConsulServiceRegister(consulClient)
 }
