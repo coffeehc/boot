@@ -11,7 +11,7 @@ import (
 	"go.uber.org/zap"
 )
 
-type ServiceBoot interface {
+type ServiceKit interface {
 	GetLogger() *zap.Logger
 	GetRootErrorService() errors.Service
 	GetLoggerService() logs.Service
@@ -20,17 +20,25 @@ type ServiceBoot interface {
 	GetServerAddr() string
 	GetGRPCConnFactory() grpcclient.GRPCConnFactory
 	GetContext() context.Context
+	GetConfigPath() string
+	GetRPCServiceInitialization() RPCServiceInitialization
 }
 
 type serviceBootImpl struct {
-	logger            *zap.Logger
-	errorService      errors.Service
-	loggerService     logs.Service
-	etcdClient        *clientv3.Client
-	serviceInfo       boot.ServiceInfo
-	grpcClientFactory grpcclient.GRPCConnFactory
-	ctx               context.Context
-	serverAddr        string
+	logger                   *zap.Logger
+	errorService             errors.Service
+	loggerService            logs.Service
+	etcdClient               *clientv3.Client
+	serviceInfo              boot.ServiceInfo
+	grpcClientFactory        grpcclient.GRPCConnFactory
+	ctx                      context.Context
+	serverAddr               string
+	configPath               string
+	rpcServiceInitialization RPCServiceInitialization
+}
+
+func (impl *serviceBootImpl) GetConfigPath() string {
+	return impl.configPath
 }
 
 func (impl *serviceBootImpl) GetLogger() *zap.Logger {
@@ -56,4 +64,8 @@ func (impl *serviceBootImpl) GetGRPCConnFactory() grpcclient.GRPCConnFactory {
 }
 func (impl *serviceBootImpl) GetContext() context.Context {
 	return impl.ctx
+}
+
+func (impl *serviceBootImpl) GetRPCServiceInitialization() RPCServiceInitialization {
+	return impl.rpcServiceInitialization
 }

@@ -10,6 +10,7 @@ import (
 const (
 	ctx_Key_serverAddr  = "boot.serverAddr"
 	ctx_Key_serviceInfo = "boot.serviceInfo"
+	ctx_Key_serviceName = "boot.serviceName"
 	ctx_Key_grpcServer  = "boot.grpcServer"
 	ctx_Key_etcdClient  = "boot.etcdClient"
 )
@@ -38,10 +39,18 @@ func GetServerAddr(ctx context.Context) string {
 	return ctx.Value(ctx_Key_serverAddr).(string)
 }
 
-func SetServiceInfo(ctx context.Context, info ServiceInfo) context.Context {
-	return context.WithValue(ctx, ctx_Key_serviceInfo, info)
+func SetServiceName(ctx context.Context, name string) context.Context {
+	return context.WithValue(ctx, ctx_Key_serviceName, name)
 }
 
-func GetServiceInfo(ctx context.Context) ServiceInfo {
-	return ctx.Value(ctx_Key_serviceInfo).(ServiceInfo)
+func GetServiceName(ctx context.Context) string {
+	return ctx.Value(ctx_Key_serviceName).(string)
 }
+
+//func SetServiceInfo(ctx context.Context, info ServiceInfo) context.Context {
+//	return context.WithValue(ctx, ctx_Key_serviceInfo, &info)
+//}
+//
+//func GetServiceInfo(ctx context.Context) ServiceInfo {
+//	return *ctx.Value(ctx_Key_serviceInfo).(*ServiceInfo)
+//}

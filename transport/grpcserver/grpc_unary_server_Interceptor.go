@@ -24,15 +24,16 @@ var (
 	_internalHandler         = "_internal_handler"
 )
 
-func newUnaryServerInterceptor(ctx context.Context) *unaryServerInterceptor {
-
+func newUnaryServerInterceptor(ctx context.Context, errorService errors.Service, logger *zap.Logger) *unaryServerInterceptor {
+	errorService = errorService.NewService("grpc")
 	return &unaryServerInterceptor{
 		interceptors: make(map[string]*unaryServerInterceptorWapper),
 		rootInterceptor: &unaryServerInterceptorWapper{
 			interceptor: catchPanicInterceptor,
 		},
-		mutex:  new(sync.Mutex),
-		logger: logs.GetLogger(ctx),
+		mutex:        new(sync.Mutex),
+		logger:       logger,
+		errorService: errorService,
 	}
 }
 
@@ -40,6 +41,7 @@ type unaryServerInterceptor struct {
 	interceptors    map[string]*unaryServerInterceptorWapper
 	rootInterceptor *unaryServerInterceptorWapper
 	mutex           *sync.Mutex
+	errorService    errors.Service
 	logger          *zap.Logger
 }
 
@@ -54,10 +56,10 @@ func (usi *unaryServerInterceptor) AppendInterceptor(name string, interceptor gr
 	usi.mutex.Lock()
 	defer usi.mutex.Unlock()
 	if _, ok := usi.interceptors[name]; ok {
-		return errors.NewError(errors.Error_System, "grpcserver interceptor", fmt.Sprintf("%s 已经存在", name))
+		return usi.errorService.SystemError(fmt.Sprintf("%s 已经存在", name))
 	}
 	lastInterceptor := getLastUnaryServerInterceptor(usi.rootInterceptor)
-	lastInterceptor.next = &unaryServerInterceptorWapper{interceptor: interceptor}
+	lastInterceptor.next = &unaryServerInterceptorWapper{interceptor: interceptor, errorService: usi.errorService, logger: usi.logger}
 	usi.interceptors[name] = lastInterceptor.next
 	return nil
 }
@@ -70,29 +72,31 @@ func getLastUnaryServerInterceptor(root *unaryServerInterceptorWapper) *unarySer
 }
 
 type unaryServerInterceptorWapper struct {
-	interceptor grpc.UnaryServerInterceptor
-	next        *unaryServerInterceptorWapper
+	interceptor  grpc.UnaryServerInterceptor
+	next         *unaryServerInterceptorWapper
+	errorService errors.Service
+	logger       *zap.Logger
 }
 
 func (usiw *unaryServerInterceptorWapper) handler(ctx context.Context, req interface{}) (interface{}, error) {
 	if usiw.next == nil {
 		realHandler := ctx.Value(_internalHandler)
 		if realHandler == nil {
-			return nil, errors.NewError(errors.Error_System, "grpcserver handler", "没有 Handler")
+			return nil, usiw.errorService.SystemError("没有 Handler")
 		}
 		if handler, ok := realHandler.(grpc.UnaryHandler); ok {
 			return handler(ctx, req)
 		}
-		return nil, errors.NewError(errors.Error_System, "grpcserver handler", "类型错误")
+		return nil, usiw.errorService.SystemError("类型错误")
 	}
 	info := ctx.Value(_internalUnaryServerInfo)
 	if info == 0 {
-		return nil, errors.NewError(errors.Error_System, "grpcserver interceptor", "没有 ServerInfo")
+		return nil, usiw.errorService.SystemError("没有 ServerInfo")
 	}
 	if unaryServerInfo, ok := info.(*grpc.UnaryServerInfo); ok {
 		return usiw.next.interceptor(ctx, req, unaryServerInfo, usiw.next.handler)
 	}
-	return nil, errors.NewError(errors.Error_System, "grpcserver interceptor", "类型错误")
+	return nil, usiw.errorService.SystemError("类型错误")
 }
 
 func catchPanicInterceptor(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp interface{}, err error) {

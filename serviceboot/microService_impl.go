@@ -16,15 +16,16 @@ import (
 	"google.golang.org/grpc"
 )
 
-func newMicroService(ctx context.Context, service Service) (MicroService, errors.Error) {
-	errorService := errors.GetRootErrorService(ctx).NewService("boot")
+func newMicroService(ctx context.Context, service Service, configPath string, errorService errors.Service, logger *zap.Logger) (MicroService, errors.Error) {
+	errorService = errorService.NewService("boot")
 	if service == nil {
-		return nil, errorService.BuildMessageError("没有service实例")
+		return nil, errorService.MessageError("没有service实例")
 	}
 	return &grpcMicroServiceImpl{
 		service:      service,
 		cleanFuncs:   make([]func(), 0),
 		errorService: errorService,
+		logger:       logger,
 	}, nil
 }
 
@@ -37,30 +38,33 @@ type grpcMicroServiceImpl struct {
 	listener      net.Listener
 	serviceConfig *ServiceConfig
 	etcdClient    *clientv3.Client
+	logger        *zap.Logger
 }
 
-func (ms *grpcMicroServiceImpl) Start(ctx context.Context, serviceConfig *ServiceConfig, configPath string) (err errors.Error) {
+func (ms *grpcMicroServiceImpl) Start(ctx context.Context, serviceConfig *ServiceConfig) (err errors.Error) {
 	ms.serviceConfig = serviceConfig
-	logger := logs.GetLogger(ctx)
-	server, err := grpcserver.NewServer(ctx, configPath)
+	serviceInfo := ms.service.GetServiceInfo()
+	server, err := grpcserver.NewServer(ctx, serviceConfig.GrpcConfig, serviceInfo, ms.errorService, ms.logger)
 	if err != nil {
 		return err
 	}
 	ctx = boot.SetGRPCServer(ctx, server)
-	etcdClient, err := etcdsd.NewClient(ctx, serviceConfig.EtcdConfig)
+	etcdClient, err := etcdsd.NewClient(ctx, serviceConfig.EtcdConfig, ms.errorService, ms.logger)
 	if err != nil {
 		return err
 	}
 	ctx = boot.SetEtcdClient(ctx, etcdClient)
+	grpcConnFactory := grpcclient.NewGRPCConnFactory(ctx, etcdClient, serviceInfo, ms.errorService, ms.logger)
 	serviceBoot := &serviceBootImpl{
-		logger:            logger,
-		errorService:      errors.GetRootErrorService(ctx),
-		loggerService:     logs.GetLoggerService(ctx),
-		etcdClient:        etcdClient,
-		serviceInfo:       serviceConfig.ServiceInfo,
-		grpcClientFactory: grpcclient.NewGRPCConnFactory(ctx, etcdClient, serviceConfig.ServiceInfo),
-		ctx:               ctx,
-		serverAddr:        serviceConfig.ServerAddr,
+		logger:                   ms.logger,
+		errorService:             ms.errorService,
+		loggerService:            logs.GetLoggerService(ctx),
+		etcdClient:               etcdClient,
+		serviceInfo:              serviceInfo,
+		grpcClientFactory:        grpcConnFactory,
+		ctx:                      ctx,
+		serverAddr:               serviceConfig.ServerAddr,
+		rpcServiceInitialization: newRPCServiceInitialization(ctx, grpcConnFactory, ms.errorService, ms.logger),
 	}
 	err = ms.service.Init(ctx, serviceBoot)
 	if err != nil {
@@ -74,7 +78,7 @@ func (ms *grpcMicroServiceImpl) Start(ctx context.Context, serviceConfig *Servic
 				err = e
 				return
 			}
-			err = ms.errorService.BuildSystemError(fmt.Sprintf("出现严重异常:%#v", err1))
+			err = ms.errorService.SystemError(fmt.Sprintf("出现严重异常:%#v", err1))
 		}
 	}()
 	err = ms.service.Run(ctx)
@@ -87,13 +91,13 @@ func (ms *grpcMicroServiceImpl) Start(ctx context.Context, serviceConfig *Servic
 	ms.service.RegisterServer(server)
 	lis, err1 := net.Listen("tcp", serviceConfig.ServerAddr)
 	if err1 != nil {
-		return ms.errorService.BuildWappedSystemError(err1)
+		return ms.errorService.WappedSystemError(err1)
 	}
 	ms.listener = lis
 	go ms.grpcServer.Serve(lis)
-	logger.Debug("服务已正常启动")
+	ms.logger.Debug("服务已正常启动")
 	//注册服务
-	return etcdsd.RegisterService(ctx, etcdClient, serviceConfig.ServiceInfo, serviceConfig.ServerAddr)
+	return etcdsd.RegisterService(ctx, etcdClient, serviceInfo, serviceConfig.ServerAddr, ms.errorService, ms.logger)
 }
 
 func (ms *grpcMicroServiceImpl) AddCleanFunc(f func()) {
@@ -132,8 +136,4 @@ func (ms *grpcMicroServiceImpl) Stop(ctx context.Context) {
 
 func (ms *grpcMicroServiceImpl) GetService() Service {
 	return ms.service
-}
-
-func (ms *grpcMicroServiceImpl) GetServiceInfo() boot.ServiceInfo {
-	return ms.serviceConfig.ServiceInfo
 }

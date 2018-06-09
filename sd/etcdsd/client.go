@@ -5,18 +5,18 @@ import (
 
 	"git.xiagaogao.com/coffee/boot/errors"
 	"github.com/coreos/etcd/clientv3"
+	"go.uber.org/zap"
 )
 
-func NewClient(ctx context.Context, config *Config) (*clientv3.Client, errors.Error) {
-	rootErrorService := errors.GetRootErrorService(ctx)
-	errorService := rootErrorService.NewService("sd")
-	conf, err := config.GetEtcdConfig()
+func NewClient(ctx context.Context, config *Config, errorService errors.Service, logger *zap.Logger) (*clientv3.Client, errors.Error) {
+	errorService = errorService.NewService("sd")
+	conf, err := config.GetEtcdConfig(errorService)
 	if err != nil {
 		return nil, err
 	}
 	etcdClient, _err := clientv3.New(*conf)
 	if _err != nil {
-		return nil, errorService.BuildWappedSystemError(err)
+		return nil, errorService.WappedSystemError(err)
 	}
 	return etcdClient, nil
 }

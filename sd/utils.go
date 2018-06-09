@@ -7,10 +7,10 @@ import (
 )
 
 type ServiceRegisterInfo struct {
-	ServiceInfo *boot.SimpleServiceInfo `json:"info"`
-	ServerAddr  string                  `json:"server_addr"`
+	ServiceInfo boot.ServiceInfo `json:"info"`
+	ServerAddr  string           `json:"server_addr"`
 }
 
 func BuildServiceKeyPrefix(serviceInfo boot.ServiceInfo) string {
-	return fmt.Sprintf("/ms/registers/%s/%s/", serviceInfo.GetServiceName(), serviceInfo.GetServiceTag())
+	return fmt.Sprintf("/ms/registers/%s/%s/", serviceInfo.ServiceName, boot.RunModule())
 }

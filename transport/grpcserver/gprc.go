@@ -5,39 +5,27 @@ import (
 	"time"
 
 	"git.xiagaogao.com/coffee/boot"
-	"git.xiagaogao.com/coffee/boot/bootutils"
 	"git.xiagaogao.com/coffee/boot/errors"
 	"git.xiagaogao.com/coffee/boot/logs"
 	_ "git.xiagaogao.com/coffee/boot/transport"
 	"github.com/grpc-ecosystem/go-grpc-prometheus"
+	"go.uber.org/zap"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/keepalive"
 	"google.golang.org/grpc/tap"
 )
 
-func NewServer(ctx context.Context, configPath string) (*grpc.Server, errors.Error) {
+func NewServer(ctx context.Context, grpcConfig *GRPCConfig, serviceInfo boot.ServiceInfo, errorService errors.Service, logger *zap.Logger) (*grpc.Server, errors.Error) {
 	//logger := logs.GetLogger(ctx)
 	//logService := logs.GetLoggerService(ctx)
-	config := &struct {
-		grpcConfig *GRPCConfig `json:"grpc_config"`
-	}{}
-	err := bootutils.LoadConfig(ctx, configPath, config)
-	if err != nil {
-		return nil, err
-	}
-	grpcConfig := config.grpcConfig
-	if grpcConfig == nil {
-		grpcConfig = &GRPCConfig{}
-	}
 	grpcConfig.initGRPCConfig()
-	server := grpc.NewServer(BuildGRPCOptions(ctx, grpcConfig)...)
+	server := grpc.NewServer(BuildGRPCOptions(ctx, grpcConfig, serviceInfo, errorService, logger)...)
 	return server, nil
 }
 
-func BuildGRPCOptions(ctx context.Context, config *GRPCConfig) []grpc.ServerOption {
-	logger := logs.GetLogger(ctx)
+func BuildGRPCOptions(ctx context.Context, config *GRPCConfig, serviceInfo boot.ServiceInfo, errorService errors.Service, logger *zap.Logger) []grpc.ServerOption {
 	//grpclog.SetLoggerV2(grpclog.NewLoggerV2(os.Stdout, os.Stdout, os.Stdout))
-	unaryServerInterceptor := newUnaryServerInterceptor(ctx)
+	unaryServerInterceptor := newUnaryServerInterceptor(ctx, errorService, logger)
 	grpc.WithDefaultCallOptions(grpc.UseCompressor("gzip"))
 	//初始化Server
 	grpc.EnableTracing = false
@@ -65,7 +53,7 @@ func BuildGRPCOptions(ctx context.Context, config *GRPCConfig) []grpc.ServerOpti
 		}),
 		grpc.InTapHandle(func(ctx1 context.Context, info *tap.Info) (context.Context, error) {
 			ctx1 = logs.SetLogger(ctx1, logger)
-			ctx1 = boot.SetServiceInfo(ctx1, boot.GetServiceInfo(ctx))
+			ctx1 = boot.SetServiceName(ctx1, serviceInfo.ServiceName)
 			return ctx, nil
 		}),
 	}

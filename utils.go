@@ -12,3 +12,11 @@ var (
 func IsDevModule() bool {
 	return *devModule
 }
+
+func RunModule() string {
+	if *devModule {
+		return "dev"
+	}
+	return "product"
+
+}

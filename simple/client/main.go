@@ -16,25 +16,24 @@ import (
 func main() {
 	//grpclog.SetLoggerV2(grpclog.NewLoggerV2(os.Stdout,os.Stdout,os.Stdout))
 	ctx := context.TODO()
-	logService, _ := logs.NewService()
+	serviceInfo_client := boot.ServiceInfo{"simple_client", "0.0.1", "", "", "http"}
+	logService, _ := logs.NewService(serviceInfo_client)
 	ctx = logs.SetLoggerService(ctx, logService)
 	logger := logService.GetLogger()
 	ctx = logs.SetLogger(ctx, logger)
 	errorService := errors.NewService("simple")
-	ctx = errors.SetRootErrorService(ctx, errorService)
-	serviceInfo := boot.NewSimpleServiceInfo("baseservice", "0.0.1", "dev", "http", "", "")
-	serviceInfo_server := boot.NewSimpleServiceInfo("simple_service", "0.0.1", "dev", "http", "", "")
-	serviceInfo_client := boot.NewSimpleServiceInfo("simple_client", "0.0.1", "dev", "http", "", "")
+	serviceInfo := boot.ServiceInfo{"baseservice", "0.0.1", "", "", "http"}
+	serviceInfo_server := boot.ServiceInfo{"simple_service", "0.0.1", "", "", "http"}
 	etcdClient, err := etcdsd.NewClient(ctx, &etcdsd.Config{
 		Endpoints:        []string{"127.0.0.1:2379"},
 		AutoSyncInterval: 5,
 		DialTimeout:      3,
-	})
+	}, errorService, logger)
 	if err != nil {
 		logger.Error(err.Error(), err.GetFields()...)
 	}
 	ctx = boot.SetEtcdClient(ctx, etcdClient)
-	grpcFactory := grpcclient.NewGRPCConnFactory(ctx, etcdClient, serviceInfo_client)
+	grpcFactory := grpcclient.NewGRPCConnFactory(ctx, etcdClient, serviceInfo_client, errorService, logger)
 	grpcConn, err := grpcFactory.NewClientConn(ctx, serviceInfo, false)
 	if err != nil {
 		logger.Error(err.Error(), err.GetFields()...)

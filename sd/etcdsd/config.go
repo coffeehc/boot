@@ -24,7 +24,8 @@ type Config struct {
 	Password         string   `yaml:"password"`
 }
 
-func (config *Config) GetEtcdConfig() (*clientv3.Config, errors.Error) {
+func (config *Config) GetEtcdConfig(errorService errors.Service) (*clientv3.Config, errors.Error) {
+	errorService = errorService.NewService("etcd")
 	if os.Getenv(envETCDUsername) != "" {
 		config.Username = os.Getenv(envETCDUsername)
 	}
@@ -36,7 +37,7 @@ func (config *Config) GetEtcdConfig() (*clientv3.Config, errors.Error) {
 		config.Endpoints = strings.Split(env_endpoints, ",")
 	}
 	if len(config.Endpoints) == 0 {
-		return nil, errors.NewError(errors.Error_System, "etdc", "没有指定对应的Endpoints")
+		return nil, errorService.SystemError("没有指定对应的Endpoints")
 	}
 	return &clientv3.Config{
 		Endpoints:        config.Endpoints,

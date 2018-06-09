@@ -56,29 +56,3 @@ func ErrorToJson(err Error) string {
 	data, _ := ffjson.Marshal(err)
 	return string(data)
 }
-
-//NewError 构建一个新的 Error
-func NewError(debugCode int32, scope string, errMsg string, fields ...zap.Field) Error {
-	return &baseError{
-		Scope:   scope,
-		Code:    debugCode,
-		Message: errMsg,
-		Fields:  fields,
-	}
-}
-
-//NewErrorWrapper 创建一个对普通的 error的封装
-func NewErrorWrapper(code int32, scope string, err error, fields ...zap.Field) Error {
-	if _err, ok := err.(Error); ok {
-		//scope = fmt.Sprintf("%s-%s", scope, _err.GetScopes())
-		//code = code | _err.GetCode()
-		return _err
-	}
-	return &baseError{Scope: scope, Code: code, Message: err.Error(), Fields: fields}
-}
-
-func PanicError(err error) {
-	if err != nil {
-		panic(err)
-	}
-}

@@ -15,7 +15,7 @@ type Service interface {
 	NewLogger(skip int) *zap.Logger
 }
 
-func NewService() (Service, error) {
+func NewService(serviceInfo boot.ServiceInfo) (Service, error) {
 	level := zap.NewAtomicLevelAt(zap.DebugLevel)
 	if !boot.IsDevModule() {
 		level.SetLevel(zap.InfoLevel)
@@ -25,6 +25,7 @@ func NewService() (Service, error) {
 		return nil, err
 	}
 	logger := newLogger(level, writerSync, 0)
+	logger = logger.WithOptions(zap.Fields(zap.String(K_ServiceName, serviceInfo.ServiceName)))
 	return &serviceImpl{
 		logger:     logger,
 		level:      level,
