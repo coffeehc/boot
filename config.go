@@ -34,9 +34,9 @@ func PrintServiceInfo(serviceInfo ServiceInfo, logger *zap.Logger) {
 	if !IsDevModule() {
 		return
 	}
-	logger.Info(fmt.Sprintf("ServiceName:%s", serviceInfo.ServiceName))
-	logger.Info(fmt.Sprintf("Version:%s", serviceInfo.Version))
-	logger.Info(fmt.Sprintf("Descriptor:%s", serviceInfo.Descriptor))
-	logger.Info(fmt.Sprintf("APIDefine:%s", serviceInfo.APIDefine))
-	logger.Info(fmt.Sprintf("Scheme:%s", serviceInfo.Scheme))
+	logger.Debug(fmt.Sprintf("ServiceName:%s", serviceInfo.ServiceName))
+	logger.Debug(fmt.Sprintf("Version:%s", serviceInfo.Version))
+	logger.Debug(fmt.Sprintf("Descriptor:%s", serviceInfo.Descriptor))
+	logger.Debug(fmt.Sprintf("APIDefine:%s", serviceInfo.APIDefine))
+	logger.Debug(fmt.Sprintf("Scheme:%s", serviceInfo.Scheme))
 }

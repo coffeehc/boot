@@ -37,7 +37,7 @@ func (config *Config) GetEtcdConfig(errorService errors.Service) (*clientv3.Conf
 		config.Endpoints = strings.Split(env_endpoints, ",")
 	}
 	if len(config.Endpoints) == 0 {
-		return nil, errorService.SystemError("没有指定对应的Endpoints")
+		return nil, errorService.SystemError("没有指定对应的Etcd Endpoints")
 	}
 	return &clientv3.Config{
 		Endpoints:        config.Endpoints,

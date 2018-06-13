@@ -1,6 +1,8 @@
 package logs
 
-import "go.uber.org/zap"
+import (
+	"go.uber.org/zap"
+)
 
 const (
 	K_Time         = "t"

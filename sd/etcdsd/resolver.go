@@ -16,13 +16,10 @@ import (
 	"google.golang.org/grpc/resolver"
 )
 
-var logger *zap.Logger
-
 const MicorScheme = "micor"
 
-func RegisterResolver(ctx context.Context, client *clientv3.Client, serviceInfo boot.ServiceInfo, defaultSrvAddr ...string) errors.Error {
-	logger = logs.GetLogger(ctx)
-	rb, err := newResolver(ctx, client, serviceInfo, defaultSrvAddr...)
+func RegisterResolver(ctx context.Context, client *clientv3.Client, serviceInfo boot.ServiceInfo, errorService errors.Service, logger *zap.Logger, defaultSrvAddr ...string) errors.Error {
+	rb, err := newResolver(ctx, client, serviceInfo, errorService, logger, defaultSrvAddr...)
 	if err != nil {
 		return err
 	}
@@ -30,12 +27,15 @@ func RegisterResolver(ctx context.Context, client *clientv3.Client, serviceInfo 
 	return nil
 }
 
-func newResolver(ctx context.Context, client *clientv3.Client, serviceInfo boot.ServiceInfo, defaultSrvAddr ...string) (resolver.Builder, errors.Error) {
+func newResolver(ctx context.Context, client *clientv3.Client, serviceInfo boot.ServiceInfo, errorService errors.Service, logger *zap.Logger, defaultSrvAddr ...string) (resolver.Builder, errors.Error) {
 	rb := &etcdResolverBuilder{
 		client:         client,
 		ctx:            ctx,
 		defaultSrvAddr: defaultSrvAddr,
 		scheme:         sd.BuildServiceKeyPrefix(serviceInfo),
+		serviceInfo:    serviceInfo,
+		errorService:   errorService,
+		logger:         logger,
 	}
 	return rb, nil
 }
@@ -45,6 +45,9 @@ type etcdResolverBuilder struct {
 	ctx            context.Context
 	defaultSrvAddr []string
 	scheme         string
+	serviceInfo    boot.ServiceInfo
+	errorService   errors.Service
+	logger         *zap.Logger
 }
 
 func (impl *etcdResolverBuilder) Build(target resolver.Target, cc resolver.ClientConn, opts resolver.BuildOption) (resolver.Resolver, error) {
@@ -55,9 +58,10 @@ func (impl *etcdResolverBuilder) Build(target resolver.Target, cc resolver.Clien
 		ctx:            ctx,
 		cancel:         cancel,
 		defaultSrvAddr: impl.defaultSrvAddr,
-		logger:         logs.GetLogger(ctx),
+		logger:         impl.logger,
 		keyPrefix:      fmt.Sprintf("/ms/registers/%s/%s/", target.Endpoint, target.Authority),
 		target:         target,
+		ServerName:     impl.serviceInfo.ServiceName,
 	}
 	addrList := r.initServerAddr()
 	go r.watch(addrList)
@@ -77,6 +81,7 @@ type etcdResolver struct {
 	logger         *zap.Logger
 	keyPrefix      string
 	target         resolver.Target
+	ServerName     string
 }
 
 func (impl *etcdResolver) ResolveNow(ro resolver.ResolveNowOption) {
@@ -88,16 +93,16 @@ func (impl *etcdResolver) Close() {
 }
 
 func (r *etcdResolver) initServerAddr() []resolver.Address {
-	var addrList []resolver.Address
+	addrList := []resolver.Address{}
 	for _, addr := range r.defaultSrvAddr {
-		addrList = append(addrList, resolver.Address{Addr: addr})
+		addrList = append(addrList, resolver.Address{Addr: addr, ServerName: r.ServerName})
 	}
 	getResp, err := r.client.Get(context.Background(), r.keyPrefix, clientv3.WithPrefix())
 	if err != nil {
-		logger.Error("etcd获取服务节点信息失败:%s", zap.Any(logs.K_Cause, err))
+		r.logger.Error("etcd获取服务节点信息失败:%s", zap.Any(logs.K_Cause, err))
 	} else {
 		if getResp.Count == 0 {
-			logger.Warn(fmt.Sprintf("服务[%s]没有足够的节点使用", r.target.Endpoint))
+			r.logger.Warn(fmt.Sprintf("服务[%s]没有足够的节点使用", r.target.Endpoint))
 		}
 		for _, kv := range getResp.Kvs {
 			addrList = append(addrList, *r.getServiceAddr(kv))
@@ -115,10 +120,11 @@ func (r *etcdResolver) watch(addrList []resolver.Address) {
 			switch ev.Type {
 			case mvccpb.PUT:
 				if !exist(addrList, addr) {
-					addrList = append(addrList, resolver.Address{Addr: addr})
+					addrList = append(addrList, resolver.Address{Addr: addr, ServerName: r.ServerName})
 					r.cc.NewAddress(addrList)
 				}
 			case mvccpb.DELETE:
+				r.logger.Error("节点丢失", logs.F_ExtendData(addr))
 				if s, ok := remove(addrList, addr); ok {
 					addrList = s
 					r.cc.NewAddress(addrList)
@@ -151,14 +157,14 @@ func (r *etcdResolver) getServiceAddr(kv *mvccpb.KeyValue) *resolver.Address {
 	info := &sd.ServiceRegisterInfo{}
 	err := ffjson.Unmarshal(kv.Value, info)
 	if err != nil {
-		logger.Error("Unmarshal err", zap.Any(logs.K_Cause, err))
+		r.logger.Error("Unmarshal err", zap.Any(logs.K_Cause, err))
 		return nil
 	}
 	if boot.RunModule() == r.target.Authority {
 		if info.ServerAddr == "" {
-			return &resolver.Address{Addr: string(kv.Key[len(r.keyPrefix):])}
+			return &resolver.Address{Addr: string(kv.Key[len(r.keyPrefix):]), ServerName: r.ServerName}
 		}
-		return &resolver.Address{Addr: info.ServerAddr}
+		return &resolver.Address{Addr: info.ServerAddr, ServerName: r.ServerName}
 	}
 	return nil
 }

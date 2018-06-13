@@ -8,6 +8,8 @@ import (
 	"os"
 
 	"git.xiagaogao.com/coffee/boot/errors"
+	"git.xiagaogao.com/coffee/boot/logs"
+	"go.uber.org/zap"
 	"gopkg.in/yaml.v2"
 )
 
@@ -62,17 +64,15 @@ func WarpServerAddr(serviceAddr string, errorService errors.Service) (string, er
 	return serverAddr, nil
 }
 
-const errScopeLoadConfig = "loadConfig"
-
 //LoadConfig load the config from config path
-func LoadConfig(ctx context.Context, configPath string, config interface{}, errorService errors.Service) errors.Error {
+func LoadConfig(ctx context.Context, configPath string, config interface{}, errorService errors.Service, logger *zap.Logger) errors.Error {
 	data, err := ioutil.ReadFile(configPath)
 	if err != nil {
-		return errorService.WappedSystemError(err)
+		return errorService.WappedSystemError(err, logs.F_ExtendData(configPath))
 	}
 	err = yaml.Unmarshal(data, config)
 	if err != nil {
-		return errorService.WappedSystemError(err)
+		return errorService.WappedSystemError(err, logs.F_ExtendData(configPath))
 	}
 	return nil
 }

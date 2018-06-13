@@ -1,9 +1,0 @@
-package baseservicecommon
-
-const (
-	ERROR_CODE_SECURITY_SCOPE = 0x00010000
-)
-
-var (
-	SECURITY_ERROR_KEY_EXPIRE int64 = ERROR_CODE_SECURITY_SCOPE & 0x0100 //KEY 过期
-)

@@ -1,6 +1,6 @@
 package restful
 
-import "github.com/coffeehc/httpx"
+import "git.xiagaogao.com/coffee/httpx"
 
 //EndpointMeta endpoint meta define
 type EndpointMeta struct {

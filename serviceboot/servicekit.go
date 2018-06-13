@@ -21,20 +21,19 @@ type ServiceKit interface {
 	GetGRPCConnFactory() grpcclient.GRPCConnFactory
 	GetContext() context.Context
 	GetConfigPath() string
-	GetRPCServiceInitialization() RPCServiceInitialization
+	RPCServiceInitialization(rpcService RPCService) errors.Error
 }
 
 type serviceBootImpl struct {
-	logger                   *zap.Logger
-	errorService             errors.Service
-	loggerService            logs.Service
-	etcdClient               *clientv3.Client
-	serviceInfo              boot.ServiceInfo
-	grpcClientFactory        grpcclient.GRPCConnFactory
-	ctx                      context.Context
-	serverAddr               string
-	configPath               string
-	rpcServiceInitialization RPCServiceInitialization
+	logger            *zap.Logger
+	errorService      errors.Service
+	loggerService     logs.Service
+	etcdClient        *clientv3.Client
+	serviceInfo       boot.ServiceInfo
+	grpcClientFactory grpcclient.GRPCConnFactory
+	ctx               context.Context
+	serverAddr        string
+	configPath        string
 }
 
 func (impl *serviceBootImpl) GetConfigPath() string {
@@ -65,7 +64,13 @@ func (impl *serviceBootImpl) GetGRPCConnFactory() grpcclient.GRPCConnFactory {
 func (impl *serviceBootImpl) GetContext() context.Context {
 	return impl.ctx
 }
+func (impl *serviceBootImpl) RPCServiceInitialization(rpcService RPCService) errors.Error {
+	errorService := impl.errorService.NewService("rpc")
+	conn, err := impl.grpcClientFactory.NewClientConn(impl.ctx, rpcService.GetRPCServiceInfo(), false)
+	if err != nil {
+		return err
+	}
+	impl.logger.Debug("初始化RPCService", logs.F_ExtendData(rpcService.GetRPCServiceInfo()))
+	return rpcService.InitRPCService(impl.ctx, conn, errorService, impl.logger)
 
-func (impl *serviceBootImpl) GetRPCServiceInitialization() RPCServiceInitialization {
-	return impl.rpcServiceInitialization
 }

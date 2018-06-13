@@ -4,16 +4,10 @@ import (
 	"fmt"
 	"sync"
 
-	"time"
-
-	"runtime/debug"
-
-	"git.xiagaogao.com/coffee/boot"
 	"git.xiagaogao.com/coffee/boot/errors"
 	"git.xiagaogao.com/coffee/boot/logs"
 	"go.uber.org/zap"
 	"golang.org/x/net/context"
-	spb "google.golang.org/genproto/googleapis/rpc/status"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -26,15 +20,16 @@ var (
 
 func newUnaryServerInterceptor(ctx context.Context, errorService errors.Service, logger *zap.Logger) *unaryServerInterceptor {
 	errorService = errorService.NewService("grpc")
-	return &unaryServerInterceptor{
+	interceptor := &unaryServerInterceptor{
 		interceptors: make(map[string]*unaryServerInterceptorWapper),
 		rootInterceptor: &unaryServerInterceptorWapper{
-			interceptor: catchPanicInterceptor,
+			interceptor: buildCatchPanicInterceptor(errorService, logger),
 		},
 		mutex:        new(sync.Mutex),
 		logger:       logger,
 		errorService: errorService,
 	}
+	return interceptor
 }
 
 type unaryServerInterceptor struct {
@@ -46,7 +41,6 @@ type unaryServerInterceptor struct {
 }
 
 func (usi *unaryServerInterceptor) Interceptor(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp interface{}, err error) {
-	ctx = logs.SetLogger(ctx, usi.logger)
 	ctx = context.WithValue(ctx, _internalUnaryServerInfo, info)
 	ctx = context.WithValue(ctx, _internalHandler, handler)
 	return usi.rootInterceptor.interceptor(ctx, req, info, usi.rootInterceptor.handler)
@@ -98,40 +92,33 @@ func (usiw *unaryServerInterceptorWapper) handler(ctx context.Context, req inter
 	}
 	return nil, usiw.errorService.SystemError("类型错误")
 }
-
-func catchPanicInterceptor(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp interface{}, err error) {
-	defer func() {
-		if r := recover(); r != nil {
-			err = adapteError(ctx, r)
+func buildCatchPanicInterceptor(errorService errors.Service, logger *zap.Logger) grpc.UnaryServerInterceptor {
+	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp interface{}, err error) {
+		defer func() {
+			if r := recover(); r != nil {
+				err = adapteError(r, errorService, logger)
+			}
+		}()
+		resp, err = handler(ctx, req)
+		if err != nil {
+			return nil, adapteError(err, errorService, logger)
 		}
-	}()
-	resp, err = handler(ctx, req)
-	if err != nil {
-		return nil, adapteError(ctx, err)
+		return resp, nil
 	}
-	return resp, nil
 }
 
-func adapteError(ctx context.Context, err interface{}) error {
+func adapteError(err interface{}, errorService errors.Service, logger *zap.Logger) error {
 	if err == nil {
 		return nil
 	}
-	if boot.IsDevModule() {
-		logger := logs.GetLogger(ctx)
-		if e, ok := err.(errors.Error); ok && errors.IsMessageError(e) {
-			logger.Error(e.Error(), e.GetFields()...)
-		} else {
-			logger.Error("rpc内部异常", zap.Any(logs.K_Cause, err))
-		}
-		time.Sleep(time.Millisecond * 100)
-		debug.PrintStack()
+	if e, ok := err.(errors.Error); ok && errors.IsMessageError(e) {
+		logger.Error(e.Error(), e.GetFields()...)
+	} else {
+		logger.Error("rpc内部异常", zap.Any(logs.K_Cause, err))
 	}
 	switch v := err.(type) {
 	case errors.Error:
-		return status.ErrorProto(&spb.Status{
-			Code:    v.GetCode(),
-			Message: v.Error(),
-		})
+		return status.Errorf(18, v.FormatRPCError())
 	case string:
 		return status.Errorf(codes.Internal, v)
 	case error:
@@ -139,5 +126,4 @@ func adapteError(ctx context.Context, err interface{}) error {
 	default:
 		return status.Errorf(codes.Unknown, "%#v", v)
 	}
-
 }

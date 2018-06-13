@@ -1,0 +1,2 @@
+disable_service_register: true
+server_addr: 0.0.0.0:8889

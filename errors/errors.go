@@ -1,6 +1,8 @@
 package errors
 
 import (
+	"fmt"
+
 	"git.xiagaogao.com/coffee/boot/logs"
 	"github.com/pquerna/ffjson/ffjson"
 	"go.uber.org/zap"
@@ -12,15 +14,21 @@ type Error interface {
 	GetCode() int32
 	GetScopes() string
 	GetFields() []zap.Field
+	GetFieldsWithCause() []zap.Field
 	AddFields(...zap.Field)
+	FormatRPCError() string
 }
 
 //BaseError Error 接口的实现,可 json 序列化
 type baseError struct {
 	Scope   string      `json:"scope"`
 	Code    int32       `json:"code"`
-	Message string      `json:"message"`
-	Fields  []zap.Field `json:"fields"`
+	Message string      `json:"msg"`
+	Fields  []zap.Field `json:"-"`
+}
+
+func (err *baseError) FormatRPCError() string {
+	return fmt.Sprintf(`{"scope":"rpc","code":%d,"msg":"%s"}`, err.Code, err.Message)
 }
 
 func (err *baseError) AddFields(fields ...zap.Field) {
@@ -40,6 +48,9 @@ func (err *baseError) GetScopes() string {
 
 func (err *baseError) GetFields() []zap.Field {
 	return append(err.Fields, zap.String(logs.K_ServiceScope, err.GetScopes()), zap.Int32(logs.K_ErrorCode, err.GetCode()))
+}
+func (err *baseError) GetFieldsWithCause() []zap.Field {
+	return append(err.Fields, zap.String(logs.K_ServiceScope, err.GetScopes()), zap.Int32(logs.K_ErrorCode, err.GetCode()), zap.String(logs.K_Cause, err.Message))
 }
 
 //ParseErrorFromJSON 从 Jons数据解析出 Error 对象

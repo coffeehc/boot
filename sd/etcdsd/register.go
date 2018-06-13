@@ -19,7 +19,7 @@ func RegisterService(ctx context.Context, client *clientv3.Client, info boot.Ser
 	if ctx.Err() != nil {
 		return errorService.MessageError("服务注册已经关闭")
 	}
-	ttl := int64(15)
+	ttl := int64(5)
 	lease := clientv3.NewLease(client)
 	resp, err := lease.Grant(ctx, ttl)
 	if err != nil {
@@ -52,6 +52,6 @@ func RegisterService(ctx context.Context, client *clientv3.Client, info boot.Ser
 			logger.Error("注册服务发生了错误", logs.F_Error(err))
 		}
 	}()
-	logger.Debug("向Etcd注册服务成功", logs.F_ExtendData(serviceAddr))
+	logger.Debug("向Etcd注册服务成功", logs.F_ExtendData(serviceKey))
 	return nil
 }

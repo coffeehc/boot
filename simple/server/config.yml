@@ -1,18 +1,1 @@
-enableAccessInfo: false
-disable_service_register: true
 server_addr: 0.0.0.0:8888
-service_info:
-  service_name: simple_service
-  version: 0.0.1
-  tag: dev
-  scheme: http
-grpc_config:
-  max_msg_size: 1048576
-  max_concurr: 10000
-  ent_streams: 1024
-etcd_config:
-  endpoints: ["127.0.0.1:2379"]
-  auto_sync_interval: 5
-  dial_timeout: 3
-  #  username: dev
-  #  password: dev#123

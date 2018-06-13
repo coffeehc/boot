@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"net"
 
-	"git.xiagaogao.com/coffee/boot"
 	"git.xiagaogao.com/coffee/boot/errors"
 	"git.xiagaogao.com/coffee/boot/logs"
 	"git.xiagaogao.com/coffee/boot/sd/etcdsd"
@@ -16,16 +15,18 @@ import (
 	"google.golang.org/grpc"
 )
 
-func newMicroService(ctx context.Context, service Service, configPath string, errorService errors.Service, logger *zap.Logger) (MicroService, errors.Error) {
+func newMicroService(ctx context.Context, service Service, configPath string, errorService errors.Service, logger *zap.Logger, loggerService logs.Service) (MicroService, errors.Error) {
 	errorService = errorService.NewService("boot")
 	if service == nil {
 		return nil, errorService.MessageError("没有service实例")
 	}
 	return &grpcMicroServiceImpl{
-		service:      service,
-		cleanFuncs:   make([]func(), 0),
-		errorService: errorService,
-		logger:       logger,
+		service:       service,
+		cleanFuncs:    make([]func(), 0),
+		errorService:  errorService,
+		logger:        logger,
+		configPath:    configPath,
+		loggerService: loggerService,
 	}, nil
 }
 
@@ -39,6 +40,8 @@ type grpcMicroServiceImpl struct {
 	serviceConfig *ServiceConfig
 	etcdClient    *clientv3.Client
 	logger        *zap.Logger
+	configPath    string
+	loggerService logs.Service
 }
 
 func (ms *grpcMicroServiceImpl) Start(ctx context.Context, serviceConfig *ServiceConfig) (err errors.Error) {
@@ -48,23 +51,21 @@ func (ms *grpcMicroServiceImpl) Start(ctx context.Context, serviceConfig *Servic
 	if err != nil {
 		return err
 	}
-	ctx = boot.SetGRPCServer(ctx, server)
 	etcdClient, err := etcdsd.NewClient(ctx, serviceConfig.EtcdConfig, ms.errorService, ms.logger)
 	if err != nil {
 		return err
 	}
-	ctx = boot.SetEtcdClient(ctx, etcdClient)
 	grpcConnFactory := grpcclient.NewGRPCConnFactory(ctx, etcdClient, serviceInfo, ms.errorService, ms.logger)
 	serviceBoot := &serviceBootImpl{
-		logger:                   ms.logger,
-		errorService:             ms.errorService,
-		loggerService:            logs.GetLoggerService(ctx),
-		etcdClient:               etcdClient,
-		serviceInfo:              serviceInfo,
-		grpcClientFactory:        grpcConnFactory,
-		ctx:                      ctx,
-		serverAddr:               serviceConfig.ServerAddr,
-		rpcServiceInitialization: newRPCServiceInitialization(ctx, grpcConnFactory, ms.errorService, ms.logger),
+		logger:            ms.logger,
+		errorService:      ms.errorService,
+		loggerService:     ms.loggerService,
+		etcdClient:        etcdClient,
+		serviceInfo:       serviceInfo,
+		grpcClientFactory: grpcConnFactory,
+		ctx:               ctx,
+		serverAddr:        serviceConfig.ServerAddr,
+		configPath:        ms.configPath,
 	}
 	err = ms.service.Init(ctx, serviceBoot)
 	if err != nil {
@@ -96,6 +97,9 @@ func (ms *grpcMicroServiceImpl) Start(ctx context.Context, serviceConfig *Servic
 	ms.listener = lis
 	go ms.grpcServer.Serve(lis)
 	ms.logger.Debug("服务已正常启动")
+	if serviceConfig.DisableServiceRegister {
+		return nil
+	}
 	//注册服务
 	return etcdsd.RegisterService(ctx, etcdClient, serviceInfo, serviceConfig.ServerAddr, ms.errorService, ms.logger)
 }
@@ -108,7 +112,6 @@ func (ms *grpcMicroServiceImpl) Stop(ctx context.Context) {
 	if ms.etcdClient != nil {
 		ms.etcdClient.Close()
 	}
-	logger := logs.GetLogger(ctx)
 	if ms.grpcServer != nil {
 		ms.grpcServer.GracefulStop()
 	}
@@ -119,14 +122,14 @@ func (ms *grpcMicroServiceImpl) Stop(ctx context.Context) {
 	if service != nil && service.Stop != nil {
 		stopErr := service.Stop(ctx)
 		if stopErr != nil {
-			logger.Error(stopErr.Error(), stopErr.GetFields()...)
+			ms.logger.Error(stopErr.Error(), stopErr.GetFields()...)
 		}
 	}
 	for _, f := range ms.cleanFuncs {
 		func() {
 			defer func() {
 				if err := recover(); err != nil {
-					logger.Error("clean func painc", zap.Any(logs.K_Cause, err))
+					ms.logger.Error("clean func painc", zap.Any(logs.K_Cause, err))
 				}
 			}()
 			f()

@@ -9,6 +9,13 @@ import (
 	"go.uber.org/zap/zapcore"
 )
 
+var levelMap = map[string]zapcore.Level{
+	"debug": zapcore.DebugLevel,
+	"warn":  zapcore.WarnLevel,
+	"info":  zapcore.InfoLevel,
+	"error": zapcore.ErrorLevel,
+}
+
 type Service interface {
 	GetLogger() *zap.Logger
 	SetLevel(level zapcore.Level)
@@ -17,6 +24,12 @@ type Service interface {
 
 func NewService(serviceInfo boot.ServiceInfo) (Service, error) {
 	level := zap.NewAtomicLevelAt(zap.DebugLevel)
+	levelStr, ok := os.LookupEnv("LOGGER_LEVEL")
+	if ok {
+		if l, ok1 := levelMap[levelStr]; ok1 {
+			level.SetLevel(l)
+		}
+	}
 	if !boot.IsDevModule() {
 		level.SetLevel(zap.InfoLevel)
 	}

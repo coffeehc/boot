@@ -10,6 +10,10 @@ import (
 
 func NewClient(ctx context.Context, config *Config, errorService errors.Service, logger *zap.Logger) (*clientv3.Client, errors.Error) {
 	errorService = errorService.NewService("sd")
+	if config == nil {
+		logger.Debug("没有配置EtcdConfig,使用默认配置")
+		config = &Config{}
+	}
 	conf, err := config.GetEtcdConfig(errorService)
 	if err != nil {
 		return nil, err

@@ -4,43 +4,37 @@ import (
 	"fmt"
 	"sync"
 
-	"git.xiagaogao.com/coffee/boot"
 	"git.xiagaogao.com/coffee/boot/errors"
+	"git.xiagaogao.com/coffee/boot/logs"
 	"go.uber.org/zap"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
 
 const _internalInvoker = "_internal_invoker"
-const context_serviceInfoKey = "__serviceInfo__"
 
-var _unaryClientInterceptor *unartClientInterceptor
-
-func wapperUnartClientInterceptor(serviceInfo boot.ServiceInfo, errorService errors.Service, logger *zap.Logger) grpc.UnaryClientInterceptor {
-	_unaryClientInterceptor = newUnartClientInterceptor(errorService, logger)
+func wapperUnartClientInterceptor(ctx context.Context, errorService errors.Service, logger *zap.Logger) grpc.UnaryClientInterceptor {
+	_unaryClientInterceptor := newUnartClientInterceptor(ctx, errorService, logger)
 	return func(ctx context.Context, method string, req, reply interface{}, cc *grpc.ClientConn, invoker grpc.UnaryInvoker, opts ...grpc.CallOption) (err error) {
-		return _unaryClientInterceptor.Interceptor(context.WithValue(ctx, context_serviceInfoKey, serviceInfo), method, req, reply, cc, invoker, opts...)
+		return _unaryClientInterceptor.Interceptor(ctx, method, req, reply, cc, invoker, opts...)
 	}
 }
 
-//AppendUnartClientInterceptor 追加一个UnartClientInterceptor
-func AppendUnartClientInterceptor(name string, unaryClientInterceptor grpc.UnaryClientInterceptor) errors.Error {
-	return _unaryClientInterceptor.AppendInterceptor(name, unaryClientInterceptor)
-}
-
-func newUnartClientInterceptor(errorService errors.Service, logger *zap.Logger) *unartClientInterceptor {
+func newUnartClientInterceptor(ctx context.Context, errorService errors.Service, logger *zap.Logger) *unartClientInterceptor {
 	errorService = errorService.NewService("grpc")
 	return &unartClientInterceptor{
 		interceptors: make(map[string]*unaryClientInterceptorWapper),
 		rootInterceptor: &unaryClientInterceptorWapper{
-			interceptor:  newPaincInterceptor(errorService, logger),
+			interceptor:  newPaincInterceptor(ctx, errorService, logger),
 			errorService: errorService,
 			logger:       logger,
 		},
 		mutex:        new(sync.Mutex),
 		errorService: errorService,
 		logger:       logger,
+		ctx:          ctx,
 	}
 }
 
@@ -50,10 +44,10 @@ type unartClientInterceptor struct {
 	mutex           *sync.Mutex
 	errorService    errors.Service
 	logger          *zap.Logger
+	ctx             context.Context
 }
 
 func (uci *unartClientInterceptor) Interceptor(ctx context.Context, method string, req, reply interface{}, cc *grpc.ClientConn, invoker grpc.UnaryInvoker, opts ...grpc.CallOption) (err error) {
-	opts = append(opts, grpc.FailFast(true))
 	return uci.rootInterceptor.interceptor(context.WithValue(ctx, _internalInvoker, invoker), method, req, reply, cc, uci.rootInterceptor.invoker, opts...)
 }
 
@@ -90,49 +84,41 @@ func (uciw *unaryClientInterceptorWapper) invoker(ctx context.Context, method st
 			return uciw.errorService.SystemError("没有 Handler")
 		}
 		if invoker, ok := realInvoker.(grpc.UnaryInvoker); ok {
-			return invoker(ctx, method, req, reply, cc, opts...)
+			err = invoker(ctx, method, req, reply, cc, opts...)
+			return err
 		}
 		return uciw.errorService.SystemError("类型错误")
 	}
 	return uciw.next.interceptor(ctx, method, req, reply, cc, uciw.next.invoker, opts...)
 }
 
-func newPaincInterceptor(errorService errors.Service, logger *zap.Logger) grpc.UnaryClientInterceptor {
+func newPaincInterceptor(ctx context.Context, errorService errors.Service, logger *zap.Logger) grpc.UnaryClientInterceptor {
 	return func(cxt context.Context, method string, req, reply interface{}, cc *grpc.ClientConn, invoker grpc.UnaryInvoker, opts ...grpc.CallOption) (err error) {
 		defer func() {
 			if r := recover(); r != nil {
-				err = adapteError(cxt, r, errorService)
+				if err, ok := r.(error); ok {
+					err = adapteError(err, errorService, logger)
+					return
+				}
+				err = errorService.SystemError("无法识别的远程异常", logs.F_ExtendData(r))
 			}
 		}()
-		return adapteError(cxt, invoker(cxt, method, req, reply, cc, opts...), errorService)
+		return adapteError(invoker(cxt, method, req, reply, cc, opts...), errorService, logger)
 	}
 }
 
-func adapteError(ctx context.Context, err interface{}, errorService errors.Service) errors.Error {
+var errCode = codes.Code(18)
+
+func adapteError(err error, errorService errors.Service, logger *zap.Logger) errors.Error {
 	if err == nil {
 		return nil
 	}
-	serviceName := boot.GetServiceName(ctx)
-	if serviceName == "" {
-		serviceName = "未知服务"
+	s, ok := status.FromError(err)
+	if !ok {
+		return errorService.SystemError("无法识别的RPC异常", logs.F_ExtendData(err))
 	}
-	serviceName = "grpcserver:" + serviceName
-	switch v := err.(type) {
-	case errors.Error:
-		return v
-	case string:
-		return errorService.SystemError(v)
-	case error:
-		if s, ok := status.FromError(v); ok {
-			code := int32(s.Code())
-			if !errors.IsBaseErrorCode(code) {
-				return errorService.WappedSystemError(s.Err())
-			}
-			return errorService.Error(code, s.Message())
-		}
-		return errorService.WappedSystemError(v)
-	default:
-		return errorService.SystemError(fmt.Sprintf("%#v", v))
+	if s.Code() == errCode {
+		return errors.ParseError(s.Message())
 	}
-
+	return errorService.SystemError("RPC异常", logs.F_Error(err))
 }
