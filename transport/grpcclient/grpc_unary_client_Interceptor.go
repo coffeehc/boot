@@ -120,5 +120,5 @@ func adapteError(err error, errorService errors.Service, logger *zap.Logger) err
 	if s.Code() == errCode {
 		return errors.ParseError(s.Message())
 	}
-	return errorService.SystemError("RPC异常", logs.F_Error(err))
+	return errorService.SystemError("RPC异常", logs.F_Error(err), logs.F_ExtendData(s.Message()))
 }

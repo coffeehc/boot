@@ -24,14 +24,14 @@ type Service interface {
 
 func NewService(serviceInfo boot.ServiceInfo) (Service, error) {
 	level := zap.NewAtomicLevelAt(zap.DebugLevel)
+	if !boot.IsDevModule() {
+		level.SetLevel(zap.InfoLevel)
+	}
 	levelStr, ok := os.LookupEnv("LOGGER_LEVEL")
 	if ok {
 		if l, ok1 := levelMap[levelStr]; ok1 {
 			level.SetLevel(l)
 		}
-	}
-	if !boot.IsDevModule() {
-		level.SetLevel(zap.InfoLevel)
 	}
 	writerSync, err := newMQWriterSync()
 	if err != nil {
@@ -163,5 +163,5 @@ func newLogger(level zap.AtomicLevel, writerSync ExtWriterSync, skip int) *zap.L
 	opts = append(opts, zap.WrapCore(func(core zapcore.Core) zapcore.Core {
 		return zapcore.NewSampler(core, time.Second, 3, 10)
 	}))
-	return zap.New(loggerCore, zap.AddCaller(), zap.AddStacktrace(zapcore.PanicLevel), zap.AddCallerSkip(skip))
+	return zap.New(loggerCore, zap.AddCaller(), zap.AddStacktrace(zapcore.ErrorLevel), zap.AddCallerSkip(skip))
 }

@@ -17,7 +17,12 @@ const (
 	K_ErrorCode    = "ec"
 	K_ExtendData   = "ed"
 	K_AccessUrl    = "au"
+	K_Account      = "ac"
 )
+
+func F_Account(accountId int64) zap.Field {
+	return zap.Int64(K_Account, accountId)
+}
 
 func F_ExtendData(extData interface{}) zap.Field {
 	return zap.Any(K_ExtendData, extData)

@@ -71,7 +71,7 @@ func NewClientConn(ctx context.Context, errorService errors.Service, logger *zap
 		grpc.WithInsecure(),
 		grpc.WithUnaryInterceptor(wapperUnartClientInterceptor(ctx, errorService, logger)),
 	}
-	ctx, _ = context.WithTimeout(ctx, time.Second*20)
+	ctx, _ = context.WithTimeout(ctx, time.Second*10)
 	clientConn, err := grpc.DialContext(ctx, serverAddr, opts...)
 	if err != nil {
 		return nil, errorService.WappedSystemError(err)
