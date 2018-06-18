@@ -18,6 +18,7 @@ const (
 	K_ExtendData   = "ed"
 	K_AccessUrl    = "au"
 	K_Account      = "ac"
+	K_rpcService   = "rs"
 )
 
 func F_Account(accountId int64) zap.Field {

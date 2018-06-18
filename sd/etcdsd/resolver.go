@@ -124,7 +124,7 @@ func (r *etcdResolver) watch(addrList []resolver.Address) {
 					r.cc.NewAddress(addrList)
 				}
 			case mvccpb.DELETE:
-				r.logger.Error("节点丢失", logs.F_ExtendData(addr))
+				r.logger.Error("节点丢失", logs.F_ExtendData(addr), zap.String(logs.K_rpcService, r.ServerName))
 				if s, ok := remove(addrList, addr); ok {
 					addrList = s
 					r.cc.NewAddress(addrList)

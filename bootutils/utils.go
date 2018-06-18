@@ -16,6 +16,11 @@ import (
 const envIPInterfaceName = "NET_INTERFACE"
 
 func GetLocalIP(errorService errors.Service) (string, errors.Error) {
+	ifs, _ := net.Interfaces()
+	for _, iface := range ifs {
+		addr, _ := iface.Addrs()
+		fmt.Printf("%s-->%#q", iface.Name, addr)
+	}
 	if interfaceName, ok := os.LookupEnv(envIPInterfaceName); ok {
 		netInterface, err := net.InterfaceByName(interfaceName)
 		if err != nil {
@@ -35,6 +40,9 @@ func GetLocalIP(errorService errors.Service) (string, errors.Error) {
 }
 
 func getActiveIP(addrs []net.Addr, errorService errors.Service) (string, errors.Error) {
+	for _, addr := range addrs {
+		fmt.Printf("地址为:%s\n", addr)
+	}
 	for _, addr := range addrs {
 		if ipnet, ok := addr.(*net.IPNet); ok && !ipnet.IP.IsLoopback() {
 			if ipnet.IP.To4() != nil {
