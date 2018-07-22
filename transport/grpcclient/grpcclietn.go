@@ -27,7 +27,7 @@ type grpcClientImpl struct {
 	logger       *zap.Logger
 }
 
-func NewGRPCConnFactory(ctx context.Context, etcdClient *clientv3.Client, serviceInfo boot.ServiceInfo, errorService errors.Service, logger *zap.Logger) GRPCConnFactory {
+func NewGRPCConnFactory(etcdClient *clientv3.Client, errorService errors.Service, logger *zap.Logger) GRPCConnFactory {
 	return &grpcClientImpl{etcdClient: etcdClient, errorService: errorService, logger: logger}
 }
 

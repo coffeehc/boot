@@ -17,6 +17,7 @@ var configPath = flag.String("config", "./config.yml", "配置文件路径")
 // ServiceConfig 服务配置
 type ServiceConfig struct {
 	DisableServiceRegister bool                   `yaml:"disable_service_register"`
+	SingleService          bool                   `yaml:"single_service"`
 	ServerAddr             string                 `yaml:"server_addr"`
 	GrpcConfig             *grpcserver.GRPCConfig `yaml:"grpc_config"`
 	EtcdConfig             *etcdsd.Config         `yaml:"etcd_config"`

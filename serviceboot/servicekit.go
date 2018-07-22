@@ -24,7 +24,7 @@ type ServiceKit interface {
 	RPCServiceInitialization(rpcService RPCService) errors.Error
 }
 
-type serviceBootImpl struct {
+type serviceKitImpl struct {
 	logger            *zap.Logger
 	errorService      errors.Service
 	loggerService     logs.Service
@@ -36,35 +36,35 @@ type serviceBootImpl struct {
 	configPath        string
 }
 
-func (impl *serviceBootImpl) GetConfigPath() string {
+func (impl *serviceKitImpl) GetConfigPath() string {
 	return impl.configPath
 }
 
-func (impl *serviceBootImpl) GetLogger() *zap.Logger {
+func (impl *serviceKitImpl) GetLogger() *zap.Logger {
 	return impl.logger
 }
-func (impl *serviceBootImpl) GetRootErrorService() errors.Service {
+func (impl *serviceKitImpl) GetRootErrorService() errors.Service {
 	return impl.errorService
 }
-func (impl *serviceBootImpl) GetLoggerService() logs.Service {
+func (impl *serviceKitImpl) GetLoggerService() logs.Service {
 	return impl.loggerService
 }
-func (impl *serviceBootImpl) GetEtcdClient() *clientv3.Client {
+func (impl *serviceKitImpl) GetEtcdClient() *clientv3.Client {
 	return impl.etcdClient
 }
-func (impl *serviceBootImpl) GetServiceInfo() boot.ServiceInfo {
+func (impl *serviceKitImpl) GetServiceInfo() boot.ServiceInfo {
 	return impl.serviceInfo
 }
-func (impl *serviceBootImpl) GetServerAddr() string {
+func (impl *serviceKitImpl) GetServerAddr() string {
 	return impl.serverAddr
 }
-func (impl *serviceBootImpl) GetGRPCConnFactory() grpcclient.GRPCConnFactory {
+func (impl *serviceKitImpl) GetGRPCConnFactory() grpcclient.GRPCConnFactory {
 	return impl.grpcClientFactory
 }
-func (impl *serviceBootImpl) GetContext() context.Context {
+func (impl *serviceKitImpl) GetContext() context.Context {
 	return impl.ctx
 }
-func (impl *serviceBootImpl) RPCServiceInitialization(rpcService RPCService) errors.Error {
+func (impl *serviceKitImpl) RPCServiceInitialization(rpcService RPCService) errors.Error {
 	errorService := impl.errorService.NewService("rpc")
 	conn, err := impl.grpcClientFactory.NewClientConn(impl.ctx, rpcService.GetRPCServiceInfo(), false)
 	if err != nil {

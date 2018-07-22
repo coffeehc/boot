@@ -51,12 +51,17 @@ func (ms *grpcMicroServiceImpl) Start(ctx context.Context, serviceConfig *Servic
 	if err != nil {
 		return err
 	}
-	etcdClient, err := etcdsd.NewClient(ctx, serviceConfig.EtcdConfig, ms.errorService, ms.logger)
-	if err != nil {
-		return err
+	var grpcConnFactory grpcclient.GRPCConnFactory = nil
+	var etcdClient *clientv3.Client = nil
+	if !ms.serviceConfig.SingleService {
+		ms.serviceConfig.DisableServiceRegister = true
+		etcdClient, err = etcdsd.NewClient(ctx, serviceConfig.EtcdConfig, ms.errorService, ms.logger)
+		if err != nil {
+			return err
+		}
+		grpcConnFactory = grpcclient.NewGRPCConnFactory(etcdClient, ms.errorService, ms.logger)
 	}
-	grpcConnFactory := grpcclient.NewGRPCConnFactory(ctx, etcdClient, serviceInfo, ms.errorService, ms.logger)
-	serviceBoot := &serviceBootImpl{
+	serviceBoot := &serviceKitImpl{
 		logger:            ms.logger,
 		errorService:      ms.errorService,
 		loggerService:     ms.loggerService,
@@ -101,6 +106,7 @@ func (ms *grpcMicroServiceImpl) Start(ctx context.Context, serviceConfig *Servic
 		return nil
 	}
 	//注册服务
+	ms.logger.Debug("开始注册服务")
 	return etcdsd.RegisterService(ctx, etcdClient, serviceInfo, serviceConfig.ServerAddr, ms.errorService, ms.logger)
 }
 

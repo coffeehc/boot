@@ -26,8 +26,9 @@ type serviceImpl struct {
 
 func (impl *serviceImpl) Init(cxt context.Context, serviceKit serviceboot.ServiceKit) errors.Error {
 	impl.rpcService = &simple.RPCService{}
-	serviceKit.RPCServiceInitialization(impl.rpcService)
 	impl.logger = serviceKit.GetLogger()
+	impl.logger.Debug(fmt.Sprintf("cf is %#v", serviceKit.GetGRPCConnFactory()))
+	serviceKit.RPCServiceInitialization(impl.rpcService)
 	return nil
 }
 func (impl *serviceImpl) Run(cxt context.Context) errors.Error {
