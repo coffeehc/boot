@@ -53,8 +53,9 @@ func (ms *grpcMicroServiceImpl) Start(ctx context.Context, serviceConfig *Servic
 	}
 	var grpcConnFactory grpcclient.GRPCConnFactory = nil
 	var etcdClient *clientv3.Client = nil
-	if !ms.serviceConfig.SingleService {
-		ms.serviceConfig.DisableServiceRegister = true
+	if ms.serviceConfig.SingleService {
+		serviceConfig.DisableServiceRegister = true
+	} else {
 		etcdClient, err = etcdsd.NewClient(ctx, serviceConfig.EtcdConfig, ms.errorService, ms.logger)
 		if err != nil {
 			return err
