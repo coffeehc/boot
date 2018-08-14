@@ -63,15 +63,15 @@ func (ms *grpcMicroServiceImpl) Start(ctx context.Context, serviceConfig *Servic
 		grpcConnFactory = grpcclient.NewGRPCConnFactory(etcdClient, ms.errorService, ms.logger)
 	}
 	serviceBoot := &serviceKitImpl{
-		logger:            ms.logger,
-		errorService:      ms.errorService,
-		loggerService:     ms.loggerService,
-		etcdClient:        etcdClient,
-		serviceInfo:       serviceInfo,
-		grpcClientFactory: grpcConnFactory,
-		ctx:               ctx,
-		serverAddr:        serviceConfig.ServerAddr,
-		configPath:        ms.configPath,
+		logger:          ms.logger,
+		errorService:    ms.errorService,
+		loggerService:   ms.loggerService,
+		etcdClient:      etcdClient,
+		serviceInfo:     serviceInfo,
+		grpcConnFactory: grpcConnFactory,
+		ctx:             ctx,
+		serverAddr:      serviceConfig.ServerAddr,
+		configPath:      ms.configPath,
 	}
 	err = ms.service.Init(ctx, serviceBoot)
 	if err != nil {
@@ -98,7 +98,7 @@ func (ms *grpcMicroServiceImpl) Start(ctx context.Context, serviceConfig *Servic
 	ms.service.RegisterServer(server)
 	lis, err1 := net.Listen("tcp", serviceConfig.ServerAddr)
 	if err1 != nil {
-		return ms.errorService.WappedSystemError(err1)
+		return ms.errorService.WrappedSystemError(err1)
 	}
 	ms.listener = lis
 	go ms.grpcServer.Serve(lis)
@@ -129,14 +129,14 @@ func (ms *grpcMicroServiceImpl) Stop(ctx context.Context) {
 	if service != nil && service.Stop != nil {
 		stopErr := service.Stop(ctx)
 		if stopErr != nil {
-			ms.logger.Error(stopErr.Error(), stopErr.GetFields()...)
+			ms.logger.DPanic(stopErr.Error(), stopErr.GetFields()...)
 		}
 	}
 	for _, f := range ms.cleanFuncs {
 		func() {
 			defer func() {
 				if err := recover(); err != nil {
-					ms.logger.Error("clean func painc", zap.Any(logs.K_Cause, err))
+					ms.logger.DPanic("clean func painc", zap.Any(logs.K_Cause, err))
 				}
 			}()
 			f()

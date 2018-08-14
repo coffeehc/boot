@@ -36,7 +36,7 @@ func ServiceLaunch(ctx context.Context, service Service) {
 	ctx = boot.SetServiceName(ctx, serviceInfo.ServiceName)
 	logService, err1 := logs.NewService(serviceInfo)
 	if err1 != nil {
-		logger.Panic("创建logService失败", zap.String(logs.K_Cause, err1.Error()))
+		logger.Error("创建logService失败", zap.String(logs.K_Cause, err1.Error()))
 		return
 	}
 	logger = logService.GetLogger()
@@ -44,7 +44,7 @@ func ServiceLaunch(ctx context.Context, service Service) {
 	ctx = boot.SetServiceName(ctx, serviceInfo.ServiceName)
 	serviceConfig, configPath, err := loadServiceConfig(ctx, errorService, logger)
 	if err != nil {
-		logger.Error(err.Error(), err.GetFields()...)
+		logger.DPanic(err.Error(), err.GetFields()...)
 		return
 	}
 	if boot.IsDevModule() {
@@ -54,7 +54,7 @@ func ServiceLaunch(ctx context.Context, service Service) {
 	}
 	microService, err := Launch(ctx, service, serviceConfig, configPath, errorService, logger, logService)
 	if err != nil {
-		logger.Error(err.Error(), err.GetFields()...)
+		logger.DPanic(err.Error(), err.GetFields()...)
 		return
 	}
 	defer func() {

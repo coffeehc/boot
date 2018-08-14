@@ -43,6 +43,10 @@ func (impl *grpcClientImpl) NewClientConn(ctx context.Context, serviceInfo boot.
 		grpc.WithUserAgent("coffee's client"),
 		grpc.WithInsecure(),
 		grpc.WithUnaryInterceptor(wapperUnartClientInterceptor(ctx, impl.errorService, logger)),
+		grpc.WithInitialConnWindowSize(10),
+		grpc.WithInitialWindowSize(1024),
+		grpc.WithChannelzParentID(0),
+		grpc.FailOnNonTempDialError(true),
 	}
 	target := fmt.Sprintf("%s://%s/%s", etcdsd.MicorScheme, boot.RunModule(), serviceInfo.ServiceName)
 	if resolver.Get(target) == nil {
@@ -53,11 +57,12 @@ func (impl *grpcClientImpl) NewClientConn(ctx context.Context, serviceInfo boot.
 	}
 	if block {
 		opts = append(opts, grpc.WithBlock())
+
 	}
-	ctx, _ = context.WithTimeout(ctx, time.Second*20)
+	ctx, _ = context.WithTimeout(ctx, time.Second*5)
 	clientConn, err := grpc.DialContext(ctx, target, opts...)
 	if err != nil {
-		return nil, impl.errorService.WappedSystemError(err)
+		return nil, impl.errorService.WrappedSystemError(err)
 	}
 	return clientConn, nil
 }
@@ -74,7 +79,7 @@ func NewClientConn(ctx context.Context, errorService errors.Service, logger *zap
 	ctx, _ = context.WithTimeout(ctx, time.Second*10)
 	clientConn, err := grpc.DialContext(ctx, serverAddr, opts...)
 	if err != nil {
-		return nil, errorService.WappedSystemError(err)
+		return nil, errorService.WrappedSystemError(err)
 	}
 	return clientConn, nil
 }

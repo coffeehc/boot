@@ -2,6 +2,7 @@ package errors
 
 import (
 	"fmt"
+	"strconv"
 
 	"git.xiagaogao.com/coffee/boot/logs"
 	"github.com/pquerna/ffjson/ffjson"
@@ -47,10 +48,10 @@ func (err *baseError) GetScopes() string {
 }
 
 func (err *baseError) GetFields() []zap.Field {
-	return append(err.Fields, zap.String(logs.K_ServiceScope, err.GetScopes()), zap.Int32(logs.K_ErrorCode, err.GetCode()))
+	return append(err.Fields, zap.String(logs.K_ServiceScope, err.GetScopes()), zap.String(logs.K_ErrorCode, strconv.FormatInt(int64(err.GetCode()), 16)))
 }
 func (err *baseError) GetFieldsWithCause() []zap.Field {
-	return append(err.Fields, zap.String(logs.K_ServiceScope, err.GetScopes()), zap.Int32(logs.K_ErrorCode, err.GetCode()), zap.String(logs.K_Cause, err.Message))
+	return append(err.Fields, zap.String(logs.K_ServiceScope, err.GetScopes()), zap.String(logs.K_ErrorCode, strconv.FormatInt(int64(err.GetCode()), 16)), zap.String(logs.K_Cause, err.Message))
 }
 
 //ParseErrorFromJSON 从 Jons数据解析出 Error 对象

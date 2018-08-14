@@ -12,9 +12,9 @@ type Service interface {
 	Error(errorCode int32, message string, fields ...zap.Field) Error
 	SystemError(message string, fields ...zap.Field) Error
 	MessageError(message string, fields ...zap.Field) Error
-	WappedError(errorCode int32, err error, fields ...zap.Field) Error
-	WappedSystemError(err error, fields ...zap.Field) Error
-	WappedMessageError(err error, fields ...zap.Field) Error
+	WrappedError(errorCode int32, err error, fields ...zap.Field) Error
+	WrappedSystemError(err error, fields ...zap.Field) Error
+	WrappedMessageError(err error, fields ...zap.Field) Error
 }
 
 func NewService(scope string) Service {
@@ -56,7 +56,7 @@ func (impl *serviceImpl) MessageError(message string, fields ...zap.Field) Error
 	return impl.Error(Error_Message, message, fields...)
 }
 
-func (impl *serviceImpl) WappedError(errorCode int32, err error, fields ...zap.Field) Error {
+func (impl *serviceImpl) WrappedError(errorCode int32, err error, fields ...zap.Field) Error {
 	return &baseError{
 		Scope:   impl.scope,
 		Code:    errorCode,
@@ -65,9 +65,9 @@ func (impl *serviceImpl) WappedError(errorCode int32, err error, fields ...zap.F
 	}
 }
 
-func (impl *serviceImpl) WappedSystemError(err error, fields ...zap.Field) Error {
-	return impl.WappedError(Error_System, err, fields...)
+func (impl *serviceImpl) WrappedSystemError(err error, fields ...zap.Field) Error {
+	return impl.WrappedError(Error_System, err, fields...)
 }
-func (impl *serviceImpl) WappedMessageError(err error, fields ...zap.Field) Error {
-	return impl.WappedError(Error_Message, err, fields...)
+func (impl *serviceImpl) WrappedMessageError(err error, fields ...zap.Field) Error {
+	return impl.WrappedError(Error_Message, err, fields...)
 }

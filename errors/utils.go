@@ -21,7 +21,7 @@ func ConverUnkonwError(err interface{}, errorService Service) Error {
 		if IsBaseError(e) {
 			return e.(Error)
 		}
-		return errorService.WappedSystemError(e)
+		return errorService.WrappedSystemError(e)
 	}
 	return errorService.SystemError(fmt.Sprintf("%#v", err))
 }
@@ -30,5 +30,5 @@ func ConverError(err error, errorService Service) Error {
 	if IsBaseError(err) {
 		return err.(Error)
 	}
-	return errorService.WappedSystemError(err)
+	return errorService.WrappedSystemError(err)
 }

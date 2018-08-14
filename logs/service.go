@@ -159,9 +159,9 @@ func newLogger(level zap.AtomicLevel, writerSync ExtWriterSync, skip int) *zap.L
 		enc:          encoder,
 		out:          writerSync,
 	}
-	opts := make([]zap.Option, 0)
+	opts := []zap.Option{zap.AddCaller(), zap.AddStacktrace(zapcore.DPanicLevel), zap.AddCallerSkip(skip)}
 	opts = append(opts, zap.WrapCore(func(core zapcore.Core) zapcore.Core {
 		return zapcore.NewSampler(core, time.Second, 3, 10)
 	}))
-	return zap.New(loggerCore, zap.AddCaller(), zap.AddStacktrace(zapcore.ErrorLevel), zap.AddCallerSkip(skip))
+	return zap.New(loggerCore, opts...)
 }

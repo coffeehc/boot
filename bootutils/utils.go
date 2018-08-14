@@ -57,7 +57,7 @@ func WarpServerAddr(serviceAddr string, errorService errors.Service) (string, er
 	if addr.IP.Equal(net.IPv4zero) {
 		localIp, err := GetLocalIP(errorService)
 		if err != nil {
-			return "", errorService.WappedSystemError(err)
+			return "", errorService.WrappedSystemError(err)
 		}
 		serverAddr = fmt.Sprintf("%s:%d", localIp, addr.Port)
 	}
@@ -68,11 +68,11 @@ func WarpServerAddr(serviceAddr string, errorService errors.Service) (string, er
 func LoadConfig(ctx context.Context, configPath string, config interface{}, errorService errors.Service, logger *zap.Logger) errors.Error {
 	data, err := ioutil.ReadFile(configPath)
 	if err != nil {
-		return errorService.WappedSystemError(err, logs.F_ExtendData(configPath))
+		return errorService.WrappedSystemError(err, logs.F_ExtendData(configPath))
 	}
 	err = yaml.Unmarshal(data, config)
 	if err != nil {
-		return errorService.WappedSystemError(err, logs.F_ExtendData(configPath))
+		return errorService.WrappedSystemError(err, logs.F_ExtendData(configPath))
 	}
 	return nil
 }

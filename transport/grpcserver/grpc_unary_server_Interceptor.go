@@ -111,10 +111,8 @@ func adapteError(err interface{}, errorService errors.Service, logger *zap.Logge
 	if err == nil {
 		return nil
 	}
-	if e, ok := err.(errors.Error); ok && errors.IsMessageError(e) {
-		logger.Error(e.Error(), e.GetFields()...)
-	} else {
-		logger.Error("rpc内部异常", zap.Any(logs.K_Cause, err))
+	if e, ok := err.(errors.Error); !ok || errors.IsSystemError(e) {
+		logger.DPanic("系统异常", zap.Any(logs.K_Cause, err))
 	}
 	switch v := err.(type) {
 	case errors.Error:

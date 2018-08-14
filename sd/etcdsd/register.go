@@ -23,20 +23,20 @@ func RegisterService(ctx context.Context, client *clientv3.Client, info boot.Ser
 	lease := clientv3.NewLease(client)
 	resp, err := lease.Grant(ctx, ttl)
 	if err != nil {
-		return errorService.WappedSystemError(err)
+		return errorService.WrappedSystemError(err)
 	}
 	serviceKey := fmt.Sprintf("%s%s", sd.BuildServiceKeyPrefix(info), serviceAddr)
 	value, err := ffjson.Marshal(&sd.ServiceRegisterInfo{ServiceInfo: info, ServerAddr: serviceAddr})
 	if err != nil {
-		return errorService.WappedSystemError(err)
+		return errorService.WrappedSystemError(err)
 	}
 	_, err = client.Put(ctx, serviceKey, string(value), clientv3.WithLease(resp.ID))
 	if err != nil {
-		return errorService.WappedSystemError(err)
+		return errorService.WrappedSystemError(err)
 	}
 	ch, err := lease.KeepAlive(ctx, resp.ID)
 	if err != nil {
-		return errorService.WappedSystemError(err)
+		return errorService.WrappedSystemError(err)
 	}
 	go func() {
 		for {
