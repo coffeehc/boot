@@ -5,7 +5,6 @@ import (
 	"sync"
 
 	"git.xiagaogao.com/coffee/boot/errors"
-	"git.xiagaogao.com/coffee/boot/logs"
 	"go.uber.org/zap"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
@@ -111,11 +110,15 @@ func adapteError(err interface{}, errorService errors.Service, logger *zap.Logge
 	if err == nil {
 		return nil
 	}
-	if e, ok := err.(errors.Error); !ok || errors.IsSystemError(e) {
-		logger.DPanic("系统异常", zap.Any(logs.K_Cause, err))
+	e := errors.ConverUnkonwError(err, errorService)
+	if errors.IsSystemError(e) {
+		if errors.IsSystemError(e) {
+			logger.DPanic(e.Error(), e.GetFields()...)
+		}
 	}
 	switch v := err.(type) {
 	case errors.Error:
+
 		return status.Errorf(18, v.FormatRPCError())
 	case string:
 		return status.Errorf(codes.Internal, v)
