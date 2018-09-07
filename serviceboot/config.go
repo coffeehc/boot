@@ -4,6 +4,7 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	"os"
 
 	"git.xiagaogao.com/coffee/boot"
 	"git.xiagaogao.com/coffee/boot/bootutils"
@@ -19,9 +20,13 @@ var configPath = flag.String("config", "./config.yml", "配置文件路径")
 type ServiceConfig struct {
 	DisableServiceRegister bool                   `yaml:"disable_service_register"`
 	SingleService          bool                   `yaml:"single_service"`
-	ServerAddr             string                 `yaml:"server_addr"`
 	GrpcConfig             *grpcserver.GRPCConfig `yaml:"grpc_config"`
 	EtcdConfig             *etcdsd.Config         `yaml:"etcd_config"`
+	serviceEndpoint        string
+}
+
+func (s *ServiceConfig) GetServiceEndpoint() string {
+	return s.serviceEndpoint
 }
 
 //LoadConfig 加载ServiceConfiguration的配置
@@ -42,13 +47,15 @@ func loadServiceConfig(ctx context.Context, errorService errors.Service, logger 
 			return nil, "", err
 		}
 	}
-	if config.ServerAddr == "" {
-		return nil, "", errorService.MessageError("没有配置ServiceAddr")
+	serviceEndpoint, ok := os.LookupEnv("ENV_SERIVCE_ENDPOINT")
+	if !ok {
+		serviceEndpoint = "0.0.0.0:8888"
 	}
-	serverAddr, err := bootutils.WarpServerAddr(config.ServerAddr, errorService)
+	serviceEndpoint, err := bootutils.WarpServerAddr(serviceEndpoint, errorService)
 	if err != nil {
 		return nil, "", err
 	}
-	config.ServerAddr = serverAddr
+	config.serviceEndpoint = serviceEndpoint
+	logger.Debug("Service endpoint", zap.String("address", serviceEndpoint))
 	return config, *configPath, nil
 }

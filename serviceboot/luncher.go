@@ -77,6 +77,6 @@ func Launch(ctx context.Context, service Service, serviceConfig *ServiceConfig, 
 	if err != nil {
 		return nil, err
 	}
-	logger.Debug(fmt.Sprintf("核心服务启动成功,服务地址:%s,启动耗时:%s", serviceConfig.ServerAddr, time.Since(startTime)))
+	logger.Debug(fmt.Sprintf("核心服务启动成功,服务地址:%s,启动耗时:%s", serviceConfig.GetServiceEndpoint(), time.Since(startTime)))
 	return microService, nil
 }

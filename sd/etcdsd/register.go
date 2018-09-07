@@ -3,6 +3,7 @@ package etcdsd
 import (
 	"context"
 	"fmt"
+	"os"
 	"time"
 
 	"git.xiagaogao.com/coffee/boot"
@@ -15,6 +16,10 @@ import (
 )
 
 func RegisterService(ctx context.Context, client *clientv3.Client, info boot.ServiceInfo, serviceAddr string, errorService errors.Service, logger *zap.Logger) errors.Error {
+	regServiceEndpoint, ok := os.LookupEnv("ENV_REG_SERVICE_ENDPOINT")
+	if !ok {
+		regServiceEndpoint = serviceAddr
+	}
 	errorService = errorService.NewService("sd")
 	if ctx.Err() != nil {
 		return errorService.MessageError("服务注册已经关闭")
@@ -25,8 +30,8 @@ func RegisterService(ctx context.Context, client *clientv3.Client, info boot.Ser
 	if err != nil {
 		return errorService.WrappedSystemError(err)
 	}
-	serviceKey := fmt.Sprintf("%s%s", sd.BuildServiceKeyPrefix(info), serviceAddr)
-	value, err := ffjson.Marshal(&sd.ServiceRegisterInfo{ServiceInfo: info, ServerAddr: serviceAddr})
+	serviceKey := fmt.Sprintf("%s%s", sd.BuildServiceKeyPrefix(info), regServiceEndpoint)
+	value, err := ffjson.Marshal(&sd.ServiceRegisterInfo{ServiceInfo: info, ServerAddr: regServiceEndpoint})
 	if err != nil {
 		return errorService.WrappedSystemError(err)
 	}
@@ -47,7 +52,7 @@ func RegisterService(ctx context.Context, client *clientv3.Client, info boot.Ser
 			}
 		}
 		time.Sleep(time.Second)
-		err := RegisterService(ctx, client, info, serviceAddr, errorService, logger)
+		err := RegisterService(ctx, client, info, regServiceEndpoint, errorService, logger)
 		if err != nil {
 			logger.Error("注册服务发生了错误", logs.F_Error(err))
 		}
