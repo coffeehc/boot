@@ -36,7 +36,7 @@ func (impl *grpcClientImpl) NewClientConn(ctx context.Context, serviceInfo boot.
 	logger := impl.logger.WithOptions(zap.Fields(zap.String("rpc_t", serviceInfo.ServiceName)))
 	opts := []grpc.DialOption{
 		grpc.WithBackoffMaxDelay(time.Second * 10),
-		grpc.WithAuthority(boot.RunModule()),
+		grpc.WithAuthority(boot.RunModel()),
 		grpc.WithDefaultCallOptions(grpc.UseCompressor("gzip"), grpc.FailFast(true)),
 		grpc.WithKeepaliveParams(keepalive.ClientParameters{Time: time.Second * 5, Timeout: time.Second * 10, PermitWithoutStream: false}),
 		grpc.WithBalancerName(roundrobin.Name),
@@ -48,7 +48,7 @@ func (impl *grpcClientImpl) NewClientConn(ctx context.Context, serviceInfo boot.
 		grpc.WithChannelzParentID(0),
 		grpc.FailOnNonTempDialError(true),
 	}
-	target := fmt.Sprintf("%s://%s/%s", etcdsd.MicorScheme, boot.RunModule(), serviceInfo.ServiceName)
+	target := fmt.Sprintf("%s://%s/%s", etcdsd.MicorScheme, boot.RunModel(), serviceInfo.ServiceName)
 	if resolver.Get(target) == nil {
 		err := etcdsd.RegisterResolver(ctx, impl.etcdClient, serviceInfo, impl.errorService, impl.logger, defaultAddr...)
 		if err != nil {

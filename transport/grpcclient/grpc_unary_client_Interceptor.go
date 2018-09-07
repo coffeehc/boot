@@ -27,7 +27,7 @@ func newUnartClientInterceptor(ctx context.Context, errorService errors.Service,
 	return &unartClientInterceptor{
 		interceptors: make(map[string]*unaryClientInterceptorWapper),
 		rootInterceptor: &unaryClientInterceptorWapper{
-			interceptor:  newPaincInterceptor(ctx, errorService, logger),
+			interceptor:  newPanicInterceptor(ctx, errorService, logger),
 			errorService: errorService,
 			logger:       logger,
 		},
@@ -92,7 +92,7 @@ func (uciw *unaryClientInterceptorWapper) invoker(ctx context.Context, method st
 	return uciw.next.interceptor(ctx, method, req, reply, cc, uciw.next.invoker, opts...)
 }
 
-func newPaincInterceptor(ctx context.Context, errorService errors.Service, logger *zap.Logger) grpc.UnaryClientInterceptor {
+func newPanicInterceptor(ctx context.Context, errorService errors.Service, logger *zap.Logger) grpc.UnaryClientInterceptor {
 	return func(cxt context.Context, method string, req, reply interface{}, cc *grpc.ClientConn, invoker grpc.UnaryInvoker, opts ...grpc.CallOption) (err error) {
 		defer func() {
 			if r := recover(); r != nil {

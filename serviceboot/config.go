@@ -3,6 +3,7 @@ package serviceboot
 import (
 	"context"
 	"flag"
+	"fmt"
 
 	"git.xiagaogao.com/coffee/boot"
 	"git.xiagaogao.com/coffee/boot/bootutils"
@@ -27,10 +28,11 @@ type ServiceConfig struct {
 func loadServiceConfig(ctx context.Context, errorService errors.Service, logger *zap.Logger) (*ServiceConfig, string, errors.Error) {
 	config := &ServiceConfig{}
 	loaded := false
-	if boot.IsDevModule() && *configPath == "./config.yml" {
-		err := bootutils.LoadConfig(ctx, "./config-dev.yml", config, errorService, logger)
+	if !boot.IsProductModel() && *configPath == "./config.yml" {
+		confPath := fmt.Sprintf("./config-%s.yml", boot.RunModel())
+		err := bootutils.LoadConfig(ctx, confPath, config, errorService, logger)
 		if err == nil {
-			*configPath = "./config-dev.yml"
+			*configPath = confPath
 			loaded = true
 		}
 	}

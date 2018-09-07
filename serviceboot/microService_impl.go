@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net"
+	"os"
 
 	"git.xiagaogao.com/coffee/boot/errors"
 	"git.xiagaogao.com/coffee/boot/logs"
@@ -108,7 +109,11 @@ func (ms *grpcMicroServiceImpl) Start(ctx context.Context, serviceConfig *Servic
 	}
 	//注册服务
 	ms.logger.Debug("开始注册服务")
-	return etcdsd.RegisterService(ctx, etcdClient, serviceInfo, serviceConfig.ServerAddr, ms.errorService, ms.logger)
+	serviceEndpoint, ok := os.LookupEnv("ENV_SERIVCE_ENDPOINT")
+	if !ok {
+		serviceEndpoint = serviceConfig.ServerAddr
+	}
+	return etcdsd.RegisterService(ctx, etcdClient, serviceInfo, serviceEndpoint, ms.errorService, ms.logger)
 }
 
 func (ms *grpcMicroServiceImpl) AddCleanFunc(f func()) {

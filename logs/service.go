@@ -1,6 +1,7 @@
 package logs
 
 import (
+	"flag"
 	"os"
 	"time"
 
@@ -8,6 +9,8 @@ import (
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 )
+
+var logLevel = flag.String("logger_level", "info", "日志级别(debug,warn,info,error)")
 
 var levelMap = map[string]zapcore.Level{
 	"debug": zapcore.DebugLevel,
@@ -23,13 +26,14 @@ type Service interface {
 }
 
 func NewService(serviceInfo boot.ServiceInfo) (Service, error) {
-	level := zap.NewAtomicLevelAt(zap.DebugLevel)
-	if !boot.IsDevModule() {
-		level.SetLevel(zap.InfoLevel)
-	}
-	levelStr, ok := os.LookupEnv("LOGGER_LEVEL")
+	level := zap.NewAtomicLevelAt(zap.InfoLevel)
+	levelStr, ok := os.LookupEnv("ENV_LOGGER_LEVEL")
 	if ok {
 		if l, ok1 := levelMap[levelStr]; ok1 {
+			level.SetLevel(l)
+		}
+	} else {
+		if l, ok1 := levelMap[*logLevel]; ok1 {
 			level.SetLevel(l)
 		}
 	}
@@ -148,20 +152,19 @@ func newLogger(level zap.AtomicLevel, writerSync ExtWriterSync, skip int) *zap.L
 		EncodeDuration: zapcore.NanosDurationEncoder,
 		EncodeCaller:   zapcore.ShortCallerEncoder,
 	}
-	encoder := zapcore.NewJSONEncoder(encoderConfig)
-	if boot.IsDevModule() {
-		encoderConfig.EncodeLevel = zapcore.CapitalColorLevelEncoder
-		encoder = zapcore.NewConsoleEncoder(encoderConfig)
+	encoderConfig.EncodeLevel = zapcore.CapitalColorLevelEncoder
+	encoder := zapcore.NewConsoleEncoder(encoderConfig)
+	if boot.IsProductModel() {
+		encoder = zapcore.NewJSONEncoder(encoderConfig)
 	}
-
 	loggerCore := &loggerCore{
 		LevelEnabler: level,
 		enc:          encoder,
 		out:          writerSync,
 	}
 	opts := []zap.Option{zap.AddCaller(), zap.AddStacktrace(zapcore.DPanicLevel), zap.AddCallerSkip(skip)}
-	opts = append(opts, zap.WrapCore(func(core zapcore.Core) zapcore.Core {
-		return zapcore.NewSampler(core, time.Second, 3, 10)
-	}))
+	//opts = append(opts, zap.WrapCore(func(core zapcore.Core) zapcore.Core {
+	//	return zapcore.NewSampler(core, time.Second, 3, 10)
+	//}))
 	return zap.New(loggerCore, opts...)
 }

@@ -17,6 +17,7 @@ import (
 
 //serviceLaunch Service 启动
 func ServiceLaunch(ctx context.Context, service Service) {
+	boot.InitModel()
 	time.LoadLocation("Asia/Shanghai")
 	if !flag.Parsed() {
 		flag.Parse()
@@ -47,11 +48,7 @@ func ServiceLaunch(ctx context.Context, service Service) {
 		logger.DPanic(err.Error(), err.GetFields()...)
 		return
 	}
-	if boot.IsDevModule() {
-		logger.Debug("当前为:开发模式")
-	} else {
-		logger.Debug("当前为:生产模式")
-	}
+	logger.Debug("运行模式", zap.String("model", boot.RunModel()))
 	microService, err := Launch(ctx, service, serviceConfig, configPath, errorService, logger, logService)
 	if err != nil {
 		logger.DPanic(err.Error(), err.GetFields()...)

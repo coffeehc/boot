@@ -28,8 +28,8 @@ func BuildGRPCOptions(ctx context.Context, config *GRPCConfig, serviceInfo boot.
 	unaryServerInterceptor := newUnaryServerInterceptor(ctx, errorService, logger)
 	//初始化Server
 	grpc.EnableTracing = false
-	if boot.IsDevModule() {
-		grpc.EnableTracing = true
+	if !boot.IsProductModel() {
+		//grpc.EnableTracing = true
 		unaryServerInterceptor.AppendInterceptor("logger", BuildLoggingInterceptor(errorService, logger))
 	}
 	unaryServerInterceptor.AppendInterceptor("prometheus", grpc_prometheus.UnaryServerInterceptor)

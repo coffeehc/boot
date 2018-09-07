@@ -12,5 +12,5 @@ type ServiceRegisterInfo struct {
 }
 
 func BuildServiceKeyPrefix(serviceInfo boot.ServiceInfo) string {
-	return fmt.Sprintf("/ms/registers/%s/%s/", serviceInfo.ServiceName, boot.RunModule())
+	return fmt.Sprintf("/ms/registers/%s/%s/", serviceInfo.ServiceName, boot.RunModel())
 }

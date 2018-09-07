@@ -31,9 +31,6 @@ func CheckServiceInfoConfig(ctx context.Context, serviceInfo ServiceInfo) error 
 }
 
 func PrintServiceInfo(serviceInfo ServiceInfo, logger *zap.Logger) {
-	if !IsDevModule() {
-		return
-	}
 	logger.Debug(fmt.Sprintf("ServiceName:%s", serviceInfo.ServiceName))
 	logger.Debug(fmt.Sprintf("Version:%s", serviceInfo.Version))
 	logger.Debug(fmt.Sprintf("Descriptor:%s", serviceInfo.Descriptor))

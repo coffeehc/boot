@@ -160,7 +160,7 @@ func (r *etcdResolver) getServiceAddr(kv *mvccpb.KeyValue) *resolver.Address {
 		r.logger.Error("Unmarshal err", zap.Any(logs.K_Cause, err))
 		return nil
 	}
-	if boot.RunModule() == r.target.Authority {
+	if boot.RunModel() == r.target.Authority {
 		if info.ServerAddr == "" {
 			return &resolver.Address{Addr: string(kv.Key[len(r.keyPrefix):]), ServerName: r.ServerName}
 		}
