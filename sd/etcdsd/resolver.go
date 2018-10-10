@@ -97,6 +97,7 @@ func (r *etcdResolver) initServerAddr() []resolver.Address {
 	for _, addr := range r.defaultSrvAddr {
 		addrList = append(addrList, resolver.Address{Addr: addr, ServerName: r.ServerName})
 	}
+	r.logger.Debug("Get service endpoints", zap.String("prefix", r.keyPrefix))
 	getResp, err := r.client.Get(context.Background(), r.keyPrefix, clientv3.WithPrefix())
 	if err != nil {
 		r.logger.Error("etcd获取服务节点信息失败:%s", zap.Any(logs.K_Cause, err))

@@ -1,16 +1,16 @@
 package logs
 
 import (
-	"flag"
 	"os"
 	"time"
 
 	"git.xiagaogao.com/coffee/boot"
+	"github.com/spf13/pflag"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 )
 
-var logLevel = flag.String("logger_level", "info", "日志级别(debug,warn,info,error)")
+var logLevel = pflag.String("logger_level", "info", "日志级别(debug,warn,info,error)")
 
 var levelMap = map[string]zapcore.Level{
 	"debug": zapcore.DebugLevel,
@@ -155,6 +155,7 @@ func newLogger(level zap.AtomicLevel, writerSync ExtWriterSync, skip int) *zap.L
 	encoderConfig.EncodeLevel = zapcore.CapitalColorLevelEncoder
 	encoder := zapcore.NewConsoleEncoder(encoderConfig)
 	if boot.IsProductModel() {
+		encoderConfig.EncodeLevel = zapcore.CapitalLevelEncoder
 		encoder = zapcore.NewJSONEncoder(encoderConfig)
 	}
 	loggerCore := &loggerCore{

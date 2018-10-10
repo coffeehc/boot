@@ -1,20 +1,18 @@
 package boot
 
 import (
-	"flag"
 	"os"
 	"sync"
+
+	"github.com/spf13/pflag"
 )
 
 var modelInit = new(sync.Once)
 
-var runModel = flag.String("run_model", "", "运行模式,必填（dev，test，product或其他）")
+var runModel = pflag.String("run_model", "", "运行模式,必填（dev，test，product或其他）")
 
 func InitModel() {
 	modelInit.Do(func() {
-		if !flag.Parsed() {
-			flag.Parse()
-		}
 		model, ok := os.LookupEnv("ENV_RUN_MODEL")
 		if !ok {
 			if *runModel != "" {
@@ -40,6 +38,9 @@ func IsProductModel() bool {
 }
 
 func RunModel() string {
+	if *runModel == "" {
+		panic("runmodel没有指定")
+	}
 	return *runModel
 
 }

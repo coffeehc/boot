@@ -1,9 +1,6 @@
 package main
 
 import (
-	"fmt"
-	"time"
-
 	"git.xiagaogao.com/coffee/boot/errors"
 	"git.xiagaogao.com/coffee/boot/simple/simplemodel"
 	"go.uber.org/zap"
@@ -23,10 +20,10 @@ func (server *_GreeterServer) SayHello(cxt context.Context, request *simplemodel
 	//}
 	//if request.GetId()%2 == 0 {
 	//	server.logger.Debug("发送一条消息错误")
-	//	return nil, server.errorService.MessageError("消息错误")
+	return nil, server.errorService.MessageError("消息错误")
 	//}
-	response := new(simplemodel.Response)
-	response.Message = fmt.Sprintf("%s-->%s", request.Name, time.Now().String())
+	//response := new(simplemodel.Response)
+	//response.Message = fmt.Sprintf("%s-->%s", request.Name, time.Now().String())
 	//return response, nil
-	return nil, nil
+	//return nil, nil
 }

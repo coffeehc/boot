@@ -2,7 +2,6 @@ package serviceboot
 
 import (
 	"context"
-	"flag"
 	"fmt"
 	"os"
 	"os/signal"
@@ -12,18 +11,19 @@ import (
 	"git.xiagaogao.com/coffee/boot"
 	"git.xiagaogao.com/coffee/boot/errors"
 	"git.xiagaogao.com/coffee/boot/logs"
+	"github.com/spf13/pflag"
 	"go.uber.org/zap"
 )
 
 //serviceLaunch Service 启动
 func ServiceLaunch(ctx context.Context, service Service) {
+	if !pflag.Parsed() {
+		pflag.Parse()
+	}
 	boot.InitModel()
 	time.LoadLocation("Asia/Shanghai")
-	if !flag.Parsed() {
-		flag.Parse()
-	}
-	if flag.Lookup("help") != nil {
-		flag.PrintDefaults()
+	if pflag.Lookup("help") != nil {
+		pflag.PrintDefaults()
 		os.Exit(0)
 	}
 	logger, _ := zap.NewDevelopment()

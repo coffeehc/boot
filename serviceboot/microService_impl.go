@@ -7,9 +7,11 @@ import (
 
 	"git.xiagaogao.com/coffee/boot/errors"
 	"git.xiagaogao.com/coffee/boot/logs"
+	"git.xiagaogao.com/coffee/boot/manage"
 	"git.xiagaogao.com/coffee/boot/sd/etcdsd"
 	"git.xiagaogao.com/coffee/boot/transport/grpcclient"
 	"git.xiagaogao.com/coffee/boot/transport/grpcserver"
+	"git.xiagaogao.com/coffee/httpx"
 	"github.com/coreos/etcd/clientv3"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
@@ -20,28 +22,31 @@ func newMicroService(ctx context.Context, service Service, configPath string, er
 	if service == nil {
 		return nil, errorService.MessageError("没有service实例")
 	}
+	managerService := manage.NewManageService(service.GetServiceInfo(), errorService, logger)
 	return &grpcMicroServiceImpl{
-		service:       service,
-		cleanFuncs:    make([]func(), 0),
-		errorService:  errorService,
-		logger:        logger,
-		configPath:    configPath,
-		loggerService: loggerService,
+		managerService: managerService,
+		service:        service,
+		cleanFuncs:     make([]func(), 0),
+		errorService:   errorService,
+		logger:         logger,
+		configPath:     configPath,
+		loggerService:  loggerService,
 	}, nil
 }
 
 type grpcMicroServiceImpl struct {
-	errorService  errors.Service
-	service       Service
-	config        *grpcserver.GRPCConfig
-	grpcServer    *grpc.Server
-	cleanFuncs    []func()
-	listener      net.Listener
-	serviceConfig *ServiceConfig
-	etcdClient    *clientv3.Client
-	logger        *zap.Logger
-	configPath    string
-	loggerService logs.Service
+	managerService httpx.Service
+	errorService   errors.Service
+	service        Service
+	config         *grpcserver.GRPCConfig
+	grpcServer     *grpc.Server
+	cleanFuncs     []func()
+	listener       net.Listener
+	serviceConfig  *ServiceConfig
+	etcdClient     *clientv3.Client
+	logger         *zap.Logger
+	configPath     string
+	loggerService  logs.Service
 }
 
 func (ms *grpcMicroServiceImpl) Start(ctx context.Context, serviceConfig *ServiceConfig) (err errors.Error) {
@@ -73,6 +78,7 @@ func (ms *grpcMicroServiceImpl) Start(ctx context.Context, serviceConfig *Servic
 		serverAddr:      serviceConfig.GetServiceEndpoint(),
 		configPath:      ms.configPath,
 	}
+	ms.managerService.Start(nil)
 	err = ms.service.Init(ctx, serviceBoot)
 	if err != nil {
 		return err
@@ -100,6 +106,7 @@ func (ms *grpcMicroServiceImpl) Start(ctx context.Context, serviceConfig *Servic
 	if err1 != nil {
 		return ms.errorService.WrappedSystemError(err1)
 	}
+	ms.logger.Debug("服务地址", zap.String("serviceEndpoint", lis.Addr().String()))
 	ms.listener = lis
 	go ms.grpcServer.Serve(lis)
 	ms.logger.Debug("服务已正常启动")
@@ -142,6 +149,7 @@ func (ms *grpcMicroServiceImpl) Stop(ctx context.Context) {
 			f()
 		}()
 	}
+	ms.managerService.Shutdown()
 }
 
 func (ms *grpcMicroServiceImpl) GetService() Service {

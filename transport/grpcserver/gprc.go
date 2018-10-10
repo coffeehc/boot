@@ -7,6 +7,8 @@ import (
 	"git.xiagaogao.com/coffee/boot"
 	"git.xiagaogao.com/coffee/boot/errors"
 	_ "git.xiagaogao.com/coffee/boot/transport"
+	"git.xiagaogao.com/coffee/boot/transport/grpcrecovery"
+	"github.com/grpc-ecosystem/go-grpc-middleware"
 	"github.com/grpc-ecosystem/go-grpc-prometheus"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
@@ -24,23 +26,23 @@ func NewServer(ctx context.Context, grpcConfig *GRPCConfig, serviceInfo boot.Ser
 }
 
 func BuildGRPCOptions(ctx context.Context, config *GRPCConfig, serviceInfo boot.ServiceInfo, errorService errors.Service, logger *zap.Logger) []grpc.ServerOption {
-	//grpclog.SetLoggerV2(grpclog.NewLoggerV2(os.Stdout, os.Stdout, os.Stdout))
-	unaryServerInterceptor := newUnaryServerInterceptor(ctx, errorService, logger)
-	//初始化Server
 	grpc.EnableTracing = false
-	if !boot.IsProductModel() {
-		//grpc.EnableTracing = true
-		unaryServerInterceptor.AppendInterceptor("logger", BuildLoggingInterceptor(errorService, logger))
-	}
-	unaryServerInterceptor.AppendInterceptor("prometheus", grpc_prometheus.UnaryServerInterceptor)
+	chainUnaryServer := grpc_middleware.ChainUnaryServer(
+		grpc_prometheus.UnaryServerInterceptor,
+		grpcrecovery.UnaryServerInterceptor(errorService, logger),
+	)
+	chainStreamServer := grpc_middleware.ChainStreamServer(
+		grpc_prometheus.StreamServerInterceptor,
+		grpcrecovery.StreamServerInterceptor(errorService, logger),
+	)
 	return []grpc.ServerOption{
 		grpc.InitialWindowSize(4096),
 		grpc.InitialConnWindowSize(100),
 		grpc.MaxConcurrentStreams(config.MaxConcurrentStreams),
 		grpc.MaxRecvMsgSize(config.MaxMsgSize),
 		grpc.MaxSendMsgSize(config.MaxMsgSize),
-		grpc.StreamInterceptor(grpc_prometheus.StreamServerInterceptor),
-		grpc.UnaryInterceptor(unaryServerInterceptor.Interceptor),
+		grpc.StreamInterceptor(chainStreamServer),
+		grpc.UnaryInterceptor(chainUnaryServer),
 		grpc.KeepaliveParams(keepalive.ServerParameters{
 			MaxConnectionIdle: time.Minute,
 			Timeout:           20 * time.Second,

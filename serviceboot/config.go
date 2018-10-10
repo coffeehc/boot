@@ -2,7 +2,6 @@ package serviceboot
 
 import (
 	"context"
-	"flag"
 	"fmt"
 	"os"
 
@@ -11,10 +10,13 @@ import (
 	"git.xiagaogao.com/coffee/boot/errors"
 	"git.xiagaogao.com/coffee/boot/sd/etcdsd"
 	"git.xiagaogao.com/coffee/boot/transport/grpcserver"
+	"github.com/spf13/pflag"
 	"go.uber.org/zap"
 )
 
-var configPath = flag.String("config", "./config.yml", "配置文件路径")
+var configPath = pflag.String("config", "./config.yml", "配置文件路径")
+var singleService = pflag.Bool("single_service", false, "是否是单体服务")
+var serviceEndpointFlag = pflag.String("env_service_endpoint", "0.0.0.0:8888", "服务地址")
 
 // ServiceConfig 服务配置
 type ServiceConfig struct {
@@ -47,15 +49,18 @@ func loadServiceConfig(ctx context.Context, errorService errors.Service, logger 
 			return nil, "", err
 		}
 	}
+	logger.Debug("加载配置完成", zap.Any("config", config))
 	serviceEndpoint, ok := os.LookupEnv("ENV_SERIVCE_ENDPOINT")
 	if !ok {
-		serviceEndpoint = "0.0.0.0:8888"
+		serviceEndpoint = *serviceEndpointFlag
 	}
 	serviceEndpoint, err := bootutils.WarpServerAddr(serviceEndpoint, errorService)
 	if err != nil {
 		return nil, "", err
 	}
 	config.serviceEndpoint = serviceEndpoint
-	logger.Debug("Service endpoint", zap.String("address", serviceEndpoint))
+	if !config.SingleService {
+		config.SingleService = *singleService
+	}
 	return config, *configPath, nil
 }

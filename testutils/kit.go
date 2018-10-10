@@ -15,6 +15,7 @@ import (
 
 func BuildServiceKit(testName string, etcdEndPoints []string) (serviceboot.ServiceKit, errors.Error) {
 	ctx := context.TODO()
+	boot.InitModel()
 	serviceInfo := boot.ServiceInfo{
 		ServiceName: testName,
 		Version:     "0.0.1",
