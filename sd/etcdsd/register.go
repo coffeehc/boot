@@ -11,11 +11,51 @@ import (
 	"git.xiagaogao.com/coffee/boot/logs"
 	"git.xiagaogao.com/coffee/boot/sd"
 	"github.com/coreos/etcd/clientv3"
+	"github.com/coreos/etcd/clientv3/concurrency"
 	"github.com/pquerna/ffjson/ffjson"
 	"go.uber.org/zap"
 )
 
 func RegisterService(ctx context.Context, client *clientv3.Client, info boot.ServiceInfo, serviceAddr string, errorService errors.Service, logger *zap.Logger) errors.Error {
+	regServiceEndpoint, ok := os.LookupEnv("ENV_REG_SERVICE_ENDPOINT")
+	if !ok {
+		regServiceEndpoint = serviceAddr
+	}
+	errorService = errorService.NewService("sd")
+	if ctx.Err() != nil {
+		return errorService.MessageError("服务注册已经关闭")
+	}
+	serviceKey := fmt.Sprintf("%s%s", sd.BuildServiceKeyPrefix(info), regServiceEndpoint)
+	value, err := ffjson.Marshal(&sd.ServiceRegisterInfo{ServiceInfo: info, ServerAddr: regServiceEndpoint})
+	if err != nil {
+		return errorService.WrappedSystemError(err)
+	}
+	go func() {
+		for {
+			func() {
+				defer func() {
+					recover()
+				}()
+				session, err := concurrency.NewSession(client, concurrency.WithTTL(5))
+				if err != nil {
+					logger.Error("创建ETCD Session异常", zap.Error(err))
+					goto SLEEP
+				}
+				_, err = client.Put(ctx, serviceKey, string(value), clientv3.WithLease(session.Lease()))
+				if err != nil {
+					logger.Error("设置注册信息KV失败", zap.Error(err))
+					goto SLEEP
+				}
+				<-session.Done()
+			SLEEP:
+				time.Sleep(time.Second)
+			}()
+		}
+	}()
+	return nil
+}
+
+func RegisterService_back(ctx context.Context, client *clientv3.Client, info boot.ServiceInfo, serviceAddr string, errorService errors.Service, logger *zap.Logger) errors.Error {
 	regServiceEndpoint, ok := os.LookupEnv("ENV_REG_SERVICE_ENDPOINT")
 	if !ok {
 		regServiceEndpoint = serviceAddr

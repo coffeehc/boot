@@ -106,6 +106,7 @@ func (ms *grpcMicroServiceImpl) Start(ctx context.Context, serviceConfig *Servic
 	if err1 != nil {
 		return ms.errorService.WrappedSystemError(err1)
 	}
+	serviceConfig.serviceEndpoint = lis.Addr().String()
 	ms.logger.Debug("服务地址", zap.String("serviceEndpoint", lis.Addr().String()))
 	ms.listener = lis
 	go ms.grpcServer.Serve(lis)

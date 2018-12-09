@@ -50,7 +50,7 @@ func loadServiceConfig(ctx context.Context, errorService errors.Service, logger 
 		}
 	}
 	logger.Debug("加载配置完成", zap.Any("config", config))
-	serviceEndpoint, ok := os.LookupEnv("ENV_SERIVCE_ENDPOINT")
+	serviceEndpoint, ok := os.LookupEnv("ENV_SERVICE_ENDPOINT")
 	if !ok {
 		serviceEndpoint = *serviceEndpointFlag
 	}

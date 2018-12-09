@@ -20,7 +20,7 @@ func NewClient(ctx context.Context, config *Config, errorService errors.Service,
 	}
 	etcdClient, _err := clientv3.New(*conf)
 	if _err != nil {
-		return nil, errorService.WrappedSystemError(err)
+		return nil, errorService.WrappedSystemError(_err)
 	}
 	return etcdClient, nil
 }

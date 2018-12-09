@@ -28,7 +28,7 @@ func BuildServiceKit(testName string, etcdEndPoints []string) (serviceboot.Servi
 	if err1 != nil {
 		return nil, errors.ConverError(err1, errorService)
 	}
-	logger := logService.GetLogger().With(zap.String("testName", testName))
+	logger := logService.GetLogger()
 	etcdClient, err := etcdsd.NewClient(ctx, &etcdsd.Config{
 		Endpoints:   etcdEndPoints,
 		DialTimeout: int64(3),
