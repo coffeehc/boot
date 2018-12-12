@@ -10,6 +10,6 @@ import (
 )
 
 type RPCService interface {
-	GetRPCServiceInfo() boot.ServiceInfo
+	GetRPCServiceInfo() *boot.ServiceInfo
 	InitRPCService(ctx context.Context, grpcConn *grpc.ClientConn, errorService errors.Service, logger *zap.Logger) errors.Error
 }

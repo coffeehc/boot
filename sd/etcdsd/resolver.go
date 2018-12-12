@@ -18,7 +18,7 @@ import (
 
 const MicorScheme = "micor"
 
-func RegisterResolver(ctx context.Context, client *clientv3.Client, serviceInfo boot.ServiceInfo, errorService errors.Service, logger *zap.Logger, defaultSrvAddr ...string) errors.Error {
+func RegisterResolver(ctx context.Context, client *clientv3.Client, serviceInfo *boot.ServiceInfo, errorService errors.Service, logger *zap.Logger, defaultSrvAddr ...string) errors.Error {
 	rb, err := newResolver(ctx, client, serviceInfo, errorService, logger, defaultSrvAddr...)
 	if err != nil {
 		return err
@@ -27,7 +27,7 @@ func RegisterResolver(ctx context.Context, client *clientv3.Client, serviceInfo 
 	return nil
 }
 
-func newResolver(ctx context.Context, client *clientv3.Client, serviceInfo boot.ServiceInfo, errorService errors.Service, logger *zap.Logger, defaultSrvAddr ...string) (resolver.Builder, errors.Error) {
+func newResolver(ctx context.Context, client *clientv3.Client, serviceInfo *boot.ServiceInfo, errorService errors.Service, logger *zap.Logger, defaultSrvAddr ...string) (resolver.Builder, errors.Error) {
 	rb := &etcdResolverBuilder{
 		client:         client,
 		ctx:            ctx,
@@ -45,7 +45,7 @@ type etcdResolverBuilder struct {
 	ctx            context.Context
 	defaultSrvAddr []string
 	scheme         string
-	serviceInfo    boot.ServiceInfo
+	serviceInfo    *boot.ServiceInfo
 	errorService   errors.Service
 	logger         *zap.Logger
 }

@@ -49,7 +49,7 @@ func WarpServerAddr(serviceAddr string, errorService errors.Service) (string, er
 	if serviceAddr == "" {
 		return "", errorService.SystemError("服务地址不能为空")
 	}
-	addr, err := net.ResolveTCPAddr("tcp", serviceAddr)
+	addr, err := net.ResolveTCPAddr("tcp4", serviceAddr)
 	if err != nil {
 		return "", errorService.SystemError(fmt.Sprintf("服务地址不是一个标准的tcp地址:%s", err))
 	}

@@ -15,7 +15,7 @@ import (
 	"google.golang.org/grpc/keepalive"
 )
 
-func NewServer(ctx context.Context, grpcConfig *GRPCConfig, serviceInfo boot.ServiceInfo, errorService errors.Service, logger *zap.Logger) (*grpc.Server, errors.Error) {
+func NewServer(ctx context.Context, grpcConfig *GRPCConfig, serviceInfo *boot.ServiceInfo, errorService errors.Service, logger *zap.Logger) (*grpc.Server, errors.Error) {
 	if grpcConfig == nil {
 		logger.Debug("没有配置GRPCConfig,使用默认配置")
 		grpcConfig = &GRPCConfig{}
@@ -25,7 +25,7 @@ func NewServer(ctx context.Context, grpcConfig *GRPCConfig, serviceInfo boot.Ser
 	return server, nil
 }
 
-func BuildGRPCOptions(ctx context.Context, config *GRPCConfig, serviceInfo boot.ServiceInfo, errorService errors.Service, logger *zap.Logger) []grpc.ServerOption {
+func BuildGRPCOptions(ctx context.Context, config *GRPCConfig, serviceInfo *boot.ServiceInfo, errorService errors.Service, logger *zap.Logger) []grpc.ServerOption {
 	grpc.EnableTracing = false
 	chainUnaryServer := grpc_middleware.ChainUnaryServer(
 		grpc_prometheus.UnaryServerInterceptor,

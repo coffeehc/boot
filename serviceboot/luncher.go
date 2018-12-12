@@ -16,7 +16,7 @@ import (
 )
 
 //serviceLaunch Service 启动
-func ServiceLaunch(ctx context.Context, service Service) {
+func ServiceLaunch(ctx context.Context, service Service, serviceInfo *boot.ServiceInfo) {
 	if !pflag.Parsed() {
 		pflag.Parse()
 	}
@@ -27,12 +27,11 @@ func ServiceLaunch(ctx context.Context, service Service) {
 		os.Exit(0)
 	}
 	logger, _ := zap.NewDevelopment()
-	err1 := boot.CheckServiceInfoConfig(ctx, service.GetServiceInfo())
+	err1 := boot.CheckServiceInfoConfig(ctx, serviceInfo)
 	if err1 != nil {
 		logger.Error("校验服务信息失败", zap.String(logs.K_Cause, err1.Error()))
 		return
 	}
-	serviceInfo := service.GetServiceInfo()
 	errorService := errors.NewService(serviceInfo.ServiceName)
 	ctx = boot.SetServiceName(ctx, serviceInfo.ServiceName)
 	logService, err1 := logs.NewService(serviceInfo)
@@ -41,7 +40,7 @@ func ServiceLaunch(ctx context.Context, service Service) {
 		return
 	}
 	logger = logService.GetLogger()
-	boot.PrintServiceInfo(service.GetServiceInfo(), logger)
+	boot.PrintServiceInfo(serviceInfo, logger)
 	ctx = boot.SetServiceName(ctx, serviceInfo.ServiceName)
 	serviceConfig, configPath, err := loadServiceConfig(ctx, errorService, logger)
 	if err != nil {
@@ -49,7 +48,7 @@ func ServiceLaunch(ctx context.Context, service Service) {
 		return
 	}
 	logger.Debug("运行模式", zap.String("model", boot.RunModel()))
-	microService, err := Launch(ctx, service, serviceConfig, configPath, errorService, logger, logService)
+	microService, err := Launch(ctx, service, serviceInfo, serviceConfig, configPath, errorService, logger, logService)
 	if err != nil {
 		logger.DPanic(err.Error(), err.GetFields()...)
 		return
@@ -64,12 +63,12 @@ func ServiceLaunch(ctx context.Context, service Service) {
 }
 
 //Launch 纯粹的启动微服务,不做系统信令监听
-func Launch(ctx context.Context, service Service, serviceConfig *ServiceConfig, configPath string, errorService errors.Service, logger *zap.Logger, loggerService logs.Service) (MicroService, errors.Error) {
+func Launch(ctx context.Context, service Service, serviceInfo *boot.ServiceInfo, serviceConfig *ServiceConfig, configPath string, errorService errors.Service, logger *zap.Logger, loggerService logs.Service) (MicroService, errors.Error) {
 	startTime := time.Now()
 	if service == nil {
 		return nil, errorService.SystemError("serviceboot is nil")
 	}
-	microService, err := newMicroService(ctx, service, configPath, errorService, logger, loggerService)
+	microService, err := newMicroService(ctx, service, serviceInfo, configPath, errorService, logger, loggerService)
 	if err != nil {
 		return nil, err
 	}

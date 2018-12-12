@@ -18,7 +18,7 @@ import (
 )
 
 type GRPCConnFactory interface {
-	NewClientConn(cxt context.Context, serviceInfo boot.ServiceInfo, block bool, defaultAddr ...string) (*grpc.ClientConn, errors.Error)
+	NewClientConn(cxt context.Context, serviceInfo *boot.ServiceInfo, block bool, defaultAddr ...string) (*grpc.ClientConn, errors.Error)
 }
 
 type grpcClientImpl struct {
@@ -31,7 +31,7 @@ func NewGRPCConnFactory(etcdClient *clientv3.Client, errorService errors.Service
 	return &grpcClientImpl{etcdClient: etcdClient, errorService: errorService, logger: logger}
 }
 
-func (impl *grpcClientImpl) NewClientConn(ctx context.Context, serviceInfo boot.ServiceInfo, block bool, defaultAddr ...string) (*grpc.ClientConn, errors.Error) {
+func (impl *grpcClientImpl) NewClientConn(ctx context.Context, serviceInfo *boot.ServiceInfo, block bool, defaultAddr ...string) (*grpc.ClientConn, errors.Error) {
 	ctx = boot.SetServiceName(ctx, serviceInfo.ServiceName)
 	logger := impl.logger.WithOptions(zap.Fields(zap.String("rpc_t", serviceInfo.ServiceName)))
 	opts := []grpc.DialOption{

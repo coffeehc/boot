@@ -8,7 +8,7 @@ import (
 	"go.uber.org/zap"
 )
 
-//SimpleServiceInfo 简单的 ServiceInfo 配置
+// SimpleServiceInfo 简单的 ServiceInfo 配置
 type ServiceInfo struct {
 	ServiceName string `yaml:"service_name" json:"service_name"`
 	Version     string `yaml:"version" json:"version"`
@@ -17,7 +17,7 @@ type ServiceInfo struct {
 	Scheme      string `yaml:"scheme" json:"scheme"`
 }
 
-func CheckServiceInfoConfig(ctx context.Context, serviceInfo ServiceInfo) error {
+func CheckServiceInfoConfig(ctx context.Context, serviceInfo *ServiceInfo) error {
 	if serviceInfo.ServiceName == "" {
 		return errors.New("没有配置 ServiceName")
 	}
@@ -30,7 +30,7 @@ func CheckServiceInfoConfig(ctx context.Context, serviceInfo ServiceInfo) error 
 	return nil
 }
 
-func PrintServiceInfo(serviceInfo ServiceInfo, logger *zap.Logger) {
+func PrintServiceInfo(serviceInfo *ServiceInfo, logger *zap.Logger) {
 	logger.Debug(fmt.Sprintf("ServiceName:%s", serviceInfo.ServiceName))
 	logger.Debug(fmt.Sprintf("Version:%s", serviceInfo.Version))
 	logger.Debug(fmt.Sprintf("Descriptor:%s", serviceInfo.Descriptor))

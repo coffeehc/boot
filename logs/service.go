@@ -25,7 +25,7 @@ type Service interface {
 	NewLogger(skip int) *zap.Logger
 }
 
-func NewService(serviceInfo boot.ServiceInfo) (Service, error) {
+func NewService(serviceInfo *boot.ServiceInfo) (Service, error) {
 	level := zap.NewAtomicLevelAt(zap.InfoLevel)
 	levelStr, ok := os.LookupEnv("ENV_LOGGER_LEVEL")
 	if ok {

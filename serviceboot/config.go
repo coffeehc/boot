@@ -46,10 +46,16 @@ func loadServiceConfig(ctx context.Context, errorService errors.Service, logger 
 	if !loaded {
 		err := bootutils.LoadConfig(ctx, *configPath, config, errorService, logger)
 		if err != nil {
-			return nil, "", err
+			// return nil, "", err
+			logger.Warn("没有找到配置文件")
+			*configPath = ""
+		} else {
+			loaded = true
 		}
 	}
-	logger.Debug("加载配置完成", zap.Any("config", config))
+	if loaded {
+		logger.Debug("加载配置完成", zap.Any("config", config))
+	}
 	serviceEndpoint, ok := os.LookupEnv("ENV_SERVICE_ENDPOINT")
 	if !ok {
 		serviceEndpoint = *serviceEndpointFlag

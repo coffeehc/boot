@@ -3,7 +3,6 @@ package serviceboot
 import (
 	"context"
 
-	"git.xiagaogao.com/coffee/boot"
 	"git.xiagaogao.com/coffee/boot/errors"
 	"google.golang.org/grpc"
 )
@@ -14,5 +13,4 @@ type Service interface {
 	Run(cxt context.Context) errors.Error
 	Stop(cxt context.Context) errors.Error
 	RegisterServer(s *grpc.Server) errors.Error
-	GetServiceInfo() boot.ServiceInfo
 }
