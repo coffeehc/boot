@@ -16,7 +16,7 @@ import (
 func BuildServiceKit(testName string, etcdEndPoints []string) (serviceboot.ServiceKit, errors.Error) {
 	ctx := context.TODO()
 	boot.InitModel()
-	serviceInfo := boot.ServiceInfo{
+	serviceInfo := &boot.ServiceInfo{
 		ServiceName: testName,
 		Version:     "0.0.1",
 		Descriptor:  "测试服务-" + testName,
@@ -57,7 +57,7 @@ type serviceKitImpl struct {
 	errorService    errors.Service
 	loggerService   logs.Service
 	etcdClient      *clientv3.Client
-	serviceInfo     boot.ServiceInfo
+	serviceInfo     *boot.ServiceInfo
 	grpcConnFactory grpcclient.GRPCConnFactory
 	ctx             context.Context
 	serverAddr      string
@@ -80,7 +80,7 @@ func (impl *serviceKitImpl) GetLoggerService() logs.Service {
 func (impl *serviceKitImpl) GetEtcdClient() *clientv3.Client {
 	return impl.etcdClient
 }
-func (impl *serviceKitImpl) GetServiceInfo() boot.ServiceInfo {
+func (impl *serviceKitImpl) GetServiceInfo() *boot.ServiceInfo {
 	return impl.serviceInfo
 }
 func (impl *serviceKitImpl) GetServerAddr() string {

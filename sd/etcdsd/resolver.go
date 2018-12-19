@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"strings"
+	"time"
 
 	"git.xiagaogao.com/coffee/boot"
 	"git.xiagaogao.com/coffee/boot/errors"
@@ -64,6 +65,7 @@ func (impl *etcdResolverBuilder) Build(target resolver.Target, cc resolver.Clien
 		ServerName:     impl.serviceInfo.ServiceName,
 	}
 	addrList := r.initServerAddr()
+	r.cc.NewAddress(addrList)
 	go r.watch(addrList)
 	return r, nil
 }
@@ -97,7 +99,7 @@ func (r *etcdResolver) initServerAddr() []resolver.Address {
 	for _, addr := range r.defaultSrvAddr {
 		addrList = append(addrList, resolver.Address{Addr: addr, ServerName: r.ServerName})
 	}
-	r.logger.Debug("Get service endpoints", zap.String("prefix", r.keyPrefix))
+	// r.logger.Debug("Get service endpoints", zap.String("prefix", r.keyPrefix))
 	getResp, err := r.client.Get(context.Background(), r.keyPrefix, clientv3.WithPrefix())
 	if err != nil {
 		r.logger.Error("etcd获取服务节点信息失败:%s", zap.Any(logs.K_Cause, err))
@@ -109,29 +111,54 @@ func (r *etcdResolver) initServerAddr() []resolver.Address {
 			addrList = append(addrList, *r.getServiceAddr(kv))
 		}
 	}
-	r.cc.NewAddress(addrList)
 	return addrList
 }
 
 func (r *etcdResolver) watch(addrList []resolver.Address) {
 	rch := r.client.Watch(context.Background(), r.keyPrefix, clientv3.WithPrefix())
-	for n := range rch {
-		for _, ev := range n.Events {
-			addr := strings.TrimPrefix(string(ev.Kv.Key), r.keyPrefix)
-			switch ev.Type {
-			case mvccpb.PUT:
-				if !exist(addrList, addr) {
-					addrList = append(addrList, resolver.Address{Addr: addr, ServerName: r.ServerName})
-					r.cc.NewAddress(addrList)
+	tiemOut := time.Second * 30
+	timer := time.NewTimer(tiemOut)
+	panicSleep := time.Second
+	for {
+		func() {
+			defer func() {
+				if err := recover(); err != nil {
+					r.logger.Error("监听地址节点出现异常", zap.Any("err", err))
+					time.Sleep(panicSleep)
+					panicSleep += time.Second
+					if panicSleep > time.Second*10 {
+						panicSleep = time.Second * 10
+					}
+				} else {
+					panicSleep = time.Second
 				}
-			case mvccpb.DELETE:
-				r.logger.Error("节点丢失", logs.F_ExtendData(addr), zap.String(logs.K_rpcService, r.ServerName))
-				if s, ok := remove(addrList, addr); ok {
-					addrList = s
-					r.cc.NewAddress(addrList)
+			}()
+			select {
+			case <-timer.C:
+				addrList = r.initServerAddr()
+			case n, closed := <-rch:
+				if closed {
+					rch = r.client.Watch(context.Background(), r.keyPrefix, clientv3.WithPrefix())
+					return
+				}
+				for _, ev := range n.Events {
+					addr := strings.TrimPrefix(string(ev.Kv.Key), r.keyPrefix)
+					switch ev.Type {
+					case mvccpb.PUT:
+						if !exist(addrList, addr) {
+							addrList = append(addrList, resolver.Address{Addr: addr, ServerName: r.ServerName})
+						}
+					case mvccpb.DELETE:
+						r.logger.Error("节点丢失", logs.F_ExtendData(addr), zap.String(logs.K_rpcService, r.ServerName))
+						if s, ok := remove(addrList, addr); ok {
+							addrList = s
+						}
+					}
 				}
 			}
-		}
+			timer.Reset(tiemOut)
+			r.cc.NewAddress(addrList)
+		}()
 	}
 }
 
