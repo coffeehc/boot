@@ -15,11 +15,9 @@ import (
 	"go.uber.org/zap"
 )
 
-//serviceLaunch Service 启动
+// serviceLaunch Service 启动
 func ServiceLaunch(ctx context.Context, service Service, serviceInfo *boot.ServiceInfo) {
-	if !pflag.Parsed() {
-		pflag.Parse()
-	}
+	boot.InitFlags()
 	boot.InitModel()
 	time.LoadLocation("Asia/Shanghai")
 	if pflag.Lookup("help") != nil {
@@ -62,7 +60,7 @@ func ServiceLaunch(ctx context.Context, service Service, serviceInfo *boot.Servi
 	<-sigChan
 }
 
-//Launch 纯粹的启动微服务,不做系统信令监听
+// Launch 纯粹的启动微服务,不做系统信令监听
 func Launch(ctx context.Context, service Service, serviceInfo *boot.ServiceInfo, serviceConfig *ServiceConfig, configPath string, errorService errors.Service, logger *zap.Logger, loggerService logs.Service) (MicroService, errors.Error) {
 	startTime := time.Now()
 	if service == nil {

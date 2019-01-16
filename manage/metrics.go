@@ -7,4 +7,6 @@ import (
 
 func (impl *serviceImpl) registerMetricsEndpoint(router gin.IRouter) {
 	router.GET("/metrics", gin.WrapH(promhttp.Handler()))
+	router.GET("/ping", impl.ping())
+	registerPprof(router)
 }

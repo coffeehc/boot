@@ -8,12 +8,8 @@ import (
 	"git.xiagaogao.com/coffee/boot/bootutils"
 	"git.xiagaogao.com/coffee/boot/errors"
 	"git.xiagaogao.com/coffee/httpx"
-	"github.com/gin-gonic/gin"
-	"github.com/spf13/pflag"
 	"go.uber.org/zap"
 )
-
-var manage_endpoint = pflag.String("env_manage_endpoint", "0.0.0.0:7777", "管理服务地址")
 
 type Service interface {
 	GetHttpService() httpx.Service
@@ -43,9 +39,9 @@ func (impl *serviceImpl) Start(onShutdown func()) {
 
 func (impl *serviceImpl) registerManager() {
 	router := impl.httpService.GetGinEngine()
-	router.Use(gin.BasicAuth(gin.Accounts{
-		"root": "36NiH7*CsjXOm@SD",
-	}))
+	// router.Use(gin.BasicAuth(gin.Accounts{
+	// 	"root": "abc###123",
+	// }))
 	impl.registerServiceRuntimeInfoEndpoint(router)
 	impl.registerHealthEndpoint(router)
 	impl.registerMetricsEndpoint(router)

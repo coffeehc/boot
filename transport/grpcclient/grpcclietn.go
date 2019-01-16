@@ -57,7 +57,6 @@ func (impl *grpcClientImpl) NewClientConn(ctx context.Context, serviceInfo *boot
 	}
 	if block {
 		opts = append(opts, grpc.WithBlock())
-
 	}
 	ctx, _ = context.WithTimeout(ctx, time.Second*5)
 	clientConn, err := grpc.DialContext(ctx, target, opts...)

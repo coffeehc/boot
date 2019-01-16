@@ -10,13 +10,8 @@ import (
 	"git.xiagaogao.com/coffee/boot/errors"
 	"git.xiagaogao.com/coffee/boot/sd/etcdsd"
 	"git.xiagaogao.com/coffee/boot/transport/grpcserver"
-	"github.com/spf13/pflag"
 	"go.uber.org/zap"
 )
-
-var configPath = pflag.String("config", "./config.yml", "配置文件路径")
-var singleService = pflag.Bool("single_service", false, "是否是单体服务")
-var serviceEndpointFlag = pflag.String("env_service_endpoint", "0.0.0.0:8888", "服务地址")
 
 // ServiceConfig 服务配置
 type ServiceConfig struct {
@@ -31,7 +26,7 @@ func (s *ServiceConfig) GetServiceEndpoint() string {
 	return s.serviceEndpoint
 }
 
-//LoadConfig 加载ServiceConfiguration的配置
+// LoadConfig 加载ServiceConfiguration的配置
 func loadServiceConfig(ctx context.Context, errorService errors.Service, logger *zap.Logger) (*ServiceConfig, string, errors.Error) {
 	config := &ServiceConfig{}
 	loaded := false

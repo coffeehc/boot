@@ -5,11 +5,20 @@ import (
 	"sync"
 
 	"github.com/spf13/pflag"
+	"github.com/spf13/viper"
 )
 
-var modelInit = new(sync.Once)
+func InitFlags() {
+	if !pflag.Parsed() {
 
-var runModel = pflag.String("run_model", "", "运行模式,必填（dev，test，product或其他）")
+		// pflag.SetInterspersed(false)
+		// pflag.CommandLine.AddGoFlagSet(flag.CommandLine)
+		pflag.Parse()
+		viper.BindPFlags(pflag.CommandLine) // viper绑定flags
+	}
+}
+
+var modelInit = new(sync.Once)
 
 func InitModel() {
 	modelInit.Do(func() {
@@ -32,7 +41,7 @@ const (
 	Model_product = "product"
 )
 
-//IsDevModule 是否是开发模式
+// IsDevModule 是否是开发模式
 func IsProductModel() bool {
 	return *runModel == Model_product
 }
