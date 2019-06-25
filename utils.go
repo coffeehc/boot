@@ -1,6 +1,7 @@
 package boot
 
 import (
+	"flag"
 	"os"
 	"sync"
 
@@ -10,9 +11,8 @@ import (
 
 func InitFlags() {
 	if !pflag.Parsed() {
-
 		// pflag.SetInterspersed(false)
-		// pflag.CommandLine.AddGoFlagSet(flag.CommandLine)
+		pflag.CommandLine.AddGoFlagSet(flag.CommandLine)
 		pflag.Parse()
 		viper.BindPFlags(pflag.CommandLine) // viper绑定flags
 	}
@@ -27,7 +27,7 @@ func InitModel() {
 			if *runModel != "" {
 				return
 			}
-			panic("没有指定运行模式")
+			panic("没有指定运行模式,请设置环境变量：ENV_RUN_MODEL或参数--run_model")
 		}
 		*runModel = model
 	})

@@ -185,7 +185,7 @@ func (r *etcdResolver) getServiceAddr(kv *mvccpb.KeyValue) *resolver.Address {
 	info := &sd.ServiceRegisterInfo{}
 	err := ffjson.Unmarshal(kv.Value, info)
 	if err != nil {
-		r.logger.Error("Unmarshal err", zap.Any(logs.K_Cause, err))
+		r.logger.Error("Unmarshal err", zap.Any(logs.K_Cause, err), zap.String("kv.Value", string(kv.Value)))
 		return nil
 	}
 	if boot.RunModel() == r.target.Authority {

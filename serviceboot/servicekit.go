@@ -22,6 +22,7 @@ type ServiceKit interface {
 	GetContext() context.Context
 	GetConfigPath() string
 	RPCServiceInitialization(rpcService RPCService) errors.Error
+	SetExtentData(data map[string]string)
 }
 
 type serviceKitImpl struct {
@@ -34,6 +35,11 @@ type serviceKitImpl struct {
 	ctx             context.Context
 	serverAddr      string
 	configPath      string
+	extentData      map[string]string
+}
+
+func (impl *serviceKitImpl) SetExtentData(data map[string]string) {
+	impl.extentData = data
 }
 
 func (impl *serviceKitImpl) GetConfigPath() string {

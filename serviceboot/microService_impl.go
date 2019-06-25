@@ -107,7 +107,7 @@ func (ms *grpcMicroServiceImpl) Start(ctx context.Context, serviceConfig *Servic
 	ms.service.RegisterServer(server)
 	lis, err1 := net.Listen("tcp4", serviceConfig.GetServiceEndpoint())
 	if err1 != nil {
-		return ms.errorService.WrappedSystemError(err1)
+		return ms.errorService.SystemError("启动RPC服务端口失败，请设置：ENV_SERVICE_ENDPOINT", zap.Error(err1))
 	}
 	serviceConfig.serviceEndpoint = lis.Addr().String()
 	ms.logger.Debug("服务地址", zap.String("serviceEndpoint", lis.Addr().String()))
@@ -119,7 +119,7 @@ func (ms *grpcMicroServiceImpl) Start(ctx context.Context, serviceConfig *Servic
 	}
 	// 注册服务
 	ms.logger.Debug("开始注册服务")
-	return etcdsd.RegisterService(ctx, etcdClient, serviceInfo, serviceConfig.GetServiceEndpoint(), ms.managerService.GetEndpoint(), "", ms.errorService, ms.logger)
+	return etcdsd.RegisterService(ctx, etcdClient, serviceInfo, serviceConfig.GetServiceEndpoint(), ms.managerService.GetEndpoint(), serviceBoot.extentData, ms.errorService, ms.logger)
 }
 
 func (ms *grpcMicroServiceImpl) AddCleanFunc(f func()) {

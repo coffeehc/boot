@@ -60,8 +60,9 @@ func loadServiceConfig(ctx context.Context, errorService errors.Service, logger 
 		return nil, "", err
 	}
 	config.serviceEndpoint = serviceEndpoint
-	if !config.SingleService {
-		config.SingleService = *singleService
+	config.SingleService = *singleService
+	if config.SingleService {
+		logger.Info("启动单体模式")
 	}
 	return config, *configPath, nil
 }

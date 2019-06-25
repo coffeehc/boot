@@ -16,7 +16,7 @@ import (
 const envIPInterfaceName = "NET_INTERFACE"
 
 func GetLocalIP(errorService errors.Service) (string, errors.Error) {
-	if interfaceName, ok := os.LookupEnv(envIPInterfaceName); ok {
+	if interfaceName, ok := os.LookupEnv(envIPInterfaceName); ok && interfaceName != "" {
 		netInterface, err := net.InterfaceByName(interfaceName)
 		if err != nil {
 			return "", errorService.SystemError(fmt.Sprintf("获取指定网络接口[s%]失败", interfaceName))
@@ -57,7 +57,7 @@ func WarpServerAddr(serviceAddr string, errorService errors.Service) (string, er
 	if addr.IP.Equal(net.IPv4zero) {
 		localIp, err := GetLocalIP(errorService)
 		if err != nil {
-			return "", errorService.WrappedSystemError(err)
+			return "", errorService.SystemError("服务IP地址无效", zap.Error(err))
 		}
 		serverAddr = fmt.Sprintf("%s:%d", localIp, addr.Port)
 	}

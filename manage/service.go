@@ -63,7 +63,7 @@ func NewManageService(serviceInfo *boot.ServiceInfo, errorService errors.Service
 	}
 	lis, err1 := net.Listen("tcp4", manageEndpoint)
 	if err1 != nil {
-		return nil, errorService.WrappedSystemError(err1)
+		return nil, errorService.SystemError("启动ManageServer失败，请设置：ENV_MANAGE_ENDPOINT,或者--env_manage_endpoint", zap.Error(err1))
 	}
 	manageEndpoint = lis.Addr().String()
 	lis.Close()

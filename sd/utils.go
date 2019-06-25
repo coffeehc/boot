@@ -10,7 +10,7 @@ type ServiceRegisterInfo struct {
 	ServiceInfo    *boot.ServiceInfo `json:"info"`
 	ServerAddr     string            `json:"server_addr"`
 	ManageEndpoint string            `json:"manage_endpoint"`
-	Data           string            `json:"data"`
+	Metadata       map[string]string `json:"metadata,omitempty"`
 }
 
 func BuildServiceKeyPrefix(serviceInfo *boot.ServiceInfo) string {

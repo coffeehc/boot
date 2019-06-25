@@ -100,5 +100,7 @@ func (impl *serviceKitImpl) RPCServiceInitialization(rpcService serviceboot.RPCS
 	}
 	impl.logger.Debug("初始化RPCService", logs.F_ExtendData(rpcService.GetRPCServiceInfo()))
 	return rpcService.InitRPCService(impl.ctx, conn, errorService, impl.logger)
+}
 
+func (impl *serviceKitImpl) SetExtentData(data map[string]string) {
 }

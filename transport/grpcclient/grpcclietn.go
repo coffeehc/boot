@@ -69,13 +69,19 @@ func (impl *grpcClientImpl) NewClientConn(ctx context.Context, serviceInfo *boot
 func NewClientConn(ctx context.Context, errorService errors.Service, logger *zap.Logger, serverAddr string) (*grpc.ClientConn, errors.Error) {
 	opts := []grpc.DialOption{
 		grpc.WithBackoffMaxDelay(time.Second * 10),
+		grpc.WithAuthority(boot.RunModel()),
 		grpc.WithDefaultCallOptions(grpc.UseCompressor("gzip"), grpc.FailFast(true)),
 		grpc.WithKeepaliveParams(keepalive.ClientParameters{Time: time.Second * 5, Timeout: time.Second * 10, PermitWithoutStream: false}),
+		grpc.WithBalancerName(roundrobin.Name),
 		grpc.WithUserAgent("coffee's client"),
 		grpc.WithInsecure(),
 		grpc.WithUnaryInterceptor(wapperUnartClientInterceptor(ctx, errorService, logger)),
+		grpc.WithInitialConnWindowSize(10),
+		grpc.WithInitialWindowSize(1024),
+		grpc.WithChannelzParentID(0),
+		grpc.FailOnNonTempDialError(true),
 	}
-	ctx, _ = context.WithTimeout(ctx, time.Second*10)
+	ctx, _ = context.WithTimeout(ctx, time.Second*5)
 	clientConn, err := grpc.DialContext(ctx, serverAddr, opts...)
 	if err != nil {
 		return nil, errorService.WrappedSystemError(err)

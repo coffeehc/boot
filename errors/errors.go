@@ -25,7 +25,7 @@ type baseError struct {
 	Scope   string      `json:"scope"`
 	Code    int32       `json:"code"`
 	Message string      `json:"msg"`
-	Fields  []zap.Field `json:"-"`
+	Fields  []zap.Field `json:"fields,omitempty"`
 }
 
 func (err *baseError) FormatRPCError() string {
