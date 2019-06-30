@@ -2,6 +2,7 @@ package etcdsd
 
 import (
 	"context"
+	"time"
 
 	"git.xiagaogao.com/coffee/boot/errors"
 	"github.com/coreos/etcd/clientv3"
@@ -22,5 +23,11 @@ func NewClient(ctx context.Context, config *Config, errorService errors.Service,
 	if _err != nil {
 		return nil, errorService.WrappedSystemError(_err)
 	}
+	ctx, _ = context.WithTimeout(ctx, time.Second*3)
+	_err = etcdClient.Sync(ctx)
+	if _err != nil {
+		return nil, errorService.SystemError("同步etcd失败", zap.Error(_err))
+	}
+	logger.Info("初始化EtcdClient", zap.Strings("endpoints", etcdClient.Endpoints()))
 	return etcdClient, nil
 }

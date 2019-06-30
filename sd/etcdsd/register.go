@@ -34,7 +34,10 @@ func RegisterService(ctx context.Context, client *clientv3.Client, info *boot.Se
 		for {
 			func() {
 				defer func() {
-					recover()
+					if err := recover(); err != nil {
+						_err := errors.ConverUnkonwError(err, errorService)
+						logger.Error("注册模块异常", _err.GetFieldsWithCause()...)
+					}
 				}()
 				session, err := concurrency.NewSession(client, concurrency.WithTTL(5))
 				if err != nil {
@@ -46,6 +49,7 @@ func RegisterService(ctx context.Context, client *clientv3.Client, info *boot.Se
 					logger.Error("设置注册信息KV失败", zap.Error(err))
 					goto SLEEP
 				}
+				logger.Debug("注册服务成功", zap.String("serviceKey", serviceKey))
 				<-session.Done()
 			SLEEP:
 				time.Sleep(time.Second)

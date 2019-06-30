@@ -104,6 +104,7 @@ func (r *etcdResolver) initServerAddr() []resolver.Address {
 	if err != nil {
 		r.logger.Error("etcd获取服务节点信息失败:%s", zap.Any(logs.K_Cause, err))
 	} else {
+		// r.logger.Debug("获取到节点数据", zap.Strings("endpoints",r.client.Endpoints()))//zap.String("prefix", r.keyPrefix),zap.Any("nodes",getResp))
 		if getResp.Count == 0 {
 			r.logger.Warn(fmt.Sprintf("服务[%s]没有足够的节点使用", r.target.Endpoint))
 		}
@@ -137,7 +138,7 @@ func (r *etcdResolver) watch(addrList []resolver.Address) {
 			case <-timer.C:
 				addrList = r.initServerAddr()
 			case n, closed := <-rch:
-				if closed {
+				if !closed {
 					rch = r.client.Watch(context.Background(), r.keyPrefix, clientv3.WithPrefix())
 					return
 				}
@@ -145,11 +146,12 @@ func (r *etcdResolver) watch(addrList []resolver.Address) {
 					addr := strings.TrimPrefix(string(ev.Kv.Key), r.keyPrefix)
 					switch ev.Type {
 					case mvccpb.PUT:
+						r.logger.Info("获取新的节点", zap.String("addr", addr))
 						if !exist(addrList, addr) {
 							addrList = append(addrList, resolver.Address{Addr: addr, ServerName: r.ServerName})
 						}
 					case mvccpb.DELETE:
-						r.logger.Error("节点丢失", logs.F_ExtendData(addr), zap.String(logs.K_rpcService, r.ServerName))
+						r.logger.Warn("节点丢失", logs.F_ExtendData(addr), zap.String(logs.K_rpcService, r.ServerName))
 						if s, ok := remove(addrList, addr); ok {
 							addrList = s
 						}

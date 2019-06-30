@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"git.xiagaogao.com/coffee/boot"
+	"git.xiagaogao.com/coffee/boot/bootutils"
 	"git.xiagaogao.com/coffee/boot/errors"
 	"git.xiagaogao.com/coffee/boot/logs"
 	"git.xiagaogao.com/coffee/boot/transport/grpcclient"
@@ -23,6 +24,7 @@ type ServiceKit interface {
 	GetConfigPath() string
 	RPCServiceInitialization(rpcService RPCService) errors.Error
 	SetExtentData(data map[string]string)
+	InitExtConfig(config interface{}) errors.Error
 }
 
 type serviceKitImpl struct {
@@ -78,5 +80,8 @@ func (impl *serviceKitImpl) RPCServiceInitialization(rpcService RPCService) erro
 	}
 	impl.logger.Debug("初始化RPCService", logs.F_ExtendData(rpcService.GetRPCServiceInfo()))
 	return rpcService.InitRPCService(impl.ctx, conn, errorService, impl.logger)
+}
 
+func (impl *serviceKitImpl) InitExtConfig(config interface{}) errors.Error {
+	return bootutils.LoadConfig(impl.ctx, impl.configPath, config, impl.errorService, impl.logger)
 }

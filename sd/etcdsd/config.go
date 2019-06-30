@@ -43,12 +43,14 @@ func (config *Config) GetEtcdConfig(errorService errors.Service) (*clientv3.Conf
 		Endpoints:        config.Endpoints,
 		AutoSyncInterval: config.getAutoSyncInterval(),
 		DialTimeout:      config.getDialTimeout(),
-		//TLS:              config.getTLS(),
-		RejectOldCluster: false,
-		DialOptions:      nil,
-		Context:          context.Background(),
-		Username:         config.Username,
-		Password:         config.Password,
+		// TLS:              config.getTLS(),
+		DialKeepAliveTime:    time.Second * 60,
+		DialKeepAliveTimeout: time.Second * 90,
+		RejectOldCluster:     false,
+		DialOptions:          nil,
+		Context:              context.Background(),
+		Username:             config.Username,
+		Password:             config.Password,
 	}, nil
 }
 
