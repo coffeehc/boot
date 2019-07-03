@@ -32,12 +32,12 @@ func (service *ServiceImpl) Stop(cxt context.Context) errors.Error {
 	return nil
 }
 
-func (service *ServiceImpl) GetServiceInfo() boot.ServiceInfo {
+func (service *ServiceImpl) GetServiceInfo() *boot.ServiceInfo {
 	return getServiceInfo()
 }
 
-func getServiceInfo() boot.ServiceInfo {
-	return boot.ServiceInfo{
+func getServiceInfo() *boot.ServiceInfo {
+	return &boot.ServiceInfo{
 		ServiceName: "simple_service",
 		Version:     "0.0.1",
 		Descriptor:  "测试Server",

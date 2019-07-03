@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"git.xiagaogao.com/coffee/boot"
+	"git.xiagaogao.com/coffee/boot/bootutils"
 	"git.xiagaogao.com/coffee/boot/errors"
 	"git.xiagaogao.com/coffee/boot/logs"
 	"git.xiagaogao.com/coffee/boot/sd/etcdsd"
@@ -23,12 +24,12 @@ func BuildServiceKit(testName string, etcdEndPoints []string) (serviceboot.Servi
 		APIDefine:   "",
 		Scheme:      "http",
 	}
-	errorService := errors.NewService(testName)
 	logService, err1 := logs.NewService(serviceInfo)
 	if err1 != nil {
-		return nil, errors.ConverError(err1, errorService)
+		panic(err1.Error())
 	}
 	logger := logService.GetLogger()
+	errorService := errors.NewService(testName, logger)
 	etcdClient, err := etcdsd.NewClient(ctx, &etcdsd.Config{
 		Endpoints:   etcdEndPoints,
 		DialTimeout: int64(3),
@@ -103,4 +104,8 @@ func (impl *serviceKitImpl) RPCServiceInitialization(rpcService serviceboot.RPCS
 }
 
 func (impl *serviceKitImpl) SetExtentData(data map[string]string) {
+}
+
+func (impl *serviceKitImpl) InitExtConfig(config interface{}) errors.Error {
+	return bootutils.LoadConfig(impl.ctx, impl.configPath, config, impl.errorService, impl.logger)
 }

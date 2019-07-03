@@ -30,7 +30,7 @@ func ServiceLaunch(ctx context.Context, service Service, serviceInfo *boot.Servi
 		logger.Error("校验服务信息失败", zap.String(logs.K_Cause, err1.Error()))
 		return
 	}
-	errorService := errors.NewService(serviceInfo.ServiceName)
+
 	ctx = boot.SetServiceName(ctx, serviceInfo.ServiceName)
 	logService, err1 := logs.NewService(serviceInfo)
 	if err1 != nil {
@@ -38,6 +38,7 @@ func ServiceLaunch(ctx context.Context, service Service, serviceInfo *boot.Servi
 		return
 	}
 	logger = logService.GetLogger()
+	errorService := errors.NewService(serviceInfo.ServiceName, logger)
 	boot.PrintServiceInfo(serviceInfo, logger)
 	ctx = boot.SetServiceName(ctx, serviceInfo.ServiceName)
 	serviceConfig, configPath, err := loadServiceConfig(ctx, errorService, logger)
@@ -45,7 +46,7 @@ func ServiceLaunch(ctx context.Context, service Service, serviceInfo *boot.Servi
 		logger.DPanic(err.Error(), err.GetFields()...)
 		return
 	}
-	logger.Debug("运行模式", zap.String("model", boot.RunModel()))
+	logger.Info("运行模式", zap.String("model", boot.RunModel()))
 	microService, err := Launch(ctx, service, serviceInfo, serviceConfig, configPath, errorService, logger, logService)
 	if err != nil {
 		logger.DPanic(err.Error(), err.GetFields()...)
@@ -74,6 +75,6 @@ func Launch(ctx context.Context, service Service, serviceInfo *boot.ServiceInfo,
 	if err != nil {
 		return nil, err
 	}
-	logger.Debug(fmt.Sprintf("核心服务启动成功,服务地址:%s,启动耗时:%s", serviceConfig.GetServiceEndpoint(), time.Since(startTime)))
+	logger.Info(fmt.Sprintf("核心服务启动成功,服务地址:%s,启动耗时:%s", serviceConfig.GetServiceEndpoint(), time.Since(startTime)))
 	return microService, nil
 }

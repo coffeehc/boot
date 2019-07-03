@@ -78,8 +78,12 @@ func (impl *serviceKitImpl) RPCServiceInitialization(rpcService RPCService) erro
 	if err != nil {
 		return err
 	}
-	impl.logger.Debug("初始化RPCService", logs.F_ExtendData(rpcService.GetRPCServiceInfo()))
-	return rpcService.InitRPCService(impl.ctx, conn, errorService, impl.logger)
+	err = rpcService.InitRPCService(impl.ctx, conn, errorService, impl.logger)
+	if err != nil {
+		return err
+	}
+	impl.logger.Info("初始化RPCService成功", logs.F_ExtendData(rpcService.GetRPCServiceInfo()))
+	return nil
 }
 
 func (impl *serviceKitImpl) InitExtConfig(config interface{}) errors.Error {

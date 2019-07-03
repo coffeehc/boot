@@ -137,8 +137,8 @@ func (r *etcdResolver) watch(addrList []resolver.Address) {
 			select {
 			case <-timer.C:
 				addrList = r.initServerAddr()
-			case n, closed := <-rch:
-				if !closed {
+			case n, ok := <-rch:
+				if !ok {
 					rch = r.client.Watch(context.Background(), r.keyPrefix, clientv3.WithPrefix())
 					return
 				}

@@ -42,13 +42,6 @@ func recoverFrom(err interface{}, errorService errors.Service, logger *zap.Logge
 	if err == nil {
 		return nil
 	}
-	e := errors.ConverUnkonwError(err, errorService)
-	if errors.IsSystemError(e) {
-		logger.DPanic(e.Error(), e.GetFields()...)
-	}
-	if errors.IsMessageError(e) {
-		logger.Error(e.Error(), e.GetFields()...)
-	}
 	switch v := err.(type) {
 	case errors.Error:
 		return status.Errorf(18, v.FormatRPCError())

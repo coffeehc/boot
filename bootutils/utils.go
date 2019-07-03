@@ -68,11 +68,11 @@ func WarpServerAddr(serviceAddr string, errorService errors.Service) (string, er
 func LoadConfig(ctx context.Context, configPath string, config interface{}, errorService errors.Service, logger *zap.Logger) errors.Error {
 	data, err := ioutil.ReadFile(configPath)
 	if err != nil {
-		return errorService.WrappedSystemError(err, logs.F_ExtendData(configPath))
+		return errorService.WrappedMessageError(err, logs.F_ExtendData(configPath))
 	}
 	err = yaml.Unmarshal(data, config)
 	if err != nil {
-		return errorService.WrappedSystemError(err, logs.F_ExtendData(configPath))
+		return errorService.WrappedMessageError(err, logs.F_ExtendData(configPath))
 	}
 	return nil
 }

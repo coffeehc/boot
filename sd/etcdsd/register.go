@@ -49,7 +49,7 @@ func RegisterService(ctx context.Context, client *clientv3.Client, info *boot.Se
 					logger.Error("设置注册信息KV失败", zap.Error(err))
 					goto SLEEP
 				}
-				logger.Debug("注册服务成功", zap.String("serviceKey", serviceKey))
+				logger.Info("注册服务成功", zap.String("serviceKey", serviceKey))
 				<-session.Done()
 			SLEEP:
 				time.Sleep(time.Second)

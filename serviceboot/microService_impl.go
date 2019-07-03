@@ -113,7 +113,7 @@ func (ms *grpcMicroServiceImpl) Start(ctx context.Context, serviceConfig *Servic
 	ms.logger.Debug("服务地址", zap.String("serviceEndpoint", lis.Addr().String()))
 	ms.listener = lis
 	go ms.grpcServer.Serve(lis)
-	ms.logger.Debug("服务已正常启动")
+	ms.logger.Info("服务已正常启动", zap.String("serviceEndpoint", lis.Addr().String()))
 	if serviceConfig.DisableServiceRegister {
 		return nil
 	}
