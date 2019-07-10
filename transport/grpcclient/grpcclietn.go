@@ -71,7 +71,7 @@ func NewClientConn(ctx context.Context, errorService errors.Service, logger *zap
 		grpc.WithBackoffMaxDelay(time.Second * 10),
 		grpc.WithAuthority(boot.RunModel()),
 		grpc.WithDefaultCallOptions(grpc.UseCompressor("gzip"), grpc.FailFast(true)),
-		grpc.WithKeepaliveParams(keepalive.ClientParameters{Time: time.Second * 5, Timeout: time.Second * 10, PermitWithoutStream: false}),
+		grpc.WithKeepaliveParams(keepalive.ClientParameters{Time: time.Second * 5, Timeout: time.Second * 15, PermitWithoutStream: true}), //20秒发送一个keepalive
 		grpc.WithBalancerName(roundrobin.Name),
 		grpc.WithUserAgent("coffee's client"),
 		grpc.WithInsecure(),

@@ -45,12 +45,12 @@ func BuildGRPCOptions(ctx context.Context, config *GRPCConfig, serviceInfo *boot
 		grpc.UnaryInterceptor(chainUnaryServer),
 		grpc.KeepaliveParams(keepalive.ServerParameters{
 			MaxConnectionIdle: time.Minute,
-			Timeout:           20 * time.Second,
-			Time:              2 * time.Hour,
+			Timeout:           30 * time.Second, //類似 ClientParameters.Time 不過默認爲 2小時
+			Time:              10 * time.Second, //類似 ClientParameters.Timeout 默認 20秒
 		}),
-		grpc.KeepaliveEnforcementPolicy(keepalive.EnforcementPolicy{
-			MinTime:             time.Minute * 5,
-			PermitWithoutStream: false,
+		grpc.KeepaliveEnforcementPolicy(keepalive.EnforcementPolicy{ //當服務器不允許ping 或 ping 太頻繁超過 MinTime 限制 服務器 會 返回ping失敗 此時 客戶端 不會認爲這個ping是 active RPCs
+			MinTime:             time.Second * 10,
+			PermitWithoutStream: true,
 		}),
 	}
 }
