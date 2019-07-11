@@ -17,9 +17,10 @@ import (
 
 // serviceLaunch Service 启动
 func ServiceLaunch(ctx context.Context, service Service, serviceInfo *boot.ServiceInfo) {
+	ctx, cancelFunc := context.WithCancel(ctx)
 	boot.InitFlags()
 	boot.InitModel()
-	time.LoadLocation("Asia/Shanghai")
+	time.FixedZone("CST", 8*3600)
 	if pflag.Lookup("help") != nil {
 		pflag.PrintDefaults()
 		os.Exit(0)
@@ -59,6 +60,7 @@ func ServiceLaunch(ctx context.Context, service Service, serviceInfo *boot.Servi
 	var sigChan = make(chan os.Signal, 3)
 	signal.Notify(sigChan, os.Interrupt, syscall.SIGTERM)
 	<-sigChan
+	cancelFunc()
 }
 
 // Launch 纯粹的启动微服务,不做系统信令监听

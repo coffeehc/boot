@@ -32,6 +32,9 @@ func RegisterService(ctx context.Context, client *clientv3.Client, info *boot.Se
 	}
 	go func() {
 		for {
+			if ctx.Err() != nil {
+				return
+			}
 			func() {
 				defer func() {
 					if err := recover(); err != nil {
@@ -52,6 +55,9 @@ func RegisterService(ctx context.Context, client *clientv3.Client, info *boot.Se
 				logger.Info("注册服务成功", zap.String("serviceKey", serviceKey))
 				<-session.Done()
 			SLEEP:
+				if ctx.Err() != nil {
+					return
+				}
 				time.Sleep(time.Second)
 			}()
 		}

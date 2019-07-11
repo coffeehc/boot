@@ -23,7 +23,6 @@ func wapperUnartClientInterceptor(ctx context.Context, errorService errors.Servi
 }
 
 func newUnartClientInterceptor(ctx context.Context, errorService errors.Service, logger *zap.Logger) *unartClientInterceptor {
-	errorService = errorService.NewService("grpc")
 	return &unartClientInterceptor{
 		interceptors: make(map[string]*unaryClientInterceptorWapper),
 		rootInterceptor: &unaryClientInterceptorWapper{
@@ -120,5 +119,5 @@ func adapteError(err error, errorService errors.Service, logger *zap.Logger) err
 	if s.Code() == errCode {
 		return errors.ParseError(s.Message())
 	}
-	return errorService.SystemError(fmt.Sprintf("RPC异常-%s", err.Error()), logs.F_Error(err), logs.F_ExtendData(s.Message()))
+	return errorService.SystemErrorIgnoreLog(err.Error()) //fmt.Sprintf("RPC异常-%s", err.Error()), logs.F_Error(err), logs.F_ExtendData(s.Message()))
 }

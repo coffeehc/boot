@@ -28,6 +28,7 @@ type grpcClientImpl struct {
 }
 
 func NewGRPCConnFactory(etcdClient *clientv3.Client, errorService errors.Service, logger *zap.Logger) GRPCConnFactory {
+	errorService = errorService.NewService("grpc")
 	return &grpcClientImpl{etcdClient: etcdClient, errorService: errorService, logger: logger}
 }
 
@@ -43,6 +44,7 @@ func (impl *grpcClientImpl) NewClientConn(ctx context.Context, serviceInfo *boot
 		grpc.WithUserAgent("coffee's client"),
 		grpc.WithInsecure(),
 		grpc.WithUnaryInterceptor(wapperUnartClientInterceptor(ctx, impl.errorService, logger)),
+		// grpc.WithStreamInterceptor()
 		grpc.WithInitialConnWindowSize(10),
 		grpc.WithInitialWindowSize(1024),
 		grpc.WithChannelzParentID(0),
@@ -67,6 +69,7 @@ func (impl *grpcClientImpl) NewClientConn(ctx context.Context, serviceInfo *boot
 }
 
 func NewClientConn(ctx context.Context, errorService errors.Service, logger *zap.Logger, serverAddr string) (*grpc.ClientConn, errors.Error) {
+	errorService = errorService.NewService("grpc")
 	opts := []grpc.DialOption{
 		grpc.WithBackoffMaxDelay(time.Second * 10),
 		grpc.WithAuthority(boot.RunModel()),
@@ -80,6 +83,10 @@ func NewClientConn(ctx context.Context, errorService errors.Service, logger *zap
 		grpc.WithInitialWindowSize(1024),
 		grpc.WithChannelzParentID(0),
 		grpc.FailOnNonTempDialError(true),
+		// grpc.WithDialer(func(s string, duration time.Duration) (conn net.Conn, e error) {
+		// 	logger.Debug("开始链接",zap.String("server",s),zap.Duration("timeout",duration))
+		// 	return net.DialTimeout("tcp", s, duration)
+		// }),
 	}
 	ctx, _ = context.WithTimeout(ctx, time.Second*5)
 	clientConn, err := grpc.DialContext(ctx, serverAddr, opts...)

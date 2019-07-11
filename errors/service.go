@@ -18,6 +18,8 @@ type Service interface {
 	WrappedSystemError(err error, fields ...zap.Field) Error
 	WrappedMessageError(err error, fields ...zap.Field) Error
 	WrappedMessageErrorIgnoreLog(err error, fields ...zap.Field) Error
+	SystemErrorIgnoreLog(message string, fields ...zap.Field) Error
+	WrappedSystemErrorIgnoreLog(err error, fields ...zap.Field) Error
 }
 
 func NewService(scope string, logger *zap.Logger) Service {
@@ -66,6 +68,10 @@ func (impl *serviceImpl) SystemError(message string, fields ...zap.Field) Error 
 	return impl.Error(Error_System, message, fields...)
 }
 
+func (impl *serviceImpl) SystemErrorIgnoreLog(message string, fields ...zap.Field) Error {
+	return impl.Error(Error_System, message, fields...)
+}
+
 func (impl *serviceImpl) MessageErrorIgnoreLog(message string, fields ...zap.Field) Error {
 	return impl.Error(Error_Message, message, fields...)
 }
@@ -86,6 +92,10 @@ func (impl *serviceImpl) WrappedError(errorCode int32, err error, fields ...zap.
 
 func (impl *serviceImpl) WrappedSystemError(err error, fields ...zap.Field) Error {
 	impl.logger.DPanic(err.Error(), fields...)
+	return impl.WrappedError(Error_System, err, fields...)
+}
+
+func (impl *serviceImpl) WrappedSystemErrorIgnoreLog(err error, fields ...zap.Field) Error {
 	return impl.WrappedError(Error_System, err, fields...)
 }
 

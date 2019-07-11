@@ -18,7 +18,6 @@ var (
 )
 
 func newUnaryServerInterceptor(ctx context.Context, errorService errors.Service, logger *zap.Logger) *unaryServerInterceptor {
-	errorService = errorService.NewService("grpc")
 	interceptor := &unaryServerInterceptor{
 		interceptors: make(map[string]*unaryServerInterceptorWapper),
 		rootInterceptor: &unaryServerInterceptorWapper{

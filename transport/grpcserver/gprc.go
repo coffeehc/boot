@@ -16,6 +16,7 @@ import (
 )
 
 func NewServer(ctx context.Context, grpcConfig *GRPCConfig, serviceInfo *boot.ServiceInfo, errorService errors.Service, logger *zap.Logger) (*grpc.Server, errors.Error) {
+	errorService = errorService.NewService("grpc")
 	if grpcConfig == nil {
 		logger.Warn("没有配置GRPCConfig,使用默认配置")
 		grpcConfig = &GRPCConfig{}

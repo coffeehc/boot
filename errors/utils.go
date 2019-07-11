@@ -2,8 +2,10 @@ package errors
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/pquerna/ffjson/ffjson"
+	"go.uber.org/zap"
 )
 
 func ParseError(jsonStr string) Error {
@@ -18,17 +20,20 @@ func ParseError(jsonStr string) Error {
 
 func ConverUnkonwError(err interface{}, errorService Service) Error {
 	if e, ok := err.(error); ok {
-		if IsBaseError(e) {
-			return e.(Error)
-		}
-		return errorService.WrappedSystemError(e)
+		return ConverError(e, errorService)
 	}
-	return errorService.SystemError(fmt.Sprintf("%#v", err))
+	errorService.GetLogger().DPanic("未知异常", zap.Any("err", err))
+	return errorService.SystemErrorIgnoreLog(fmt.Sprintf("%#v", err))
 }
 
 func ConverError(err error, errorService Service) Error {
 	if IsBaseError(err) {
 		return err.(Error)
 	}
-	return errorService.WrappedSystemError(err)
+	if strings.HasPrefix(err.Error(), "context ") {
+		errorService.GetLogger().WithOptions(zap.AddCallerSkip(1)).Error(err.Error())
+		return errorService.SystemErrorIgnoreLog(err.Error())
+	}
+	errorService.GetLogger().DPanic(err.Error())
+	return errorService.WrappedSystemErrorIgnoreLog(err)
 }
