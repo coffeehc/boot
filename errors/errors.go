@@ -1,10 +1,10 @@
 package errors
 
 import (
-	"fmt"
 	"strconv"
 
 	"git.xiagaogao.com/coffee/boot/logs"
+	"github.com/json-iterator/go"
 	"github.com/pquerna/ffjson/ffjson"
 	"go.uber.org/zap"
 )
@@ -25,11 +25,12 @@ type baseError struct {
 	Scope   string      `json:"scope"`
 	Code    int32       `json:"code"`
 	Message string      `json:"msg"`
-	Fields  []zap.Field `json:"fields,omitempty"`
+	Fields  []zap.Field `json:-`
 }
 
 func (err *baseError) FormatRPCError() string {
-	return fmt.Sprintf(`{"scope":"rpc","code":%d,"msg":"%s"}`, err.Code, err.Message)
+	json, _ := jsoniter.MarshalToString(err)
+	return json
 }
 
 func (err *baseError) AddFields(fields ...zap.Field) {

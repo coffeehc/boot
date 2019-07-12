@@ -19,11 +19,11 @@ func GetLocalIP(errorService errors.Service) (string, errors.Error) {
 	if interfaceName, ok := os.LookupEnv(envIPInterfaceName); ok && interfaceName != "" {
 		netInterface, err := net.InterfaceByName(interfaceName)
 		if err != nil {
-			return "", errorService.SystemError(fmt.Sprintf("获取指定网络接口[s%]失败", interfaceName))
+			return "", errorService.SystemError("获取指定网络接口失败", zap.String("interfaceName", interfaceName))
 		}
 		addrs, err := netInterface.Addrs()
 		if err != nil || len(addrs) == 0 {
-			return "", errorService.SystemError(fmt.Sprintf("获取指定网络接口[s%]地址失败", interfaceName))
+			return "", errorService.SystemError("获取指定网络接口地址失败", zap.String("interfaceName", interfaceName))
 		}
 		return getActiveIP(addrs, errorService)
 	}

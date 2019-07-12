@@ -9,7 +9,10 @@ import (
 	"git.xiagaogao.com/coffee/boot/errors"
 	"git.xiagaogao.com/coffee/boot/sd/etcdsd"
 	_ "git.xiagaogao.com/coffee/boot/transport"
+	"git.xiagaogao.com/coffee/boot/transport/grpcrecovery"
 	"github.com/coreos/etcd/clientv3"
+	"github.com/grpc-ecosystem/go-grpc-middleware"
+	"github.com/grpc-ecosystem/go-grpc-prometheus"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/balancer/roundrobin"
@@ -35,6 +38,14 @@ func NewGRPCConnFactory(etcdClient *clientv3.Client, errorService errors.Service
 func (impl *grpcClientImpl) NewClientConn(ctx context.Context, serviceInfo *boot.ServiceInfo, block bool, defaultAddr ...string) (*grpc.ClientConn, errors.Error) {
 	ctx = boot.SetServiceName(ctx, serviceInfo.ServiceName)
 	logger := impl.logger.WithOptions(zap.Fields(zap.String("rpc_t", serviceInfo.ServiceName)))
+	chainUnaryClient := grpc_middleware.ChainUnaryClient(
+		grpc_prometheus.UnaryClientInterceptor,
+		grpcrecovery.UnaryClientInterceptor(impl.errorService, logger),
+	)
+	chainStreamClient := grpc_middleware.ChainStreamClient(
+		grpc_prometheus.StreamClientInterceptor,
+		grpcrecovery.StreamClientInterceptor(impl.errorService, logger),
+	)
 	opts := []grpc.DialOption{
 		grpc.WithBackoffMaxDelay(time.Second * 10),
 		grpc.WithAuthority(boot.RunModel()),
@@ -43,8 +54,8 @@ func (impl *grpcClientImpl) NewClientConn(ctx context.Context, serviceInfo *boot
 		grpc.WithBalancerName(roundrobin.Name),
 		grpc.WithUserAgent("coffee's client"),
 		grpc.WithInsecure(),
-		grpc.WithUnaryInterceptor(wapperUnartClientInterceptor(ctx, impl.errorService, logger)),
-		// grpc.WithStreamInterceptor()
+		grpc.WithUnaryInterceptor(chainUnaryClient),
+		grpc.WithStreamInterceptor(chainStreamClient),
 		grpc.WithInitialConnWindowSize(10),
 		grpc.WithInitialWindowSize(1024),
 		grpc.WithChannelzParentID(0),
@@ -70,6 +81,14 @@ func (impl *grpcClientImpl) NewClientConn(ctx context.Context, serviceInfo *boot
 
 func NewClientConn(ctx context.Context, errorService errors.Service, logger *zap.Logger, serverAddr string) (*grpc.ClientConn, errors.Error) {
 	errorService = errorService.NewService("grpc")
+	chainUnaryClient := grpc_middleware.ChainUnaryClient(
+		grpc_prometheus.UnaryClientInterceptor,
+		grpcrecovery.UnaryClientInterceptor(errorService, logger),
+	)
+	chainStreamClient := grpc_middleware.ChainStreamClient(
+		grpc_prometheus.StreamClientInterceptor,
+		grpcrecovery.StreamClientInterceptor(errorService, logger),
+	)
 	opts := []grpc.DialOption{
 		grpc.WithBackoffMaxDelay(time.Second * 10),
 		grpc.WithAuthority(boot.RunModel()),
@@ -78,15 +97,12 @@ func NewClientConn(ctx context.Context, errorService errors.Service, logger *zap
 		grpc.WithBalancerName(roundrobin.Name),
 		grpc.WithUserAgent("coffee's client"),
 		grpc.WithInsecure(),
-		grpc.WithUnaryInterceptor(wapperUnartClientInterceptor(ctx, errorService, logger)),
+		grpc.WithUnaryInterceptor(chainUnaryClient),
+		grpc.WithStreamInterceptor(chainStreamClient),
 		grpc.WithInitialConnWindowSize(10),
 		grpc.WithInitialWindowSize(1024),
 		grpc.WithChannelzParentID(0),
 		grpc.FailOnNonTempDialError(true),
-		// grpc.WithDialer(func(s string, duration time.Duration) (conn net.Conn, e error) {
-		// 	logger.Debug("开始链接",zap.String("server",s),zap.Duration("timeout",duration))
-		// 	return net.DialTimeout("tcp", s, duration)
-		// }),
 	}
 	ctx, _ = context.WithTimeout(ctx, time.Second*5)
 	clientConn, err := grpc.DialContext(ctx, serverAddr, opts...)
