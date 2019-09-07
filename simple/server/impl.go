@@ -1,7 +1,7 @@
 package main
 
 import (
-	"git.xiagaogao.com/coffee/boot/errors"
+	"git.xiagaogao.com/coffee/boot/base/errors"
 	"git.xiagaogao.com/coffee/boot/simple/simplemodel"
 	"go.uber.org/zap"
 	"golang.org/x/net/context"
@@ -9,7 +9,7 @@ import (
 
 type _GreeterServer struct {
 	logger       *zap.Logger
-	errorService errors.Service
+	errorService xerror.Service
 }
 
 func (server *_GreeterServer) SayHello(cxt context.Context, request *simplemodel.Request) (*simplemodel.Response, error) {

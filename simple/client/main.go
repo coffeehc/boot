@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"git.xiagaogao.com/coffee/boot"
-	"git.xiagaogao.com/coffee/boot/errors"
+	"git.xiagaogao.com/coffee/boot/base/errors"
 	"git.xiagaogao.com/coffee/boot/logs"
 	"git.xiagaogao.com/coffee/boot/serviceboot"
 	"git.xiagaogao.com/coffee/boot/simple"
@@ -24,20 +24,20 @@ type serviceImpl struct {
 	logger     *zap.Logger
 }
 
-func (impl *serviceImpl) Init(cxt context.Context, serviceKit serviceboot.ServiceKit) errors.Error {
+func (impl *serviceImpl) Init(cxt context.Context, serviceKit serviceboot.ServiceKit) xerror.Error {
 	impl.rpcService = &simple.RPCService{}
 	impl.logger = serviceKit.GetLogger()
 	impl.logger.Debug(fmt.Sprintf("cf is %#v", serviceKit.GetGRPCConnFactory()))
 	serviceKit.RPCServiceInitialization(impl.rpcService)
 	return nil
 }
-func (impl *serviceImpl) Run(cxt context.Context) errors.Error {
+func (impl *serviceImpl) Run(cxt context.Context) xerror.Error {
 	go func() {
 		client := impl.rpcService.GetClient()
 		for i := int64(0); i < 100000000; i++ {
 			resp, err := client.SayHello(cxt, &simplemodel.Request{fmt.Sprintf("coffee-%d", i), i})
 			if err != nil {
-				impl.logger.Error(fmt.Sprintf("全程调用异常%#v", err), logs.F_ExtendData(err))
+				impl.logger.Error(fmt.Sprintf("全程调用异常%#v", err), xlog.F_ExtendData(err))
 				continue
 			}
 			impl.logger.Debug(resp.GetMessage())
@@ -46,10 +46,10 @@ func (impl *serviceImpl) Run(cxt context.Context) errors.Error {
 	}()
 	return nil
 }
-func (impl *serviceImpl) Stop(cxt context.Context) errors.Error {
+func (impl *serviceImpl) Stop(cxt context.Context) xerror.Error {
 	return nil
 }
-func (impl *serviceImpl) RegisterServer(s *grpc.Server) errors.Error {
+func (impl *serviceImpl) RegisterServer(s *grpc.Server) xerror.Error {
 	return nil
 }
 func (impl *serviceImpl) GetServiceInfo() boot.ServiceInfo {

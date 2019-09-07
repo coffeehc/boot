@@ -3,15 +3,16 @@ package testutils
 import (
 	"context"
 
-	"git.xiagaogao.com/coffee/boot"
+	"git.xiagaogao.com/coffee/boot/base/errors"
 	"git.xiagaogao.com/coffee/boot/bootutils"
-	"git.xiagaogao.com/coffee/boot/errors"
-	"git.xiagaogao.com/coffee/boot/logs"
-	"git.xiagaogao.com/coffee/boot/sd/etcdsd"
+	"git.xiagaogao.com/coffee/boot/discover/etcdsd"
 	"git.xiagaogao.com/coffee/boot/serviceboot"
-	"git.xiagaogao.com/coffee/boot/transport/grpcclient"
+	"git.xiagaogao.com/coffee/boot/transport/grpc/grpcclient"
+	"git.xiagaogao.com/coffee/boot/xerror"
+	"git.xiagaogao.com/coffee/boot/xlog"
 	"github.com/coreos/etcd/clientv3"
 	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
 )
 
 func BuildServiceKit(testName string, etcdEndPoints []string) (serviceboot.ServiceKit, errors.Error) {
@@ -24,22 +25,23 @@ func BuildServiceKit(testName string, etcdEndPoints []string) (serviceboot.Servi
 		APIDefine:   "",
 		Scheme:      "http",
 	}
-	logService, err1 := logs.NewService(serviceInfo)
+	logService, err1 := log.NewService(serviceInfo)
 	if err1 != nil {
 		panic(err1.Error())
 	}
-	logger := logService.GetLogger()
+	logger, _ := zap.NewDevelopment(zap.AddStacktrace(zapcore.DPanicLevel))
 	errorService := errors.NewService(testName, logger)
-	etcdClient, err := etcdsd.NewClient(ctx, &etcdsd.Config{
+	etcdClient, err := etcdsd.newClient(ctx, &etcdsd.Config{
 		Endpoints:   etcdEndPoints,
 		DialTimeout: int64(3),
 	}, errorService, logger)
 	if err != nil {
-		logger.Error("初始化注册中心失败", logs.F_Error(err))
+		logger.Error("初始化注册中心失败", log.F_Error(err))
 		return nil, err
 	}
 	logger.Debug("Etcd客户端初始化完成")
 	grpcConnFactory := grpcclient.NewGRPCConnFactory(etcdClient, errorService, logger)
+
 	return &serviceKitImpl{
 		logger:          logger,
 		errorService:    errorService,
@@ -56,7 +58,7 @@ func BuildServiceKit(testName string, etcdEndPoints []string) (serviceboot.Servi
 type serviceKitImpl struct {
 	logger          *zap.Logger
 	errorService    errors.Service
-	loggerService   logs.Service
+	loggerService   log.Service
 	etcdClient      *clientv3.Client
 	serviceInfo     *boot.ServiceInfo
 	grpcConnFactory grpcclient.GRPCConnFactory
@@ -75,7 +77,7 @@ func (impl *serviceKitImpl) GetLogger() *zap.Logger {
 func (impl *serviceKitImpl) GetRootErrorService() errors.Service {
 	return impl.errorService
 }
-func (impl *serviceKitImpl) GetLoggerService() logs.Service {
+func (impl *serviceKitImpl) GetLoggerService() log.Service {
 	return impl.loggerService
 }
 func (impl *serviceKitImpl) GetEtcdClient() *clientv3.Client {
@@ -99,7 +101,7 @@ func (impl *serviceKitImpl) RPCServiceInitialization(rpcService serviceboot.RPCS
 	if err != nil {
 		return err
 	}
-	impl.logger.Debug("初始化RPCService", logs.F_ExtendData(rpcService.GetRPCServiceInfo()))
+	impl.logger.Debug("初始化RPCService", log.F_ExtendData(rpcService.GetRPCServiceInfo()))
 	return rpcService.InitRPCService(impl.ctx, conn, errorService, impl.logger)
 }
 

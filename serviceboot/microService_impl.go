@@ -7,18 +7,18 @@ import (
 
 	"git.xiagaogao.com/base/cloudcommons/utils"
 	"git.xiagaogao.com/coffee/boot"
-	"git.xiagaogao.com/coffee/boot/errors"
+	"git.xiagaogao.com/coffee/boot/base/errors"
 	"git.xiagaogao.com/coffee/boot/logs"
 	"git.xiagaogao.com/coffee/boot/manage"
 	"git.xiagaogao.com/coffee/boot/sd/etcdsd"
-	"git.xiagaogao.com/coffee/boot/transport/grpcclient"
-	"git.xiagaogao.com/coffee/boot/transport/grpcserver"
+	"git.xiagaogao.com/coffee/boot/transport/grpc/grpcclient"
+	"git.xiagaogao.com/coffee/boot/transport/grpc/grpcserver"
 	"github.com/coreos/etcd/clientv3"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
 )
 
-func newMicroService(ctx context.Context, service Service, serviceInfo *boot.ServiceInfo, configPath string, errorService errors.Service, logger *zap.Logger, loggerService logs.Service) (MicroService, errors.Error) {
+func newMicroService(ctx context.Context, service Service, serviceInfo *boot.ServiceInfo, configPath string, errorService xerror.Service, logger *zap.Logger, loggerService xlog.Service) (MicroService, xerror.Error) {
 	errorService = errorService.NewService("boot")
 	if service == nil {
 		return nil, errorService.MessageError("没有service实例")
@@ -41,7 +41,7 @@ func newMicroService(ctx context.Context, service Service, serviceInfo *boot.Ser
 
 type grpcMicroServiceImpl struct {
 	managerService manage.Service
-	errorService   errors.Service
+	errorService   xerror.Service
 	service        Service
 	config         *grpcserver.GRPCConfig
 	grpcServer     *grpc.Server
@@ -51,11 +51,11 @@ type grpcMicroServiceImpl struct {
 	etcdClient     *clientv3.Client
 	logger         *zap.Logger
 	configPath     string
-	loggerService  logs.Service
+	loggerService  xlog.Service
 	serviceInfo    *boot.ServiceInfo
 }
 
-func (ms *grpcMicroServiceImpl) Start(ctx context.Context, serviceConfig *ServiceConfig) (err errors.Error) {
+func (ms *grpcMicroServiceImpl) Start(ctx context.Context, serviceConfig *ServiceConfig) (err xerror.Error) {
 	ms.serviceConfig = serviceConfig
 	serviceInfo := ms.serviceInfo
 	server, err := grpcserver.NewServer(ctx, serviceConfig.GrpcConfig, serviceInfo, ms.errorService, ms.logger)
@@ -67,7 +67,7 @@ func (ms *grpcMicroServiceImpl) Start(ctx context.Context, serviceConfig *Servic
 	if ms.serviceConfig.SingleService {
 		serviceConfig.DisableServiceRegister = true
 	} else {
-		etcdClient, err = etcdsd.NewClient(ctx, serviceConfig.EtcdConfig, ms.errorService, ms.logger)
+		etcdClient, err = etcdsd.newClient(ctx, serviceConfig.EtcdConfig, ms.errorService, ms.logger)
 		if err != nil {
 			return err
 		}
@@ -93,7 +93,7 @@ func (ms *grpcMicroServiceImpl) Start(ctx context.Context, serviceConfig *Servic
 	ms.grpcServer = server
 	defer func() {
 		if err1 := recover(); err1 != nil {
-			if e, ok := err1.(errors.Error); ok {
+			if e, ok := err1.(xerror.Error); ok {
 				err = e
 				return
 			}
@@ -147,7 +147,7 @@ func (ms *grpcMicroServiceImpl) Stop(ctx context.Context) {
 		func() {
 			defer func() {
 				if err := recover(); err != nil {
-					ms.logger.DPanic("clean func painc", zap.Any(logs.K_Cause, err))
+					ms.logger.DPanic("clean func painc", zap.Any(xlog.K_Cause, err))
 				}
 			}()
 			f()

@@ -4,33 +4,27 @@ import (
 	"context"
 
 	"git.xiagaogao.com/coffee/boot"
+	"git.xiagaogao.com/coffee/boot/base/errors"
 	"git.xiagaogao.com/coffee/boot/bootutils"
-	"git.xiagaogao.com/coffee/boot/errors"
 	"git.xiagaogao.com/coffee/boot/logs"
-	"git.xiagaogao.com/coffee/boot/transport/grpcclient"
+	"git.xiagaogao.com/coffee/boot/transport/grpc/grpcclient"
 	"github.com/coreos/etcd/clientv3"
 	"go.uber.org/zap"
 )
 
 type ServiceKit interface {
-	GetLogger() *zap.Logger
-	GetRootErrorService() errors.Service
-	GetLoggerService() logs.Service
 	GetEtcdClient() *clientv3.Client
 	GetServiceInfo() *boot.ServiceInfo
 	GetServerAddr() string
 	GetGRPCConnFactory() grpcclient.GRPCConnFactory
 	GetContext() context.Context
 	GetConfigPath() string
-	RPCServiceInitialization(rpcService RPCService) errors.Error
+	RPCServiceInitialization(rpcService RPCService) xerror.Error
 	SetExtentData(data map[string]string)
-	InitExtConfig(config interface{}) errors.Error
+	InitExtConfig(config interface{}) xerror.Error
 }
 
 type serviceKitImpl struct {
-	logger          *zap.Logger
-	errorService    errors.Service
-	loggerService   logs.Service
 	etcdClient      *clientv3.Client
 	serviceInfo     *boot.ServiceInfo
 	grpcConnFactory grpcclient.GRPCConnFactory
@@ -47,16 +41,6 @@ func (impl *serviceKitImpl) SetExtentData(data map[string]string) {
 func (impl *serviceKitImpl) GetConfigPath() string {
 	return impl.configPath
 }
-
-func (impl *serviceKitImpl) GetLogger() *zap.Logger {
-	return impl.logger
-}
-func (impl *serviceKitImpl) GetRootErrorService() errors.Service {
-	return impl.errorService
-}
-func (impl *serviceKitImpl) GetLoggerService() logs.Service {
-	return impl.loggerService
-}
 func (impl *serviceKitImpl) GetEtcdClient() *clientv3.Client {
 	return impl.etcdClient
 }
@@ -72,20 +56,20 @@ func (impl *serviceKitImpl) GetGRPCConnFactory() grpcclient.GRPCConnFactory {
 func (impl *serviceKitImpl) GetContext() context.Context {
 	return impl.ctx
 }
-func (impl *serviceKitImpl) RPCServiceInitialization(rpcService RPCService) errors.Error {
-	errorService := impl.errorService.NewService("rpc")
+func (impl *serviceKitImpl) RPCServiceInitialization(rpcService RPCService) xerror.Error {
+	errorService := xerror.GetErrorService().NewService("rpc")
 	conn, err := impl.grpcConnFactory.NewClientConn(impl.ctx, rpcService.GetRPCServiceInfo(), false)
 	if err != nil {
 		return err
 	}
-	err = rpcService.InitRPCService(impl.ctx, conn, errorService, impl.logger)
+	err = rpcService.InitRPCService(impl.ctx, conn, errorService)
 	if err != nil {
 		return err
 	}
-	impl.logger.Info("初始化RPCService成功", logs.F_ExtendData(rpcService.GetRPCServiceInfo()))
+	xlog.Info("初始化RPCService成功", xlog.F_ExtendData(rpcService.GetRPCServiceInfo()))
 	return nil
 }
 
-func (impl *serviceKitImpl) InitExtConfig(config interface{}) errors.Error {
-	return bootutils.LoadConfig(impl.ctx, impl.configPath, config, impl.errorService, impl.logger)
+func (impl *serviceKitImpl) InitExtConfig(config interface{}) xerror.Error {
+	return bootutils.LoadConfig(impl.ctx, impl.configPath, config)
 }

@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"git.xiagaogao.com/coffee/boot"
-	"git.xiagaogao.com/coffee/boot/errors"
+	"git.xiagaogao.com/coffee/boot/base/errors"
 	"git.xiagaogao.com/coffee/boot/simple/simplemodel"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
@@ -12,7 +12,7 @@ import (
 
 type RPCService struct {
 	client       simplemodel.GreeterClient
-	errorService errors.Service
+	errorService xerror.Service
 	logger       *zap.Logger
 }
 
@@ -24,7 +24,7 @@ func (impl *RPCService) GetRPCServiceInfo() boot.ServiceInfo {
 		Scheme:      "http",
 	}
 }
-func (impl *RPCService) InitRPCService(ctx context.Context, grpcConn *grpc.ClientConn, errorService errors.Service, logger *zap.Logger) errors.Error {
+func (impl *RPCService) InitRPCService(ctx context.Context, grpcConn *grpc.ClientConn, errorService xerror.Service, logger *zap.Logger) xerror.Error {
 	client := simplemodel.NewGreeterClient(grpcConn)
 	impl.logger = logger
 	impl.errorService = errorService
