@@ -5,6 +5,7 @@ import (
 	"sync"
 
 	"git.xiagaogao.com/coffee/boot/base/log"
+	"git.xiagaogao.com/coffee/boot/base/utils"
 	"github.com/spf13/viper"
 	"go.uber.org/zap"
 )
@@ -17,6 +18,7 @@ var rootCtx context.Context
 func InitConfiguration(ctx context.Context, serviceInfo ServiceInfo) {
 	initServiceConfig(ctx)
 	initServiceInfo(ctx, serviceInfo)
+	viper.MergeInConfig()
 	loadRemortConfigProvider(ctx)
 }
 
@@ -25,7 +27,7 @@ func initServiceInfo(ctx context.Context, serviceInfo ServiceInfo) {
 		rootCtx = ctx
 	}
 	viper.SetDefault("version", "0.0.0")
-	viper.SetDefault("scheme", MicorServiceProtocolScheme)
+	viper.SetDefault("scheme", MicroServiceProtocolScheme)
 	err := viper.Unmarshal(&serviceInfo)
 	if err != nil {
 		log.Fatal("加载ServiceInfo失败", zap.Error(err))
@@ -34,8 +36,13 @@ func initServiceInfo(ctx context.Context, serviceInfo ServiceInfo) {
 		log.Fatal("服务名没有设置")
 	}
 	currentServiceInfo = serviceInfo
+	localIp, err1 := utils.GetLocalIP()
+	if err1 != nil {
+		log.Fatal("获取本季IP失败", err1.GetFieldsWithCause()...)
+	}
+	log.SetBaseFields(zap.String("serviceName", serviceInfo.ServiceName), zap.String("localIp", localIp.String()))
 	viper.MergeInConfig()
-	log.Debug("加载服务信息", zap.String("version", serviceInfo.Version), zap.String("scheme", serviceInfo.Scheme), zap.String("APIDefine", serviceInfo.APIDefine), zap.String("Descriptor", serviceInfo.Descriptor))
+	log.Debug("加载服务信息", zap.Any("serviceInfo", serviceInfo))
 }
 
 func initServiceConfig(ctx context.Context) {
@@ -47,6 +54,7 @@ func initServiceConfig(ctx context.Context) {
 	if rootCtx == nil {
 		rootCtx = ctx
 	}
+	viper.RegisterAlias("model", "RUN_MODEL")
 	log.InitLogger(true)
 	conf := &ServiceConfig{}
 	err := viper.Unmarshal(conf)
@@ -58,14 +66,17 @@ func initServiceConfig(ctx context.Context) {
 	}
 	defaultServiceConfig = conf
 	viper.MergeInConfig()
-	log.Debug("加载基础配置", zap.String("model", conf.Model), zap.String("RemoteConfigProvide", conf.RemoteConfigProvide))
+	log.Debug("加载基础配置", zap.String("model", conf.Model), zap.Any("RemoteConfigProvide", conf.RemoteConfigProvide))
 }
+
 func loadRemortConfigProvider(ctx context.Context) error {
-	if defaultServiceConfig.RemoteConfigProvide != "" {
+	if defaultServiceConfig.RemoteConfigProvide != nil {
+		log.Debug("加载远程配置")
+		configProvide := defaultServiceConfig.RemoteConfigProvide
 		// TODO
+		viper.AddRemoteProvider(configProvide.Provider, configProvide.Endpoint, configProvide.Path)
+		viper.ReadRemoteConfig()
 	}
-	viper.MergeInConfig()
-	log.Debug("加载远程配置")
 	return nil
 }
 

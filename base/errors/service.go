@@ -1,9 +1,5 @@
 package errors
 
-import (
-	"go.uber.org/zap"
-)
-
 func buildError(errorCode int64, message string) Error {
 	return &baseError{
 		Code:    errorCode,
@@ -14,7 +10,7 @@ func SystemError(message string) Error {
 	return buildError(ErrorSystem, message)
 }
 
-func MessageError(message string, fields ...zap.Field) Error {
+func MessageError(message string) Error {
 	return buildError(ErrorMessage, message)
 }
 

@@ -1,3 +1,3 @@
 package configuration
 
-const MicorServiceProtocolScheme = "micor"
+const MicroServiceProtocolScheme = "micro"

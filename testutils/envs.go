@@ -1,11 +1,8 @@
 package testutils
 
-import "os"
+import "git.xiagaogao.com/coffee/boot/configuration"
 
-func SetENVRunModel(model string) {
-	os.Setenv("ENV_RUN_MODEL", model)
-}
+func InitTestEvent() {
+	configuration.SetModel("dev")
 
-func SetLoggerLevel(level string) {
-	os.Setenv("ENV_LOGGER_LEVEL", level)
 }

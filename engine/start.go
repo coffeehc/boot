@@ -16,7 +16,8 @@ import (
 )
 
 func StartEngine(ctx context.Context, serviceInfo configuration.ServiceInfo, loadPlugins func(ctx context.Context), start func(ctx context.Context, cmd *cobra.Command, args []string) error) {
-	InitService(ctx, serviceInfo)
+	ctx, cancelFunc := context.WithCancel(ctx)
+	initService(ctx, serviceInfo)
 	var rootCmd = &cobra.Command{
 		Use:   configuration.GetServiceName(),
 		Short: fmt.Sprintf("%s 服务", configuration.GetServiceName()),
@@ -30,10 +31,14 @@ func StartEngine(ctx context.Context, serviceInfo configuration.ServiceInfo, loa
 					if e := recover(); e != nil {
 						err := errors.ConverUnknowError(e)
 						log.DPanic("程序捕获不能处理的异常", err.GetFieldsWithCause()...)
-						sigChan <- syscall.SIGKILL
+						cancelFunc()
 					}
 				}()
-				start(ctx, cmd, args)
+				err := start(ctx, cmd, args)
+				if err != nil {
+					log.Error("启动服务失败", zap.Error(err))
+					cancelFunc()
+				}
 				plugin.StartPlugins(ctx)
 				log.Info("服务启动完成")
 			}()

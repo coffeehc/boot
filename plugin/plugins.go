@@ -48,3 +48,28 @@ func StopPlugins(ctx context.Context) {
 		log.Info("关闭插件", zap.String("pluginName", name))
 	}
 }
+
+func RegisterPluginByFast(name string, start func(ctx context.Context) errors.Error, stop func(ctx context.Context) errors.Error) {
+	RegisterPlugin(name, &pluginImpl{
+		stop:  stop,
+		start: start,
+	})
+}
+
+type pluginImpl struct {
+	start func(ctx context.Context) errors.Error
+	stop  func(ctx context.Context) errors.Error
+}
+
+func (impl *pluginImpl) Start(ctx context.Context) errors.Error {
+	if impl.start != nil {
+		return impl.start(ctx)
+	}
+	return nil
+}
+func (impl *pluginImpl) Stop(ctx context.Context) errors.Error {
+	if impl.stop != nil {
+		return impl.stop(ctx)
+	}
+	return nil
+}

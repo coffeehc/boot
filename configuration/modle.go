@@ -10,6 +10,12 @@ type ServiceInfo struct {
 
 // 以下是本地配置，不可变更
 type ServiceConfig struct {
-	Model               string // 模式
-	RemoteConfigProvide string // 远程配置中心地址
+	Model               string               // 模式
+	RemoteConfigProvide *RemoteConfigProvide // 远程配置中心地址
+}
+
+type RemoteConfigProvide struct {
+	Provider string
+	Endpoint string
+	Path     string
 }

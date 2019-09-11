@@ -3,7 +3,7 @@ package pluginutils
 import (
 	"context"
 
-	"git.xiagaogao.com/coffee/boot/plugin"
+	"git.xiagaogao.com/coffee/boot/component/etcdsd"
 	"git.xiagaogao.com/coffee/boot/plugin/discovery"
 	"git.xiagaogao.com/coffee/boot/plugin/manage"
 	"git.xiagaogao.com/coffee/boot/plugin/register"
@@ -11,10 +11,9 @@ import (
 )
 
 func EnableMicorPlugin(ctx context.Context) {
-	plugin.EnablePlugins(ctx,
-		rpc.EnablePlugin,
-		discovery.EnablePlugin,
-		manage.EnablePlugin,
-		register.EnablePlugin,
-	)
+	rpc.EnablePlugin(ctx)
+	etcdsd.InitEtcdClient()
+	discovery.EnablePlugin(ctx)
+	manage.EnablePlugin(ctx)
+	register.EnablePlugin(ctx)
 }

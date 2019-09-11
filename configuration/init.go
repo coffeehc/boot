@@ -1,10 +1,13 @@
 package configuration
 
 import (
-	"fmt"
+	"flag"
+	"os"
 
+	"git.xiagaogao.com/coffee/boot/base/log"
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
+	"go.uber.org/zap"
 )
 
 const (
@@ -16,20 +19,23 @@ const (
 var configFile = pflag.StringP("config", "c", "", "配置文件路径")
 
 func init() {
+	pflag.CommandLine.AddGoFlagSet(flag.CommandLine)
+	pflag.CommandLine = pflag.NewFlagSet(os.Args[0], pflag.ContinueOnError)
 	if !pflag.Parsed() {
 		pflag.Parse()
 	}
+	viper.BindPFlags(pflag.CommandLine)
 	if *configFile != "" {
 		viper.SetConfigFile(*configFile)
 	} else {
 		viper.AddConfigPath(".")
 		viper.SetConfigName("config")
 	}
-	viper.AutomaticEnv()
 	if err := viper.ReadInConfig(); err != nil {
-		fmt.Println(err)
+		log.Warn("加载日志文件失败", zap.Error(err))
 	}
-
+	viper.SetEnvPrefix("ENV")
+	viper.AutomaticEnv()
 	// 本地配置里面如果有配置远程配置中心的也需要处理
 
 }

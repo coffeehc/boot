@@ -11,12 +11,12 @@ func SetBaseFields(fields ...zap.Field) {
 	resetLoggers()
 }
 
-func AddBaseFields(fields ...zap.Field) {
-	mutex.Lock()
-	baseFields = append(baseFields, fields...)
-	mutex.Unlock()
-	resetLoggers()
-}
+// func AddBaseFields(fields ...zap.Field) {
+// 	mutex.Lock()
+// 	baseFields = append(baseFields, fields...)
+// 	mutex.Unlock()
+// 	resetLoggers()
+// }
 
 func resetLoggers() {
 	defaultLogger = rootLogger.With(baseFields...)

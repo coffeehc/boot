@@ -15,6 +15,7 @@ import (
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/balancer/roundrobin"
+	"google.golang.org/grpc/encoding/gzip"
 	"google.golang.org/grpc/keepalive"
 	"google.golang.org/grpc/resolver"
 )
@@ -35,7 +36,7 @@ func NewClientConnByRegister(ctx context.Context, serviceInfo configuration.Serv
 	opts := []grpc.DialOption{
 		grpc.WithBackoffMaxDelay(time.Second * 10),
 		grpc.WithAuthority(configuration.GetModel()),
-		grpc.WithDefaultCallOptions(grpc.UseCompressor("gzip"), grpc.FailFast(true)),
+		// grpc.WithDefaultCallOptions(grpc.UseCompressor("gzip"), grpc.FailFast(true)),
 		grpc.WithKeepaliveParams(keepalive.ClientParameters{Time: time.Second * 5, Timeout: time.Second * 10, PermitWithoutStream: false}),
 		grpc.WithBalancerName(roundrobin.Name),
 		grpc.WithUserAgent("coffee's client"),
@@ -47,11 +48,20 @@ func NewClientConnByRegister(ctx context.Context, serviceInfo configuration.Serv
 		grpc.WithChannelzParentID(0),
 		grpc.FailOnNonTempDialError(true),
 	}
+	if serviceInfo.Scheme == "" {
+		log.Fatal("没有指定需要链接的ServiceInfo的RPC协议，无法创建链接")
+	}
 	target := fmt.Sprintf("%s://%s/%s", serviceInfo.Scheme, configuration.GetModel(), serviceInfo.ServiceName)
-	if resolver.Get(target) == nil {
-		err := etcdsd.Resolver(ctx, serviceInfo, defaultAddr...)
-		if err != nil {
-			return nil, err
+	log.Debug("需要获取的客户端地址", zap.String("target", target))
+	if resolver.Get(serviceInfo.Scheme) == nil {
+		switch serviceInfo.Scheme {
+		case configuration.MicroServiceProtocolScheme:
+			err := etcdsd.Resolver(ctx)
+			if err != nil {
+				return nil, err
+			}
+		default:
+			log.Fatal("不能识别的协议", zap.String("scheme", serviceInfo.Scheme))
 		}
 	}
 	if block {
@@ -78,7 +88,7 @@ func NewClientConn(ctx context.Context, block bool, serverAddr string) (*grpc.Cl
 	opts := []grpc.DialOption{
 		grpc.WithBackoffMaxDelay(time.Second * 10),
 		grpc.WithAuthority(configuration.GetModel()),
-		grpc.WithDefaultCallOptions(grpc.UseCompressor("gzip"), grpc.FailFast(true)),
+		grpc.WithDefaultCallOptions(grpc.UseCompressor(gzip.Name), grpc.FailFast(true)),
 		grpc.WithKeepaliveParams(keepalive.ClientParameters{Time: time.Second * 5, Timeout: time.Second * 15, PermitWithoutStream: true}), //20秒发送一个keepalive
 		grpc.WithBalancerName(roundrobin.Name),
 		grpc.WithUserAgent("coffee's client"),
@@ -89,6 +99,9 @@ func NewClientConn(ctx context.Context, block bool, serverAddr string) (*grpc.Cl
 		grpc.WithInitialWindowSize(1024),
 		grpc.WithChannelzParentID(0),
 		grpc.FailOnNonTempDialError(true),
+	}
+	if block {
+		opts = append(opts, grpc.WithBlock())
 	}
 	ctx, _ = context.WithTimeout(ctx, time.Second*5)
 	clientConn, err := grpc.DialContext(ctx, serverAddr, opts...)

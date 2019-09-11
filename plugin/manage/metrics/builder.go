@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"time"
 
-	"git.xiagaogao.com/coffee/boot"
+	"git.xiagaogao.com/coffee/boot/configuration"
 	"github.com/prometheus/client_golang/prometheus"
 )
 
@@ -15,7 +15,7 @@ type CollectorOpt struct {
 	ConstLabels prometheus.Labels
 }
 
-func BuildConstLabels(serviceInfo *boot.ServiceInfo, serviceAddr string) (labels prometheus.Labels) {
+func BuildConstLabels(serviceInfo *configuration.ServiceInfo, serviceAddr string) (labels prometheus.Labels) {
 	if serviceInfo != nil {
 		labels["service"] = serviceInfo.ServiceName
 	}

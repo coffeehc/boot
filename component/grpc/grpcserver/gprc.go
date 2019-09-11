@@ -11,6 +11,7 @@ import (
 	"github.com/spf13/viper"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
+	_ "google.golang.org/grpc/encoding/gzip"
 	"google.golang.org/grpc/keepalive"
 )
 
@@ -40,7 +41,6 @@ func buildGRPCOptions(config *GRPCServerConfig) []grpc.ServerOption {
 		grpc_prometheus.StreamServerInterceptor,
 		grpcrecovery.StreamServerInterceptor(),
 	)
-
 	return []grpc.ServerOption{
 		grpc.InitialWindowSize(4096),
 		grpc.InitialConnWindowSize(100),

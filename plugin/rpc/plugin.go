@@ -4,6 +4,7 @@ import (
 	"context"
 	"net"
 	"sync"
+	"time"
 
 	"git.xiagaogao.com/coffee/boot/base/errors"
 	"git.xiagaogao.com/coffee/boot/base/log"
@@ -31,11 +32,9 @@ func EnablePlugin(ctx context.Context) {
 	if server != nil {
 		return
 	}
-	if !viper.IsSet("grpc") {
-		log.Fatal("没有配置grpc")
-	}
 	viper.SetDefault("grpc.MaxConcurrentStreams", 100000)
 	viper.SetDefault("grpc.MaxMsgSize", 1024*1024*4)
+	viper.SetDefault("grpc.RPCServerAddr", "0.0.0.0:0")
 	config := &RpcConfig{}
 	_err := viper.UnmarshalKey("grpc", config)
 	if _err != nil {
@@ -50,7 +49,7 @@ func EnablePlugin(ctx context.Context) {
 	}
 	config.RPCServerAddr, err = utils.WarpServiceAddr(config.RPCServerAddr)
 	if err != nil {
-		log.Fatal("IP地址转换失败", err.GetFieldsWithCause()...)
+		log.Fatal("GRPC服务地址处理失败", err.GetFieldsWithCause()...)
 	}
 	lis, _err := net.Listen("tcp4", config.RPCServerAddr)
 	if _err != nil {
@@ -80,6 +79,7 @@ func (impl *pluginImpl) Start(ctx context.Context) errors.Error {
 			log.Fatal("RPC服务异常关闭", zap.Error(err))
 		}
 	}()
+	time.Sleep(time.Millisecond * 10)
 	log.Debug("启动RPC服务", zap.String("rpcServerAddr", rpcServerAddr))
 	return nil
 }
@@ -104,5 +104,6 @@ func RegisterRPCMotheds(register func(server *grpc.Server)) {
 	if server == nil {
 		log.Error("GRPC服务没有初始化,不能注册")
 	}
+	log.Debug("开始注册RPC接口方法")
 	register(server)
 }

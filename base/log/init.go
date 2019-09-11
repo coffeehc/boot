@@ -56,8 +56,11 @@ func InitLogger(force bool) {
 			})
 		}
 		//  初始化本地化的日志
-		core := zapcore.NewCore(zapcore.NewConsoleEncoder(newEncodeConfig()), zapcore.AddSync(os.Stdout), zapcore.DebugLevel)
+		encodeConfig := newEncodeConfig()
+		encodeConfig.EncodeLevel = zapcore.LowercaseColorLevelEncoder
+		core := zapcore.NewCore(zapcore.NewConsoleEncoder(encodeConfig), zapcore.AddSync(os.Stdout), zapcore.DebugLevel)
 		rootLogger = zap.New(core, zap.AddStacktrace(zapcore.DPanicLevel), zap.AddCaller())
+		zap.ReplaceGlobals(rootLogger)
 	}
 	conf := &Config{}
 	err := viper.UnmarshalKey("logger", conf)
@@ -69,7 +72,7 @@ func InitLogger(force bool) {
 		return
 	}
 	logCores := make([]zapcore.Core, 0)
-	var logLevel = zap.DebugLevel
+	var logLevel = zap.InfoLevel
 	switch strings.ToLower(conf.Level) {
 	case "debug":
 		logLevel = zap.DebugLevel
@@ -108,11 +111,10 @@ func InitLogger(force bool) {
 		}
 		logCores = append(logCores, zapcore.NewCore(zapcore.NewJSONEncoder(newEncodeConfig()), zapcore.AddSync(logFileWrite), level))
 	}
-
 	if conf.EnableConsole {
 		encodeConfig := newEncodeConfig()
 		if conf.EnableColor {
-			encodeConfig.EncodeLevel = zapcore.CapitalColorLevelEncoder
+			encodeConfig.EncodeLevel = zapcore.LowercaseColorLevelEncoder
 		}
 		logCores = append(logCores, zapcore.NewCore(zapcore.NewConsoleEncoder(encodeConfig), zapcore.AddSync(os.Stdout), level))
 	}
