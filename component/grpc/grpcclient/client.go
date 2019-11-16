@@ -15,39 +15,15 @@ import (
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/balancer/roundrobin"
-	"google.golang.org/grpc/encoding/gzip"
+	_ "google.golang.org/grpc/encoding/gzip"
 	"google.golang.org/grpc/keepalive"
 	"google.golang.org/grpc/resolver"
 )
 
 var scope = zap.String("scope", "grpc.client")
 
-func NewClientConnByRegister(ctx context.Context, serviceInfo configuration.ServiceInfo, block bool, defaultAddr ...string) (*grpc.ClientConn, errors.Error) {
-	// ctx = boot.SetServiceName(ctx, serviceInfo.ServiceName)
-	// logger := impl.logger.WithOptions(zap.Fields(zap.String("rpc.service", serviceInfo.ServiceName)))
-	chainUnaryClient := grpc_middleware.ChainUnaryClient(
-		grpc_prometheus.UnaryClientInterceptor,
-		grpcrecovery.UnaryClientInterceptor(),
-	)
-	chainStreamClient := grpc_middleware.ChainStreamClient(
-		grpc_prometheus.StreamClientInterceptor,
-		grpcrecovery.StreamClientInterceptor(),
-	)
-	opts := []grpc.DialOption{
-		grpc.WithBackoffMaxDelay(time.Second * 10),
-		grpc.WithAuthority(configuration.GetModel()),
-		// grpc.WithDefaultCallOptions(grpc.UseCompressor("gzip"), grpc.FailFast(true)),
-		grpc.WithKeepaliveParams(keepalive.ClientParameters{Time: time.Second * 5, Timeout: time.Second * 10, PermitWithoutStream: false}),
-		grpc.WithBalancerName(roundrobin.Name),
-		grpc.WithUserAgent("coffee's client"),
-		grpc.WithInsecure(),
-		grpc.WithUnaryInterceptor(chainUnaryClient),
-		grpc.WithStreamInterceptor(chainStreamClient),
-		grpc.WithInitialConnWindowSize(10),
-		grpc.WithInitialWindowSize(1024),
-		grpc.WithChannelzParentID(0),
-		grpc.FailOnNonTempDialError(true),
-	}
+func NewClientConnByRegister(ctx context.Context, serviceInfo configuration.ServiceInfo, block bool) (*grpc.ClientConn, errors.Error) {
+	opts := BuildDialOption(ctx, block)
 	if serviceInfo.Scheme == "" {
 		log.Fatal("没有指定需要链接的ServiceInfo的RPC协议，无法创建链接")
 	}
@@ -64,9 +40,6 @@ func NewClientConnByRegister(ctx context.Context, serviceInfo configuration.Serv
 			log.Fatal("不能识别的协议", zap.String("scheme", serviceInfo.Scheme))
 		}
 	}
-	if block {
-		opts = append(opts, grpc.WithBlock())
-	}
 	ctx, _ = context.WithTimeout(ctx, time.Second*5)
 	clientConn, err := grpc.DialContext(ctx, target, opts...)
 	if err != nil {
@@ -77,6 +50,19 @@ func NewClientConnByRegister(ctx context.Context, serviceInfo configuration.Serv
 }
 
 func NewClientConn(ctx context.Context, block bool, serverAddr string) (*grpc.ClientConn, errors.Error) {
+	opts := BuildDialOption(ctx, block)
+	ctx, _ = context.WithTimeout(ctx, time.Second*5)
+	clientConn, err := grpc.DialContext(ctx, serverAddr, opts...)
+	log.Debug("需要链接的服务端地址", zap.String("target", serverAddr))
+	if err != nil {
+		log.Error("创建客户端链接失败", zap.Error(err))
+		return nil, errors.WrappedSystemError(err)
+	}
+	return clientConn, nil
+}
+
+func BuildDialOption(ctx context.Context, block bool) []grpc.DialOption {
+	// grpclog.SetLoggerV2(grpcrecovery.NewZapLogger())
 	chainUnaryClient := grpc_middleware.ChainUnaryClient(
 		grpc_prometheus.UnaryClientInterceptor,
 		grpcrecovery.UnaryClientInterceptor(),
@@ -88,11 +74,10 @@ func NewClientConn(ctx context.Context, block bool, serverAddr string) (*grpc.Cl
 	opts := []grpc.DialOption{
 		grpc.WithBackoffMaxDelay(time.Second * 10),
 		grpc.WithAuthority(configuration.GetModel()),
-		grpc.WithDefaultCallOptions(grpc.UseCompressor(gzip.Name), grpc.FailFast(true)),
-		grpc.WithKeepaliveParams(keepalive.ClientParameters{Time: time.Second * 5, Timeout: time.Second * 15, PermitWithoutStream: true}), //20秒发送一个keepalive
+		grpc.WithDefaultCallOptions(grpc.UseCompressor("gzip")), //, grpc.FailFast(true)),
+		grpc.WithKeepaliveParams(keepalive.ClientParameters{Time: time.Second * 5, Timeout: time.Second * 10, PermitWithoutStream: false}),
 		grpc.WithBalancerName(roundrobin.Name),
 		grpc.WithUserAgent("coffee's client"),
-		grpc.WithInsecure(),
 		grpc.WithUnaryInterceptor(chainUnaryClient),
 		grpc.WithStreamInterceptor(chainStreamClient),
 		grpc.WithInitialConnWindowSize(10),
@@ -100,14 +85,14 @@ func NewClientConn(ctx context.Context, block bool, serverAddr string) (*grpc.Cl
 		grpc.WithChannelzParentID(0),
 		grpc.FailOnNonTempDialError(true),
 	}
+	creds := getCerts(ctx)
+	if creds != nil {
+		opts = append(opts, grpc.WithTransportCredentials(creds))
+	} else {
+		opts = append(opts, grpc.WithInsecure())
+	}
 	if block {
 		opts = append(opts, grpc.WithBlock())
 	}
-	ctx, _ = context.WithTimeout(ctx, time.Second*5)
-	clientConn, err := grpc.DialContext(ctx, serverAddr, opts...)
-	if err != nil {
-		log.Error("创建客户端链接失败", zap.Error(err))
-		return nil, errors.WrappedSystemError(err)
-	}
-	return clientConn, nil
+	return opts
 }

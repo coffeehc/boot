@@ -68,8 +68,10 @@ func parseRPCError(err interface{}, recover bool, fields ...zap.Field) errors.Er
 		}
 		if recover {
 			log.DPanic("不可处理的异常", append(fields, zap.Error(v))...)
+		} else {
+			log.Warn("远程服务暂时不可用", append(fields, zap.Error(v))...)
 		}
-		return errors.SystemError(v.Error())
+		return errors.SystemError("远程服务暂时不可用,请重试")
 	}
 	log.DPanic("未知异常", append(fields, zap.Any("err", err))...)
 	return errors.SystemError("未知异常")

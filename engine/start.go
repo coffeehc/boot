@@ -15,7 +15,10 @@ import (
 	"go.uber.org/zap"
 )
 
-func StartEngine(ctx context.Context, serviceInfo configuration.ServiceInfo, loadPlugins func(ctx context.Context), start func(ctx context.Context, cmd *cobra.Command, args []string) error) {
+type ServiceStart func(ctx context.Context, cmd *cobra.Command, args []string) (ServiceCloseCallback, error)
+type ServiceCloseCallback func()
+
+func StartEngine(ctx context.Context, serviceInfo configuration.ServiceInfo, start ServiceStart) {
 	ctx, cancelFunc := context.WithCancel(ctx)
 	initService(ctx, serviceInfo)
 	var rootCmd = &cobra.Command{
@@ -24,8 +27,8 @@ func StartEngine(ctx context.Context, serviceInfo configuration.ServiceInfo, loa
 		Long:  serviceInfo.Descriptor,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			var sigChan = make(chan os.Signal, 3)
-			loadPlugins(ctx)
 			defer plugin.StopPlugins(ctx)
+			var closeCallback ServiceCloseCallback = nil
 			go func() {
 				defer func() {
 					if e := recover(); e != nil {
@@ -34,11 +37,12 @@ func StartEngine(ctx context.Context, serviceInfo configuration.ServiceInfo, loa
 						cancelFunc()
 					}
 				}()
-				err := start(ctx, cmd, args)
+				_closeCallback, err := start(ctx, cmd, args)
 				if err != nil {
 					log.Error("启动服务失败", zap.Error(err))
 					cancelFunc()
 				}
+				closeCallback = _closeCallback
 				plugin.StartPlugins(ctx)
 				log.Info("服务启动完成")
 			}()
@@ -48,6 +52,9 @@ func StartEngine(ctx context.Context, serviceInfo configuration.ServiceInfo, loa
 			}()
 			signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM, syscall.SIGKILL)
 			sig := <-sigChan
+			if closeCallback != nil {
+				closeCallback()
+			}
 			log.Info("关闭程序", zap.Any("signal", sig))
 			return nil
 		},

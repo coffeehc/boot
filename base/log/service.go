@@ -4,7 +4,9 @@ import (
 	"os"
 	"strings"
 	"sync"
+	"time"
 
+	"github.com/fsnotify/fsnotify"
 	"github.com/spf13/viper"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
@@ -20,6 +22,7 @@ type Config struct {
 	FileConfig    *FileLogConfig
 	EnableConsole bool
 	EnableColor   bool // 仅仅对Console有效
+	EnableSampler bool
 }
 
 type FileLogConfig struct {
@@ -35,6 +38,7 @@ type FileLogConfig struct {
 var rootLogger *zap.Logger
 var defaultLogger *zap.Logger
 var internalLogger *zap.Logger
+var level = zap.NewAtomicLevel()
 var mutex = new(sync.Mutex)
 
 func GetLogger() *zap.Logger {
@@ -89,7 +93,6 @@ func InitLogger(force bool) {
 	default:
 		logLevel = zap.InfoLevel
 	}
-	level := zap.NewAtomicLevel()
 	level.SetLevel(logLevel)
 	fileLogConfig := conf.FileConfig
 	if fileLogConfig != nil && !fileLogConfig.Disable {
@@ -109,18 +112,57 @@ func InitLogger(force bool) {
 			MaxAge:     fileLogConfig.MaxAge,     // days
 			Compress:   fileLogConfig.Compress,   // 是否压缩 disabled by default
 		}
-		logCores = append(logCores, zapcore.NewCore(zapcore.NewJSONEncoder(newEncodeConfig()), zapcore.AddSync(logFileWrite), level))
+		core := zapcore.NewCore(zapcore.NewJSONEncoder(newEncodeConfig()), zapcore.AddSync(logFileWrite), level)
+		if conf.EnableSampler {
+			core = zapcore.NewSampler(core, time.Second*5, 100, 10)
+		}
+		logCores = append(logCores, core)
 	}
 	if conf.EnableConsole {
 		encodeConfig := newEncodeConfig()
 		if conf.EnableColor {
 			encodeConfig.EncodeLevel = zapcore.LowercaseColorLevelEncoder
 		}
-		logCores = append(logCores, zapcore.NewCore(zapcore.NewConsoleEncoder(encodeConfig), zapcore.AddSync(os.Stdout), level))
+		core := zapcore.NewCore(zapcore.NewConsoleEncoder(encodeConfig), zapcore.AddSync(os.Stdout), level)
+		if conf.EnableSampler {
+			core = zapcore.NewSampler(core, time.Second*5, 100, 5)
+		}
+		logCores = append(logCores, core)
 	}
+
 	rootLogger = zap.New(zapcore.NewTee(logCores...), zap.AddStacktrace(zapcore.DPanicLevel), zap.AddCaller())
 	resetLoggers()
 	zap.ReplaceGlobals(rootLogger)
+}
+
+func WatchLevel() {
+	viper.WatchConfig()
+	viper.WatchRemoteConfig()
+	viper.OnConfigChange(func(in fsnotify.Event) {
+		newLevel := strings.ToLower(viper.GetString("logger.level"))
+		if strings.ToLower(level.String()) == newLevel {
+			return
+		}
+		Info("log level变更", zap.String("newLevel", newLevel), zap.String("oldLevel", level.String()))
+		var logLevel = zap.InfoLevel
+		switch newLevel {
+		case "debug":
+			logLevel = zap.DebugLevel
+		case "info":
+			logLevel = zap.InfoLevel
+		case "error":
+			logLevel = zap.ErrorLevel
+		case "dPanic":
+			logLevel = zap.DPanicLevel
+		case "panic":
+			logLevel = zap.PanicLevel
+		case "fatal":
+			logLevel = zap.FatalLevel
+		default:
+			logLevel = zap.InfoLevel
+		}
+		level.SetLevel(logLevel)
+	})
 }
 
 func newEncodeConfig() zapcore.EncoderConfig {

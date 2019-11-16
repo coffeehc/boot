@@ -7,6 +7,7 @@ import (
 	"git.xiagaogao.com/coffee/boot/base/log"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials"
 )
 
 func DebufLoggingInterceptor() grpc.UnaryServerInterceptor {
@@ -18,4 +19,23 @@ func DebufLoggingInterceptor() grpc.UnaryServerInterceptor {
 		resp, err = handler(ctx, req)
 		return resp, err
 	}
+}
+
+const (
+	contextkeyServerCerds = "_grpc.serverCredentials"
+)
+
+func SetCerds(ctx context.Context, creds credentials.TransportCredentials) context.Context {
+	return context.WithValue(ctx, contextkeyServerCerds, creds)
+}
+
+func getCerts(ctx context.Context) credentials.TransportCredentials {
+	v := ctx.Value(contextkeyServerCerds)
+	if v == nil {
+		return nil
+	}
+	if cerds, ok := v.(credentials.TransportCredentials); ok {
+		return cerds
+	}
+	return nil
 }

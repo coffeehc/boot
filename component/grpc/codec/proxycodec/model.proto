@@ -1,0 +1,11 @@
+syntax = "proto3";
+
+package grpcproxy;
+
+option go_package = "git.xiagaogao.com/coffee/boot/component/grpc/codec/proxycodec;proxycodec";
+
+message ProxyFrame{
+    string serviceName =1;
+    string model = 2;
+    bytes payload = 3;
+}

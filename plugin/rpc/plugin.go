@@ -10,6 +10,7 @@ import (
 	"git.xiagaogao.com/coffee/boot/base/log"
 	"git.xiagaogao.com/coffee/boot/base/utils"
 	"git.xiagaogao.com/coffee/boot/component/grpc/grpcserver"
+	"git.xiagaogao.com/coffee/boot/crets"
 	"git.xiagaogao.com/coffee/boot/plugin"
 	"github.com/spf13/viper"
 	"go.uber.org/zap"
@@ -35,12 +36,16 @@ func EnablePlugin(ctx context.Context) {
 	viper.SetDefault("grpc.MaxConcurrentStreams", 100000)
 	viper.SetDefault("grpc.MaxMsgSize", 1024*1024*4)
 	viper.SetDefault("grpc.RPCServerAddr", "0.0.0.0:0")
+	viper.SetDefault("grpc.openTLS", false)
 	config := &RpcConfig{}
 	_err := viper.UnmarshalKey("grpc", config)
 	if _err != nil {
 		log.Fatal("加载GRPC配置失败", zap.Error(_err))
 	}
-	_server, err := grpcserver.NewServer(&grpcserver.GRPCServerConfig{
+	if viper.GetBool("grpc.openTLS") {
+		grpcserver.SetCerds(ctx, crets.NewServerCreds())
+	}
+	_server, err := grpcserver.NewServer(ctx, &grpcserver.GRPCServerConfig{
 		MaxMsgSize:           config.MaxMsgSize,
 		MaxConcurrentStreams: config.MaxConcurrentStreams,
 	})

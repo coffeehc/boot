@@ -25,10 +25,10 @@ func init() {
 		pflag.Parse()
 	}
 	viper.BindPFlags(pflag.CommandLine)
+	viper.AddConfigPath(".")
 	if *configFile != "" {
 		viper.SetConfigFile(*configFile)
 	} else {
-		viper.AddConfigPath(".")
 		viper.SetConfigName("config")
 	}
 	if err := viper.ReadInConfig(); err != nil {
@@ -37,5 +37,5 @@ func init() {
 	viper.SetEnvPrefix("ENV")
 	viper.AutomaticEnv()
 	// 本地配置里面如果有配置远程配置中心的也需要处理
-
+	log.WatchLevel()
 }

@@ -1,6 +1,7 @@
 package grpcserver
 
 import (
+	"context"
 	"time"
 
 	"git.xiagaogao.com/coffee/boot/base/errors"
@@ -17,23 +18,24 @@ import (
 
 var scope = zap.String("scope", "grpc.server")
 
-func NewServer(grpcConfig *GRPCServerConfig) (*grpc.Server, errors.Error) {
+func NewServer(ctx context.Context, grpcConfig *GRPCServerConfig) (*grpc.Server, errors.Error) {
 	grpcConfig = &GRPCServerConfig{}
 	if !viper.IsSet("grpc") {
 		log.Warn("没有配置GRPCConfig,使用默认配置", scope)
-
 	}
 	err := viper.UnmarshalKey("grpc", grpcConfig)
 	if err != nil {
 		log.Fatal("解析grpc配置失败", zap.Error(err), scope)
 	}
-	server := grpc.NewServer(buildGRPCOptions(grpcConfig)...)
+	server := grpc.NewServer(BuildGRPCServerOptions(ctx, grpcConfig)...)
 	return server, nil
 }
 
-func buildGRPCOptions(config *GRPCServerConfig) []grpc.ServerOption {
+func BuildGRPCServerOptions(ctx context.Context, config *GRPCServerConfig) []grpc.ServerOption {
+	// grpclog.SetLoggerV2(grpcrecovery.NewZapLogger())
 	grpc.EnableTracing = false
 	chainUnaryServer := grpc_middleware.ChainUnaryServer(
+		// DebufLoggingInterceptor(),
 		grpc_prometheus.UnaryServerInterceptor,
 		grpcrecovery.UnaryServerInterceptor(),
 	)
@@ -41,12 +43,11 @@ func buildGRPCOptions(config *GRPCServerConfig) []grpc.ServerOption {
 		grpc_prometheus.StreamServerInterceptor,
 		grpcrecovery.StreamServerInterceptor(),
 	)
-	return []grpc.ServerOption{
+	opts := []grpc.ServerOption{
+		grpc.Creds(getCerts(ctx)),
 		grpc.InitialWindowSize(4096),
 		grpc.InitialConnWindowSize(100),
 		grpc.MaxConcurrentStreams(config.MaxConcurrentStreams),
-		grpc.MaxRecvMsgSize(config.MaxMsgSize),
-		grpc.MaxSendMsgSize(config.MaxMsgSize),
 		grpc.StreamInterceptor(chainStreamServer),
 		grpc.UnaryInterceptor(chainUnaryServer),
 		grpc.KeepaliveParams(keepalive.ServerParameters{
@@ -59,4 +60,10 @@ func buildGRPCOptions(config *GRPCServerConfig) []grpc.ServerOption {
 			PermitWithoutStream: true,
 		}),
 	}
+	if config.MaxMsgSize > 0 {
+		opts = append(opts, grpc.MaxRecvMsgSize(config.MaxMsgSize),
+			grpc.MaxSendMsgSize(config.MaxMsgSize))
+	}
+
+	return opts
 }
