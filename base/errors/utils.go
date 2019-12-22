@@ -8,6 +8,16 @@ import (
 	"go.uber.org/zap"
 )
 
+type NetError interface {
+	Error() string
+	Timeout() bool
+	Temporary() bool
+}
+
+func NewNetError(err NetError) Error {
+	return WrappedError(ErrorSystemNet, err)
+}
+
 func NamedScope(name string) zap.Field {
 	return zap.String("scope", name)
 }

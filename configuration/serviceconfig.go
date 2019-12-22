@@ -16,6 +16,7 @@ var mutex = new(sync.RWMutex)
 var rootCtx context.Context
 
 func InitConfiguration(ctx context.Context, serviceInfo ServiceInfo) {
+	initLoggerConfig()
 	initServiceConfig(ctx)
 	initServiceInfo(ctx, serviceInfo)
 	viper.MergeInConfig()
@@ -38,7 +39,7 @@ func initServiceInfo(ctx context.Context, serviceInfo ServiceInfo) {
 	currentServiceInfo = serviceInfo
 	localIp, err1 := utils.GetLocalIP()
 	if err1 != nil {
-		log.Fatal("获取本季IP失败", err1.GetFieldsWithCause()...)
+		log.Fatal("获取本机IP失败", err1.GetFieldsWithCause()...)
 	}
 	log.SetBaseFields(zap.String("serviceName", serviceInfo.ServiceName), zap.String("localIp", localIp.String()))
 	viper.MergeInConfig()

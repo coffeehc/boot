@@ -2,9 +2,8 @@ package configuration
 
 import (
 	"flag"
-	"os"
-
 	"git.xiagaogao.com/coffee/boot/base/log"
+	"github.com/json-iterator/go/extra"
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
 	"go.uber.org/zap"
@@ -20,7 +19,6 @@ var configFile = pflag.StringP("config", "c", "", "配置文件路径")
 
 func init() {
 	pflag.CommandLine.AddGoFlagSet(flag.CommandLine)
-	pflag.CommandLine = pflag.NewFlagSet(os.Args[0], pflag.ContinueOnError)
 	if !pflag.Parsed() {
 		pflag.Parse()
 	}
@@ -38,4 +36,25 @@ func init() {
 	viper.AutomaticEnv()
 	// 本地配置里面如果有配置远程配置中心的也需要处理
 	log.WatchLevel()
+}
+func initJsonConifg() {
+	extra.RegisterFuzzyDecoders()
+	extra.SetNamingStrategy(extra.LowerCaseWithUnderscores)
+}
+
+func initLoggerConfig() {
+	viper.SetDefault("logger", &log.Config{
+		Level: "info",
+		FileConfig: &log.FileLogConfig{
+			FileName:   "./logs/service.log",
+			Disable:    false,
+			Maxsize:    100,
+			MaxBackups: 10,
+			MaxAge:     7,
+			Compress:   false,
+		},
+		EnableConsole: false,
+		EnableColor:   false,
+		EnableSampler: false,
+	})
 }

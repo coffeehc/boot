@@ -3,16 +3,13 @@ package engine
 import (
 	"context"
 	"fmt"
-	"os"
-	"os/signal"
-	"syscall"
-
 	"git.xiagaogao.com/coffee/boot/base/errors"
 	"git.xiagaogao.com/coffee/boot/base/log"
 	"git.xiagaogao.com/coffee/boot/configuration"
 	"git.xiagaogao.com/coffee/boot/plugin"
 	"github.com/spf13/cobra"
 	"go.uber.org/zap"
+	"os"
 )
 
 type ServiceStart func(ctx context.Context, cmd *cobra.Command, args []string) (ServiceCloseCallback, error)
@@ -26,7 +23,6 @@ func StartEngine(ctx context.Context, serviceInfo configuration.ServiceInfo, sta
 		Short: fmt.Sprintf("%s 服务", configuration.GetServiceName()),
 		Long:  serviceInfo.Descriptor,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			var sigChan = make(chan os.Signal, 3)
 			defer plugin.StopPlugins(ctx)
 			var closeCallback ServiceCloseCallback = nil
 			go func() {
@@ -46,16 +42,18 @@ func StartEngine(ctx context.Context, serviceInfo configuration.ServiceInfo, sta
 				plugin.StartPlugins(ctx)
 				log.Info("服务启动完成")
 			}()
-			go func() {
-				<-ctx.Done()
-				sigChan <- syscall.SIGINT
-			}()
-			signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM, syscall.SIGKILL)
-			sig := <-sigChan
-			if closeCallback != nil {
-				closeCallback()
-			}
-			log.Info("关闭程序", zap.Any("signal", sig))
+			WaitServiceStop(ctx, cancelFunc, closeCallback)
+			// var sigChan = make(chan os.Signal, 3)
+			// go func() {
+			// 	<-ctx.Done()
+			// 	sigChan <- syscall.SIGINT
+			// }()
+			// signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM, syscall.SIGKILL)
+			// sig := <-sigChan
+			// if closeCallback != nil {
+			// 	closeCallback()
+			// }
+			// log.Info("关闭程序", zap.Any("signal", sig))
 			return nil
 		},
 	}

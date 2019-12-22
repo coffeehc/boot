@@ -74,7 +74,9 @@ type pluginImpl struct {
 }
 
 func (impl *pluginImpl) Start(ctx context.Context) errors.Error {
-	lis, _err := net.Listen("tcp4", rpcServerAddr)
+	addr, _ := net.ResolveTCPAddr("tcp4", rpcServerAddr)
+	addr.IP = net.IPv4zero
+	lis, _err := net.Listen("tcp4", addr.String())
 	if _err != nil {
 		log.Fatal("启动RPC服务端口失败", zap.Error(_err))
 	}

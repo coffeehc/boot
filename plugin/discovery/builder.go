@@ -19,6 +19,44 @@ import (
 	"google.golang.org/grpc/keepalive"
 )
 
+func RPCServiceInitializationByAddress(ctx context.Context, rpcService configuration.RPCService, serverAddr string) errors.Error {
+	chainUnaryClient := grpc_middleware.ChainUnaryClient(
+		grpc_prometheus.UnaryClientInterceptor,
+		grpcrecovery.UnaryClientInterceptor(),
+	)
+	chainStreamClient := grpc_middleware.ChainStreamClient(
+		grpc_prometheus.StreamClientInterceptor,
+		grpcrecovery.StreamClientInterceptor(),
+	)
+	opts := []grpc.DialOption{
+		grpc.WithBackoffMaxDelay(time.Second * 10),
+		grpc.WithAuthority(configuration.GetModel()),
+		grpc.WithDefaultCallOptions(grpc.UseCompressor("gzip"), grpc.FailFast(true)),
+		grpc.WithKeepaliveParams(keepalive.ClientParameters{Time: time.Second * 5, Timeout: time.Second * 10, PermitWithoutStream: false}),
+		grpc.WithBalancerName(roundrobin.Name),
+		grpc.WithUserAgent("coffee's client"),
+		grpc.WithUnaryInterceptor(chainUnaryClient),
+		grpc.WithStreamInterceptor(chainStreamClient),
+		grpc.WithInitialConnWindowSize(10),
+		grpc.WithInitialWindowSize(1024),
+		grpc.WithChannelzParentID(0),
+		grpc.FailOnNonTempDialError(true),
+		grpc.WithInsecure(),
+	}
+	ctx, _ = context.WithTimeout(ctx, time.Second*10)
+	conn, err := grpc.DialContext(ctx, serverAddr, opts...)
+	if err != nil {
+		return errors.ConverError(err)
+	}
+	log.Debug("需要链接的服务端地址", zap.String("target", serverAddr))
+	_err := rpcService.InitRPCService(ctx, conn)
+	if _err != nil {
+		return _err
+	}
+	log.Info("初始化RPCService成功", zap.Any("RPCService", rpcService.GetRPCServiceInfo()))
+	return nil
+}
+
 func RPCServiceInitialization(ctx context.Context, rpcService configuration.RPCService) errors.Error {
 	var conn *grpc.ClientConn = nil
 	var err errors.Error = nil

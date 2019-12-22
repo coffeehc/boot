@@ -1,17 +1,17 @@
 package errors
 
-func buildError(errorCode int64, message string) Error {
+func BuildError(errorCode int64, message string) Error {
 	return &baseError{
 		Code:    errorCode,
 		Message: message,
 	}
 }
 func SystemError(message string) Error {
-	return buildError(ErrorSystem, message)
+	return BuildError(ErrorSystem, message)
 }
 
 func MessageError(message string) Error {
-	return buildError(ErrorMessage, message)
+	return BuildError(ErrorMessage, message)
 }
 
 func WrappedError(errorCode int64, err error) Error {
