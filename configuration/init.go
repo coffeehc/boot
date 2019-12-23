@@ -2,7 +2,7 @@ package configuration
 
 import (
 	"flag"
-	"git.xiagaogao.com/coffee/boot/base/log"
+	"git.xiagaogao.com/coffee/base/log"
 	"github.com/json-iterator/go/extra"
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"

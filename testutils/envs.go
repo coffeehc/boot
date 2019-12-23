@@ -1,7 +1,7 @@
 package testutils
 
 import (
-	"git.xiagaogao.com/coffee/boot/base/log"
+	"git.xiagaogao.com/coffee/base/log"
 	"git.xiagaogao.com/coffee/boot/configuration"
 	"github.com/spf13/viper"
 )

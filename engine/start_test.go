@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"git.xiagaogao.com/coffee/boot/base/log"
+	"git.xiagaogao.com/coffee/base/log"
 	"git.xiagaogao.com/coffee/boot/component/etcdsd"
 	"git.xiagaogao.com/coffee/boot/configuration"
 	"git.xiagaogao.com/coffee/boot/engine"

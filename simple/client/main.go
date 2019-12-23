@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"git.xiagaogao.com/coffee/boot"
-	"git.xiagaogao.com/coffee/boot/base/errors"
+	"git.xiagaogao.com/coffee/base/errors"
 	"git.xiagaogao.com/coffee/boot/logs"
 	"git.xiagaogao.com/coffee/boot/serviceboot"
 	"git.xiagaogao.com/coffee/boot/simple"

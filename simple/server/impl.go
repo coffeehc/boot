@@ -1,7 +1,7 @@
 package main
 
 import (
-	"git.xiagaogao.com/coffee/boot/base/errors"
+	"git.xiagaogao.com/coffee/base/errors"
 	"git.xiagaogao.com/coffee/boot/simple/simplemodel"
 	"go.uber.org/zap"
 	"golang.org/x/net/context"

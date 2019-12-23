@@ -5,8 +5,8 @@ import (
 	"sync"
 	"time"
 
-	"git.xiagaogao.com/coffee/boot/base/errors"
-	"git.xiagaogao.com/coffee/boot/base/log"
+	"git.xiagaogao.com/coffee/base/errors"
+	"git.xiagaogao.com/coffee/base/log"
 	"github.com/coreos/etcd/clientv3"
 	"github.com/spf13/viper"
 	"go.uber.org/zap"

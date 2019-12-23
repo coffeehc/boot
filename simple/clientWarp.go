@@ -3,8 +3,8 @@ package simple
 import (
 	"context"
 
+	"git.xiagaogao.com/coffee/base/errors"
 	"git.xiagaogao.com/coffee/boot"
-	"git.xiagaogao.com/coffee/boot/base/errors"
 	"git.xiagaogao.com/coffee/boot/simple/simplemodel"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"

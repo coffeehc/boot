@@ -3,15 +3,15 @@ package manage
 import (
 	"context"
 	"fmt"
-	"git.xiagaogao.com/coffee/boot/base/utils"
+	"git.xiagaogao.com/coffee/base/utils"
 	"github.com/gin-gonic/gin"
 	"net"
 	"net/http"
 	"strings"
 	"sync"
 
-	"git.xiagaogao.com/coffee/boot/base/errors"
-	"git.xiagaogao.com/coffee/boot/base/log"
+	"git.xiagaogao.com/coffee/base/errors"
+	"git.xiagaogao.com/coffee/base/log"
 	"git.xiagaogao.com/coffee/boot/plugin"
 	"git.xiagaogao.com/coffee/httpx"
 	"github.com/spf13/viper"

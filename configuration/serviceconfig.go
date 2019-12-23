@@ -4,8 +4,8 @@ import (
 	"context"
 	"sync"
 
-	"git.xiagaogao.com/coffee/boot/base/log"
-	"git.xiagaogao.com/coffee/boot/base/utils"
+	"git.xiagaogao.com/coffee/base/log"
+	"git.xiagaogao.com/coffee/base/utils"
 	"github.com/spf13/viper"
 	"go.uber.org/zap"
 )

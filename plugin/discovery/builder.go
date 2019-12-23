@@ -4,8 +4,8 @@ import (
 	"context"
 	"time"
 
-	"git.xiagaogao.com/coffee/boot/base/errors"
-	"git.xiagaogao.com/coffee/boot/base/log"
+	"git.xiagaogao.com/coffee/base/errors"
+	"git.xiagaogao.com/coffee/base/log"
 	"git.xiagaogao.com/coffee/boot/component/grpc/codec/proxycodec"
 	"git.xiagaogao.com/coffee/boot/component/grpc/grpcclient"
 	"git.xiagaogao.com/coffee/boot/component/grpc/grpcrecovery"

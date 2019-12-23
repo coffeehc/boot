@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"time"
 
-	"git.xiagaogao.com/coffee/boot/base/errors"
-	"git.xiagaogao.com/coffee/boot/base/log"
+	"git.xiagaogao.com/coffee/base/errors"
+	"git.xiagaogao.com/coffee/base/log"
 	"git.xiagaogao.com/coffee/boot/component/etcdsd"
 	"git.xiagaogao.com/coffee/boot/component/grpc/grpcrecovery"
 	"git.xiagaogao.com/coffee/boot/configuration"
