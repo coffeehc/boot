@@ -76,15 +76,3 @@ func NewSummaryVec(opt CollectorOpt, maxAge time.Duration, ageBuckets uint32, bu
 	RegisterMetrics(collector)
 	return collector
 }
-
-func NewUntypedVec(opt CollectorOpt, labelNames []string) *prometheus.UntypedVec {
-	collector := prometheus.NewUntypedVec(prometheus.UntypedOpts{
-		Namespace:   opt.Namespace,
-		Subsystem:   opt.Subsystem,
-		Name:        opt.Name,
-		ConstLabels: opt.ConstLabels,
-		Help:        fmt.Sprintf("%s-%s-%s:%s", opt.Namespace, opt.Subsystem, opt.Name, "UntypedVec"),
-	}, labelNames)
-	RegisterMetrics(collector)
-	return collector
-}
