@@ -3,6 +3,7 @@ package etcdsd
 import (
 	"context"
 	"fmt"
+	jsoniter "github.com/json-iterator/go"
 	"strings"
 	"time"
 
@@ -11,7 +12,6 @@ import (
 	"git.xiagaogao.com/coffee/boot/configuration"
 	"github.com/coreos/etcd/clientv3"
 	"github.com/coreos/etcd/mvcc/mvccpb"
-	"github.com/pquerna/ffjson/ffjson"
 	"go.uber.org/zap"
 	"google.golang.org/grpc/resolver"
 )
@@ -173,7 +173,7 @@ func remove(s []resolver.Address, addr string) ([]resolver.Address, bool) {
 
 func (r *etcdResolver) getServiceAddr(kv *mvccpb.KeyValue) *resolver.Address {
 	info := &configuration.ServiceRegisterInfo{}
-	err := ffjson.Unmarshal(kv.Value, info)
+	err := jsoniter.Unmarshal(kv.Value, info)
 	if err != nil {
 		log.Error("注册信息反序列化失败", zap.Error(err), zap.String("body", string(kv.Value)))
 		return nil

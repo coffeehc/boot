@@ -39,7 +39,7 @@ type serviceRuntimeInfo struct {
 	Model       string    `json:"model"`
 }
 
-func (impl *pluginImpl) registerHealthEndpoint(router gin.IRouter) {
+func (impl *pluginImpl) gregisterHealthEndpoint(router gin.IRouter) {
 	router.GET("/health", func(context *gin.Context) {
 		context.JSON(http.StatusOK, gin.H{
 			"goroutine_count": runtime.NumGoroutine(),
