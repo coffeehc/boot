@@ -2,6 +2,7 @@ package grpcserver
 
 import (
 	"context"
+	"google.golang.org/grpc/grpclog"
 	"time"
 
 	"git.xiagaogao.com/coffee/base/errors"
@@ -32,7 +33,7 @@ func NewServer(ctx context.Context, grpcConfig *GRPCServerConfig) (*grpc.Server,
 }
 
 func BuildGRPCServerOptions(ctx context.Context, config *GRPCServerConfig) []grpc.ServerOption {
-	// grpclog.SetLoggerV2(grpcrecovery.NewZapLogger())
+	grpclog.SetLoggerV2(grpcrecovery.NewZapLogger())
 	grpc.EnableTracing = false
 	chainUnaryServer := grpc_middleware.ChainUnaryServer(
 		// DebufLoggingInterceptor(),

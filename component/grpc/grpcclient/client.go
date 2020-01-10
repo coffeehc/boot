@@ -3,6 +3,7 @@ package grpcclient
 import (
 	"context"
 	"fmt"
+	"google.golang.org/grpc/grpclog"
 	"time"
 
 	"git.xiagaogao.com/coffee/base/errors"
@@ -62,7 +63,7 @@ func NewClientConn(ctx context.Context, block bool, serverAddr string) (*grpc.Cl
 }
 
 func BuildDialOption(ctx context.Context, block bool) []grpc.DialOption {
-	// grpclog.SetLoggerV2(grpcrecovery.NewZapLogger())
+	grpclog.SetLoggerV2(grpcrecovery.NewZapLogger())
 	chainUnaryClient := grpc_middleware.ChainUnaryClient(
 		grpc_prometheus.UnaryClientInterceptor,
 		grpcrecovery.UnaryClientInterceptor(),
