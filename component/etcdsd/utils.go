@@ -2,7 +2,6 @@ package etcdsd
 
 import (
 	"fmt"
-
 	"git.xiagaogao.com/coffee/boot/configuration"
 )
 
