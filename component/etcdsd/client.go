@@ -32,8 +32,6 @@ func InitEtcdClient() {
 	if !viper.IsSet("etcd") {
 		log.Fatal("没有配置etcd")
 	}
-	viper.SetDefault("etcd.AutoSyncInterval", 5)
-	viper.SetDefault("etcd.DialTimeout", "3s")
 	config := &Config{}
 	err := viper.UnmarshalKey("etcd", config)
 	if err != nil {
@@ -41,6 +39,12 @@ func InitEtcdClient() {
 	}
 	if len(config.Endpoints) == 0 {
 		log.Fatal("没有设置EtcdServer地址", scope)
+	}
+	if config.AutoSyncInterval == 0 {
+		config.AutoSyncInterval = 5 * time.Second
+	}
+	if config.DialTimeout == 0 {
+		config.DialTimeout = time.Second * 3
 	}
 	client, err1 := newClient(config)
 	if err1 != nil {
