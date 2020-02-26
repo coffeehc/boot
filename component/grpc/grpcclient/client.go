@@ -55,7 +55,7 @@ func NewClientConn(ctx context.Context, block bool, serverAddr string) (*grpc.Cl
 	opts := BuildDialOption(ctx, block)
 	ctx, _ = context.WithTimeout(ctx, time.Second*5)
 	clientConn, err := grpc.DialContext(ctx, serverAddr, opts...)
-	log.Debug("需要链接的服务端地址", zap.String("target", serverAddr))
+	// log.Debug("需要链接的服务端地址", zap.String("target", serverAddr))
 	if err != nil {
 		log.Error("创建客户端链接失败", zap.Error(err))
 		return nil, errors.WrappedSystemError(err)
