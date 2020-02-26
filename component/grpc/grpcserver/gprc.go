@@ -35,15 +35,25 @@ func NewServer(ctx context.Context, grpcConfig *GRPCServerConfig) (*grpc.Server,
 func BuildGRPCServerOptions(ctx context.Context, config *GRPCServerConfig) []grpc.ServerOption {
 	grpclog.SetLoggerV2(grpcrecovery.NewZapLogger())
 	grpc.EnableTracing = false
-	chainUnaryServer := grpc_middleware.ChainUnaryServer(
+	chainUnaryServers := []grpc.UnaryServerInterceptor{
 		// DebufLoggingInterceptor(),
 		grpc_prometheus.UnaryServerInterceptor,
 		grpcrecovery.UnaryServerInterceptor(),
-	)
-	chainStreamServer := grpc_middleware.ChainStreamServer(
+	}
+	chainStreamServers := []grpc.StreamServerInterceptor{
 		grpc_prometheus.StreamServerInterceptor,
 		grpcrecovery.StreamServerInterceptor(),
-	)
+	}
+	grpcAuth := ctx.Value(serverGrpcAuthKey)
+	if grpcAuth != nil {
+		authService, ok := grpcAuth.(GRPCServerAuth)
+		if ok {
+			chainUnaryServers = append(chainUnaryServers, buildAuthUnaryServerInterceptor(authService))
+			chainStreamServers = append(chainStreamServers, buildAuthStreamServerInterceptor(authService))
+		}
+	}
+	chainUnaryServer := grpc_middleware.ChainUnaryServer(chainUnaryServers...)
+	chainStreamServer := grpc_middleware.ChainStreamServer(chainStreamServers...)
 	opts := []grpc.ServerOption{
 		grpc.Creds(getCerts(ctx)),
 		grpc.InitialWindowSize(4096),
@@ -68,3 +78,5 @@ func BuildGRPCServerOptions(ctx context.Context, config *GRPCServerConfig) []grp
 
 	return opts
 }
+
+// //metadata.FromIncomingContext(ctx)

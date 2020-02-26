@@ -2,12 +2,12 @@ package grpcclient
 
 import (
 	"context"
-
 	"google.golang.org/grpc/credentials"
 )
 
 const (
 	contextKeyServerCerds = "_grpc.clientCredentials"
+	perRPCCredentialsKey  = "_grpc._PerRPCCredentialsKey"
 )
 
 func SetCerds(ctx context.Context, creds credentials.TransportCredentials) context.Context {
@@ -23,4 +23,8 @@ func getCerts(ctx context.Context) credentials.TransportCredentials {
 		return cerds
 	}
 	return nil
+}
+
+func SetAuthService(ctx context.Context, prc credentials.PerRPCCredentials) context.Context {
+	return context.WithValue(ctx, perRPCCredentialsKey, prc)
 }

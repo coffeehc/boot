@@ -55,6 +55,8 @@ func parseRPCError(err interface{}, recover bool, fields ...zap.Field) errors.Er
 	case string:
 		if recover {
 			log.DPanic("不可处理的异常", append(fields, zap.String("error", v))...)
+		} else {
+			log.Warn("rpc错误", append(fields, zap.String("err", v))...)
 		}
 		return errors.SystemError(v)
 	case error:
@@ -64,12 +66,13 @@ func parseRPCError(err interface{}, recover bool, fields ...zap.Field) errors.Er
 			return errors.SystemError("无法识别的RPC异常")
 		}
 		if s.Code() == errCode {
+			log.Warn("远程服务暂时不可用", append(fields, zap.Error(v))...)
 			return errors.ParseError(s.Message())
 		}
 		if recover {
 			log.DPanic("不可处理的异常", append(fields, zap.Error(v))...)
 		} else {
-			// log.Warn("远程服务暂时不可用", append(fields, zap.Error(v))...)
+			log.Warn("rpc错误", append(fields, zap.Error(v))...)
 		}
 		return errors.SystemError("远程服务暂时不可用,请重试")
 	}

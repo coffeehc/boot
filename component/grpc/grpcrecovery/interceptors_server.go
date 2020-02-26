@@ -17,6 +17,7 @@ func UnaryServerInterceptor() grpc.UnaryServerInterceptor {
 				err = convertRPCError(r, true, zap.String("rpcMethod", info.FullMethod))
 			}
 		}()
+
 		resp, err := handler(ctx, req)
 		err = convertRPCError(err, false)
 		return resp, err

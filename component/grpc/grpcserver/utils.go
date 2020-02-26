@@ -23,7 +23,12 @@ func DebufLoggingInterceptor() grpc.UnaryServerInterceptor {
 
 const (
 	contextkeyServerCerds = "_grpc.serverCredentials"
+	serverGrpcAuthKey     = "__ServerGrpcAuthKey"
 )
+
+func SetGrpcAuth(ctx context.Context, auth GRPCServerAuth) context.Context {
+	return context.WithValue(ctx, serverGrpcAuthKey, auth)
+}
 
 func SetCerds(ctx context.Context, creds credentials.TransportCredentials) context.Context {
 	return context.WithValue(ctx, contextkeyServerCerds, creds)

@@ -3,6 +3,7 @@ package grpcclient
 import (
 	"context"
 	"fmt"
+	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/grpclog"
 	"time"
 
@@ -75,7 +76,7 @@ func BuildDialOption(ctx context.Context, block bool) []grpc.DialOption {
 	opts := []grpc.DialOption{
 		grpc.WithBackoffMaxDelay(time.Second * 10),
 		grpc.WithAuthority(configuration.GetModel()),
-		grpc.WithDefaultCallOptions(grpc.UseCompressor("gzip")), //, grpc.FailFast(true)),
+		grpc.WithDefaultCallOptions(grpc.UseCompressor("gzip")), // , grpc.FailFast(true)),
 		grpc.WithKeepaliveParams(keepalive.ClientParameters{Time: time.Second * 5, Timeout: time.Second * 10, PermitWithoutStream: false}),
 		grpc.WithBalancerName(roundrobin.Name),
 		grpc.WithUserAgent("coffee's client"),
@@ -85,6 +86,12 @@ func BuildDialOption(ctx context.Context, block bool) []grpc.DialOption {
 		grpc.WithInitialWindowSize(1024),
 		grpc.WithChannelzParentID(0),
 		grpc.FailOnNonTempDialError(true),
+	}
+	perRPCCredentials := ctx.Value(perRPCCredentialsKey)
+	if perRPCCredentials != nil {
+		if prc, ok := perRPCCredentials.(credentials.PerRPCCredentials); ok {
+			opts = append(opts, grpc.WithPerRPCCredentials(prc))
+		}
 	}
 	creds := getCerts(ctx)
 	if creds != nil {
