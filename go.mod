@@ -6,7 +6,7 @@ require (
 	git.xiagaogao.com/coffee/base v0.0.0-20191222135109-9c709213638d
 	git.xiagaogao.com/coffee/httpx v0.0.0-20191223170746-00fc03c85054
 	github.com/coreos/bbolt v1.3.3 // indirect
-	github.com/coreos/etcd v3.3.18+incompatible // indirect
+	github.com/coreos/etcd v3.3.18+incompatible
 	github.com/coreos/go-semver v0.3.0 // indirect
 	github.com/coreos/go-systemd v0.0.0-20191104093116-d3cd4ed1dbcf // indirect
 	github.com/gin-gonic/gin v1.5.0
