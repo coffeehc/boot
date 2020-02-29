@@ -43,17 +43,6 @@ func StartEngine(ctx context.Context, serviceInfo configuration.ServiceInfo, sta
 				log.Info("服务启动完成")
 			}()
 			WaitServiceStop(ctx, cancelFunc, closeCallback)
-			// var sigChan = make(chan os.Signal, 3)
-			// go func() {
-			// 	<-ctx.Done()
-			// 	sigChan <- syscall.SIGINT
-			// }()
-			// signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM, syscall.SIGKILL)
-			// sig := <-sigChan
-			// if closeCallback != nil {
-			// 	closeCallback()
-			// }
-			// log.Info("关闭程序", zap.Any("signal", sig))
 			return nil
 		},
 	}

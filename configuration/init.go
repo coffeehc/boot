@@ -17,7 +17,7 @@ const (
 
 var configFile = pflag.StringP("config", "c", "", "配置文件路径")
 
-func init() {
+func _init() {
 	pflag.CommandLine.AddGoFlagSet(flag.CommandLine)
 	if !pflag.Parsed() {
 		pflag.Parse()
