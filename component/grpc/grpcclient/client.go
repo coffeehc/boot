@@ -3,13 +3,14 @@ package grpcclient
 import (
 	"context"
 	"fmt"
+	"time"
+
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/grpclog"
-	"time"
+	"google.golang.org/grpc/resolver"
 
 	"git.xiagaogao.com/coffee/base/errors"
 	"git.xiagaogao.com/coffee/base/log"
-	"git.xiagaogao.com/coffee/boot/component/etcdsd"
 	"git.xiagaogao.com/coffee/boot/component/grpc/grpcrecovery"
 	"git.xiagaogao.com/coffee/boot/configuration"
 	"github.com/grpc-ecosystem/go-grpc-middleware"
@@ -19,12 +20,11 @@ import (
 	"google.golang.org/grpc/balancer/roundrobin"
 	_ "google.golang.org/grpc/encoding/gzip"
 	"google.golang.org/grpc/keepalive"
-	"google.golang.org/grpc/resolver"
 )
 
 var scope = zap.String("scope", "grpc.client")
 
-func NewClientConnByRegister(ctx context.Context, serviceInfo configuration.ServiceInfo, block bool) (*grpc.ClientConn, errors.Error) {
+func NewClientConnByRegister(ctx context.Context, serviceInfo configuration.ServiceInfo, resolverBuilder resolver.Builder, block bool) (*grpc.ClientConn, errors.Error) {
 	opts := BuildDialOption(ctx, block)
 	if serviceInfo.Scheme == "" {
 		log.Fatal("没有指定需要链接的ServiceInfo的RPC协议，无法创建链接")
@@ -32,15 +32,13 @@ func NewClientConnByRegister(ctx context.Context, serviceInfo configuration.Serv
 	target := fmt.Sprintf("%s://%s/%s", serviceInfo.Scheme, configuration.GetModel(), serviceInfo.ServiceName)
 	log.Debug("需要获取的客户端地址", zap.String("target", target))
 	if resolver.Get(serviceInfo.Scheme) == nil {
-		switch serviceInfo.Scheme {
-		case configuration.MicroServiceProtocolScheme:
-			err := etcdsd.Resolver(ctx)
-			if err != nil {
-				return nil, err
-			}
-		default:
-			log.Fatal("不能识别的协议", zap.String("scheme", serviceInfo.Scheme))
-		}
+		//switch serviceInfo.Scheme {
+		//case configuration.MicroServiceProtocolScheme:
+		//
+		//default:
+		//	log.Fatal("不能识别的协议", zap.String("scheme", serviceInfo.Scheme))
+		//}
+		resolver.Register(resolverBuilder)
 	}
 	ctx, _ = context.WithTimeout(ctx, time.Second*5)
 	clientConn, err := grpc.DialContext(ctx, target, opts...)

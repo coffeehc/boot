@@ -2,11 +2,13 @@ package discovery
 
 import (
 	"context"
+
 	"git.xiagaogao.com/coffee/base/errors"
 	"git.xiagaogao.com/coffee/base/log"
 	"git.xiagaogao.com/coffee/boot/component/grpc/grpcclient"
 	"git.xiagaogao.com/coffee/boot/configuration"
 	"go.uber.org/zap"
+	"google.golang.org/grpc/resolver"
 )
 
 func RPCServiceInitializationByAddress(ctx context.Context, rpcService configuration.RPCService, serverAddr string) errors.Error {
@@ -24,8 +26,8 @@ func RPCServiceInitializationByAddress(ctx context.Context, rpcService configura
 
 }
 
-func RPCServiceInitialization(ctx context.Context, rpcService configuration.RPCService) errors.Error {
-	conn, err := grpcclient.NewClientConnByRegister(ctx, rpcService.GetRPCServiceInfo(), false)
+func RPCServiceInitialization(ctx context.Context, rpcService configuration.RPCService, resolverBuilder resolver.Builder) errors.Error {
+	conn, err := grpcclient.NewClientConnByRegister(ctx, rpcService.GetRPCServiceInfo(), resolverBuilder, false)
 	if err != nil {
 		return err
 	}

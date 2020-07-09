@@ -18,20 +18,20 @@ import (
 	"go.uber.org/zap"
 )
 
-var _plugin *pluginImpl
+var _plugin *serviceImpl
 var mutex = new(sync.Mutex)
 
-type pluginImpl struct {
+type serviceImpl struct {
 	httpService httpx.Service
 	endpoint    string
 }
 
-func (impl *pluginImpl) Start(ctx context.Context) errors.Error {
+func (impl *serviceImpl) Start(ctx context.Context) errors.Error {
 	impl.httpService.Start(nil)
 	log.Debug("启动ManageServer", zap.String("endpoint", GetManageEndpoint()))
 	return nil
 }
-func (impl *pluginImpl) Stop(ctx context.Context) errors.Error {
+func (impl *serviceImpl) Stop(ctx context.Context) errors.Error {
 	err := impl.httpService.Shutdown()
 	if err != nil {
 		return errors.ConverError(err)
@@ -45,7 +45,7 @@ func EnablePlugin(ctx context.Context) {
 	if _plugin != nil {
 		return
 	}
-	_plugin = &pluginImpl{}
+	_plugin = &serviceImpl{}
 	if !viper.IsSet("manage.serverAddr") {
 		viper.SetDefault("manage.serverAddr", "0.0.0.0:0")
 	}
@@ -76,7 +76,7 @@ func GetManageEndpoint() string {
 	return fmt.Sprintf("http://%s", _plugin.endpoint)
 }
 
-func (impl *pluginImpl) registerManager() {
+func (impl *serviceImpl) registerManager() {
 	router := impl.httpService.GetGinEngine()
 	// router.Use(gin.BasicAuth(gin.Accounts{
 	// 	"root": "abc###123",

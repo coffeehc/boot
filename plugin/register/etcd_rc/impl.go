@@ -1,62 +1,52 @@
-package register
+package etcd_rc
 
 import (
 	"context"
 	"fmt"
-	"sync"
 	"time"
 
 	"git.xiagaogao.com/coffee/base/errors"
 	"git.xiagaogao.com/coffee/base/log"
-	"git.xiagaogao.com/coffee/boot/component/etcdsd"
+	"git.xiagaogao.com/coffee/boot/component/etcd"
 	"git.xiagaogao.com/coffee/boot/configuration"
-	"git.xiagaogao.com/coffee/boot/plugin"
 	"git.xiagaogao.com/coffee/boot/plugin/manage"
 	"git.xiagaogao.com/coffee/boot/plugin/rpc"
 	"github.com/coreos/etcd/clientv3"
 	"github.com/coreos/etcd/clientv3/concurrency"
-	"github.com/json-iterator/go"
+	jsoniter "github.com/json-iterator/go"
 	"go.uber.org/zap"
 )
 
-type pluginImpl struct {
+type serviceImpl struct {
+	client *clientv3.Client
 }
 
-func (impl *pluginImpl) Start(ctx context.Context) errors.Error {
-	registerService(ctx, etcdsd.GetEtcdClient(), nil)
-	return nil
-}
-func (impl *pluginImpl) Stop(ctx context.Context) errors.Error {
-	return nil
-}
-
-var registered = false
-var mutex = new(sync.Mutex)
-
-func EnablePlugin(ctx context.Context) {
-	mutex.Lock()
-	defer mutex.Unlock()
-	if registered {
-		return
+func newServiceImpl() *serviceImpl {
+	client := etcd.GetEtcdClient()
+	return &serviceImpl{
+		client: client,
 	}
-	etcdsd.InitEtcdClient()
-	rpc.EnablePlugin(ctx)
-	manage.EnablePlugin(ctx)
-	plugin.RegisterPlugin("serviceRegister", &pluginImpl{})
 }
 
-func registerService(ctx context.Context, client *clientv3.Client, metadata map[string]string) errors.Error {
+func (impl *serviceImpl) GetClient() *clientv3.Client {
+	return impl.client
+}
+
+func buildServiceKeyPrefix() string {
+	return fmt.Sprintf("/ms/registers/%s/%s/", configuration.GetServiceName(), configuration.GetModel())
+}
+
+func (impl *serviceImpl) Register(ctx context.Context, serviceInfo configuration.ServiceInfo) errors.Error {
 	scope := zap.String("scope", "etcd.register")
 	if ctx.Err() != nil {
 		return errors.MessageError("服务注册已经关闭")
 	}
-	serviceInfo := configuration.GetServiceInfo()
-	serviceKey := fmt.Sprintf("%s%s/%s", etcdsd.BuildServiceKeyPrefix(), serviceInfo.Version, rpc.GetRPCServerAddr())
+	serviceKey := fmt.Sprintf("%s%s/%s", buildServiceKeyPrefix(), serviceInfo.Version, rpc.GetService().GetRPCServerAddr())
 	registerInfo := &configuration.ServiceRegisterInfo{
 		Info:           serviceInfo,
-		ServiceAddr:    rpc.GetRPCServerAddr(),
+		ServiceAddr:    rpc.GetService().GetRPCServerAddr(),
 		ManageEndpoint: manage.GetManageEndpoint(),
-		Metadata:       metadata,
+		Metadata:       serviceInfo.Metadata,
 	}
 	value, err := jsoniter.Marshal(registerInfo)
 	if err != nil {
@@ -74,12 +64,12 @@ func registerService(ctx context.Context, client *clientv3.Client, metadata map[
 						log.Error("服务注册异常", _err.GetFieldsWithCause(scope)...)
 					}
 				}()
-				session, err := concurrency.NewSession(client, concurrency.WithTTL(5))
+				session, err := concurrency.NewSession(impl.client, concurrency.WithTTL(5))
 				if err != nil {
 					log.Error("创建ETCD Session异常", zap.Error(err), scope)
 					goto SLEEP
 				}
-				_, err = client.Put(ctx, serviceKey, string(value), clientv3.WithLease(session.Lease()))
+				_, err = impl.client.Put(ctx, serviceKey, string(value), clientv3.WithLease(session.Lease()))
 				if err != nil {
 					log.Error("设置注册信息KV失败", zap.Error(err))
 					goto SLEEP

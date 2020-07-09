@@ -6,6 +6,7 @@ type ServiceInfo struct {
 	Descriptor  string // `yaml:"descriptor" json:"descriptor"`
 	APIDefine   string // `yaml:"api_define" json:"api_define"`
 	Scheme      string // `yaml:"scheme" json:"scheme"`
+	Metadata    map[string]string
 }
 
 // 以下是本地配置，不可变更

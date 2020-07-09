@@ -28,12 +28,6 @@ func initServiceInfo(ctx context.Context, serviceInfo ServiceInfo) {
 	if rootCtx == nil {
 		rootCtx = ctx
 	}
-	viper.SetDefault("version", "0.0.0")
-	viper.SetDefault("scheme", MicroServiceProtocolScheme)
-	err := viper.Unmarshal(&serviceInfo)
-	if err != nil {
-		log.Fatal("加载ServiceInfo失败", zap.Error(err))
-	}
 	if serviceInfo.ServiceName == "" {
 		log.Fatal("服务名没有设置")
 	}

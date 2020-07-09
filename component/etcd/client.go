@@ -1,4 +1,4 @@
-package etcdsd
+package etcd
 
 import (
 	"context"
