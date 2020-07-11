@@ -2,12 +2,12 @@ package etcd_dc
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"strings"
 	"time"
 
 	"git.xiagaogao.com/coffee/boot/component/etcd"
-	jsoniter "github.com/json-iterator/go"
 
 	"git.xiagaogao.com/coffee/base/log"
 	"git.xiagaogao.com/coffee/boot/configuration"
@@ -163,7 +163,7 @@ func remove(s []resolver.Address, addr string) ([]resolver.Address, bool) {
 
 func (r *etcdResolver) getServiceAddr(kv *mvccpb.KeyValue) *resolver.Address {
 	info := &configuration.ServiceRegisterInfo{}
-	err := jsoniter.Unmarshal(kv.Value, info)
+	err := json.Unmarshal(kv.Value, info)
 	if err != nil {
 		log.Error("注册信息反序列化失败", zap.Error(err), zap.String("body", string(kv.Value)))
 		return nil

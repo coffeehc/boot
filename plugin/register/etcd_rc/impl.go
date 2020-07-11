@@ -2,6 +2,7 @@ package etcd_rc
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"time"
 
@@ -13,7 +14,6 @@ import (
 	"git.xiagaogao.com/coffee/boot/plugin/rpc"
 	"github.com/coreos/etcd/clientv3"
 	"github.com/coreos/etcd/clientv3/concurrency"
-	jsoniter "github.com/json-iterator/go"
 	"go.uber.org/zap"
 )
 
@@ -48,7 +48,7 @@ func (impl *serviceImpl) Register(ctx context.Context, serviceInfo configuration
 		ManageEndpoint: manage.GetManageEndpoint(),
 		Metadata:       serviceInfo.Metadata,
 	}
-	value, err := jsoniter.Marshal(registerInfo)
+	value, err := json.Marshal(registerInfo)
 	if err != nil {
 		return errors.WrappedSystemError(err)
 	}
