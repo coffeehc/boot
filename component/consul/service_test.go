@@ -46,7 +46,7 @@ func TestGetService(t *testing.T) {
 	//	Kind:    api.ServiceKindTypical,
 	//	ID:      "",
 	//	Name:    serviceInfo.ServiceName,
-	//	Tags:    []string{configuration.GetModel()},
+	//	Tags:    []string{configuration.GetRunModel()},
 	//	Address: "127.0.0.1",
 	//	Port:    8080,
 	//	Meta: map[string]string{

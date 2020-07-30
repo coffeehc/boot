@@ -78,7 +78,7 @@ func (impl *serviceImpl) Register(ctx context.Context, serviceInfo configuration
 	register := &api.AgentServiceRegistration{
 		ID:      registerPrefix,
 		Name:    serviceInfo.ServiceName,
-		Tags:    []string{configuration.GetModel()},
+		Tags:    []string{configuration.GetRunModel()},
 		Port:    addr.Port,
 		Address: addr.IP.String(),
 		Check: &api.AgentServiceCheck{

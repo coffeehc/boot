@@ -7,7 +7,7 @@ import (
 )
 
 func InitTestConfig() {
-	configuration.SetModel("dev")
+	configuration.SetRunModel("dev")
 	viper.Set("logger", &log.Config{
 		Level: "debug",
 		FileConfig: &log.FileLogConfig{

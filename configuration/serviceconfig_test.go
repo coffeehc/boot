@@ -7,12 +7,12 @@ import (
 )
 
 func TestConfig(t *testing.T) {
-	SetModel("dev")
+	SetRunModel("dev")
 	// viper.SetDefault("ServiceName","r")
 	ctx, _ := context.WithTimeout(context.TODO(), time.Second*3)
 	InitConfiguration(ctx, ServiceInfo{
 		ServiceName: "123",
 	})
-	t.Logf("model:%s", GetModel())
+	t.Logf("%s:%s", _run_model, GetRunModel())
 	t.Logf("serviceName:%s", GetServiceName())
 }

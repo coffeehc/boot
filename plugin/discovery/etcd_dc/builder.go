@@ -28,14 +28,14 @@ func (impl *resolverBuilder) Build(target resolver.Target, cc resolver.ClientCon
 		cc:     cc,
 		ctx:    ctx,
 		cancel: cancel,
-		//defaultSrvAddr: []string{},
+		// defaultSrvAddr: []string{},
 		keyPrefix:  fmt.Sprintf("/ms/registers/%s/%s/", target.Endpoint, target.Authority),
 		target:     target,
 		ServerName: target.Endpoint,
 		client:     etcd.GetEtcdClient(),
 	}
 	addrList := r.initServerAddr()
-	//r.cc.NewAddress(addrList) //TODO ????
+	// r.cc.NewAddress(addrList) //TODO ????
 	r.cc.UpdateState(resolver.State{
 		Addresses: addrList,
 	})
@@ -48,11 +48,10 @@ func (impl *resolverBuilder) Scheme() string {
 }
 
 type etcdResolver struct {
-	cc     resolver.ClientConn
-	client *clientv3.Client
-	ctx    context.Context
-	cancel context.CancelFunc
-	//defaultSrvAddr []string
+	cc         resolver.ClientConn
+	client     *clientv3.Client
+	ctx        context.Context
+	cancel     context.CancelFunc
 	keyPrefix  string
 	target     resolver.Target
 	ServerName string
@@ -69,9 +68,6 @@ func (impl *etcdResolver) Close() {
 
 func (impl *etcdResolver) initServerAddr() []resolver.Address {
 	var addrList []resolver.Address
-	//for _, addr := range impl.defaultSrvAddr {
-	//	addrList = append(addrList, resolver.Address{Addr: addr, ServerName: impl.ServerName})
-	//}
 	// log.Debug("Get service endpoints", zap.String("prefix", impl.keyPrefix))
 	getResp, err := impl.client.Get(context.Background(), impl.keyPrefix, clientv3.WithPrefix())
 	if err != nil {
@@ -133,7 +129,7 @@ func (r *etcdResolver) watch(addrList []resolver.Address) {
 					}
 				}
 			}
-			//r.cc.NewAddress(addrList)
+			// r.cc.NewAddress(addrList)
 			r.cc.UpdateState(resolver.State{
 				Addresses: addrList,
 			})
@@ -168,7 +164,7 @@ func (r *etcdResolver) getServiceAddr(kv *mvccpb.KeyValue) *resolver.Address {
 		log.Error("注册信息反序列化失败", zap.Error(err), zap.String("body", string(kv.Value)))
 		return nil
 	}
-	if configuration.GetModel() == r.target.Authority {
+	if configuration.GetRunModel() == r.target.Authority {
 		if info.ServiceAddr == "" {
 			return &resolver.Address{Addr: string(kv.Key[len(r.keyPrefix):]), ServerName: r.ServerName}
 		}

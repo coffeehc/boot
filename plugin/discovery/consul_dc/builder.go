@@ -38,12 +38,11 @@ func (impl *resolverBuilder) Scheme() string {
 }
 
 type consulResolver struct {
-	mutex  sync.Mutex
-	cc     resolver.ClientConn
-	client *api.Client
-	ctx    context.Context
-	cancel context.CancelFunc
-	//keyPrefix      string
+	mutex      sync.Mutex
+	cc         resolver.ClientConn
+	client     *api.Client
+	ctx        context.Context
+	cancel     context.CancelFunc
 	target     resolver.Target
 	ServerName string
 	lastIndex  uint64

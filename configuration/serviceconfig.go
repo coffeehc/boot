@@ -10,18 +10,16 @@ import (
 	"go.uber.org/zap"
 )
 
-var defaultServiceConfig *ServiceConfig
+var remoteConfigProvide *RemoteConfigProvide
 var currentServiceInfo ServiceInfo
 var mutex = new(sync.RWMutex)
 var rootCtx context.Context
 
 func InitConfiguration(ctx context.Context, serviceInfo ServiceInfo) {
-	_init()
-	initLoggerConfig()
-	initServiceConfig(ctx)
+	loadConfig()
+	initDefaultLoggerConfig()
 	initServiceInfo(ctx, serviceInfo)
-	viper.MergeInConfig()
-	loadRemortConfigProvider(ctx)
+	initRemoteConfigProvide(ctx)
 }
 
 func initServiceInfo(ctx context.Context, serviceInfo ServiceInfo) {
@@ -37,47 +35,38 @@ func initServiceInfo(ctx context.Context, serviceInfo ServiceInfo) {
 		log.Fatal("获取本机IP失败", err1.GetFieldsWithCause()...)
 	}
 	log.SetBaseFields(zap.String("serviceName", serviceInfo.ServiceName), zap.String("localIp", localIp.String()))
-	viper.MergeInConfig()
 	log.Debug("加载服务信息", zap.Any("serviceInfo", serviceInfo))
 }
 
-func initServiceConfig(ctx context.Context) {
+func initRemoteConfigProvide(ctx context.Context) {
 	mutex.Lock()
 	defer mutex.Unlock()
-	if defaultServiceConfig != nil {
+	if remoteConfigProvide != nil {
 		return
 	}
 	if rootCtx == nil {
 		rootCtx = ctx
 	}
-	viper.RegisterAlias("model", "RUN_MODEL")
-	log.InitLogger(true)
-	conf := &ServiceConfig{}
-	err := viper.Unmarshal(conf)
+	if !viper.IsSet("RemoteConfigProvide") {
+		return
+	}
+	provider := &RemoteConfigProvide{}
+	err := viper.UnmarshalKey("RemoteConfigProvide", provider)
 	if err != nil {
-		log.Fatal("不能从配置中读取服务配置", zap.Error(err))
+		log.Fatal("不能从配置中读取远程服务配置", zap.Error(err))
 	}
-	if conf.Model == "" {
-		log.Fatal("service model没有设置")
+	if provider.Endpoint == "" || provider.Path == "" || provider.Provider == "" {
+		log.Fatal("没有配置中读取远程服务属性", zap.Error(err))
 	}
-	defaultServiceConfig = conf
-	viper.MergeInConfig()
-	log.Debug("加载基础配置", zap.String("model", conf.Model), zap.Any("RemoteConfigProvide", conf.RemoteConfigProvide))
+	remoteConfigProvide = provider
+	viper.AddRemoteProvider(provider.Provider, provider.Endpoint, provider.Path)
+	viper.ReadRemoteConfig()
+	viper.WatchRemoteConfig()
 }
 
-func loadRemortConfigProvider(ctx context.Context) error {
-	if defaultServiceConfig.RemoteConfigProvide != nil {
-		log.Debug("加载远程配置")
-		configProvide := defaultServiceConfig.RemoteConfigProvide
-		// TODO
-		viper.AddRemoteProvider(configProvide.Provider, configProvide.Endpoint, configProvide.Path)
-		viper.ReadRemoteConfig()
-	}
-	return nil
-}
-
-func GetModel() string {
-	return defaultServiceConfig.Model
+func GetRunModel() string {
+	// return defaultServiceConfig.RunModel
+	return viper.GetString(_run_model)
 }
 
 func GetServiceName() string {
@@ -88,6 +77,6 @@ func GetServiceInfo() ServiceInfo {
 	return currentServiceInfo
 }
 
-func SetModel(model string) {
-	viper.SetDefault("model", model)
+func SetRunModel(runModel string) {
+	viper.SetDefault(_run_model, runModel)
 }

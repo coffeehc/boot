@@ -29,7 +29,7 @@ func NewClientConnByRegister(ctx context.Context, serviceInfo configuration.Serv
 	if serviceInfo.Scheme == "" {
 		log.Fatal("没有指定需要链接的ServiceInfo的RPC协议，无法创建链接")
 	}
-	target := fmt.Sprintf("%s://%s/%s", serviceInfo.Scheme, configuration.GetModel(), serviceInfo.ServiceName)
+	target := fmt.Sprintf("%s://%s/%s", serviceInfo.Scheme, configuration.GetRunModel(), serviceInfo.ServiceName)
 	log.Debug("需要获取的客户端地址", zap.String("target", target))
 	if resolver.Get(serviceInfo.Scheme) == nil {
 		//switch serviceInfo.Scheme {
@@ -73,7 +73,7 @@ func BuildDialOption(ctx context.Context, block bool) []grpc.DialOption {
 	)
 	opts := []grpc.DialOption{
 		grpc.WithBackoffMaxDelay(time.Second * 10),
-		grpc.WithAuthority(configuration.GetModel()),
+		grpc.WithAuthority(configuration.GetRunModel()),
 		grpc.WithDefaultCallOptions(grpc.UseCompressor("gzip")), // , grpc.FailFast(true)),
 		grpc.WithKeepaliveParams(keepalive.ClientParameters{Time: time.Second * 5, Timeout: time.Second * 10, PermitWithoutStream: false}),
 		grpc.WithBalancerName(roundrobin.Name),

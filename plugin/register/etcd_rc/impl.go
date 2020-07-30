@@ -33,7 +33,7 @@ func (impl *serviceImpl) GetClient() *clientv3.Client {
 }
 
 func buildServiceKeyPrefix() string {
-	return fmt.Sprintf("/ms/registers/%s/%s/", configuration.GetServiceName(), configuration.GetModel())
+	return fmt.Sprintf("/ms/registers/%s/%s/", configuration.GetServiceName(), configuration.GetRunModel())
 }
 
 func (impl *serviceImpl) Register(ctx context.Context, serviceInfo configuration.ServiceInfo) errors.Error {

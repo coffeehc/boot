@@ -20,7 +20,7 @@ func (impl *serviceImpl) registerServiceRuntimeInfoEndpoint(router gin.IRouter) 
 		GoRach:      runtime.GOARCH,
 		GoOS:        runtime.GOOS,
 		StartTime:   time.Now(),
-		Model:       configuration.GetModel(),
+		Model:       configuration.GetRunModel(),
 	}
 	router.GET("/info", func(context *gin.Context) {
 		context.JSON(http.StatusOK, h)

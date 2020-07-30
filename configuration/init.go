@@ -4,7 +4,6 @@ import (
 	"flag"
 
 	"git.xiagaogao.com/coffee/base/log"
-	"github.com/json-iterator/go/extra"
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
 	"go.uber.org/zap"
@@ -16,34 +15,35 @@ const (
 	Model_product = "product"
 )
 
-var configFile = pflag.StringP("config", "c", "", "配置文件路径")
+var configFile = pflag.StringP("config", "c", "./cofnig.yml", "配置文件路径")
 
-func _init() {
+func registerAlias() {
+	viper.RegisterAlias(_run_model, "RUN_MODEL")
+}
+
+func loadConfig() {
+	registerAlias()
 	pflag.CommandLine.AddGoFlagSet(flag.CommandLine)
 	if !pflag.Parsed() {
 		pflag.Parse()
 	}
 	viper.BindPFlags(pflag.CommandLine)
-	viper.AddConfigPath(".")
-	if *configFile != "" {
-		viper.SetConfigFile(*configFile)
-	} else {
-		viper.SetConfigName("config")
-	}
-	if err := viper.ReadInConfig(); err != nil {
-		log.Warn("加载日志文件失败", zap.Error(err))
-	}
 	viper.SetEnvPrefix("ENV")
 	viper.AutomaticEnv()
-	// 本地配置里面如果有配置远程配置中心的也需要处理
-	log.WatchLevel()
-}
-func initJsonConifg() {
-	extra.RegisterFuzzyDecoders()
-	extra.SetNamingStrategy(extra.LowerCaseWithUnderscores)
+	if *configFile == "" {
+		log.Warn("没有指定config文件路径")
+		return
+	}
+	viper.SetConfigFile(*configFile)
+	if err := viper.MergeInConfig(); err != nil {
+		log.Warn("加载日志文件失败", zap.Error(err))
+	}
+	if viper.GetString(_run_model) == "" {
+		log.Fatal("没有指定run model")
+	}
 }
 
-func initLoggerConfig() {
+func initDefaultLoggerConfig() {
 	viper.SetDefault("logger", &log.Config{
 		Level: "info",
 		FileConfig: &log.FileLogConfig{
@@ -58,4 +58,6 @@ func initLoggerConfig() {
 		EnableColor:   false,
 		EnableSampler: false,
 	})
+	log.InitLogger(true)
+	log.WatchLevel()
 }
