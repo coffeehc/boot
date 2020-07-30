@@ -14,7 +14,6 @@ require (
 	github.com/grpc-ecosystem/go-grpc-middleware v1.2.0
 	github.com/grpc-ecosystem/go-grpc-prometheus v1.2.0
 	github.com/hashicorp/consul/api v1.5.0
-	github.com/json-iterator/go v1.1.10
 	github.com/prometheus/client_golang v1.7.1
 	github.com/spf13/cobra v1.0.0
 	github.com/spf13/pflag v1.0.5
@@ -22,6 +21,6 @@ require (
 	go.uber.org/zap v1.15.0
 	golang.org/x/net v0.0.0-20200707034311-ab3426394381
 	google.golang.org/grpc v1.30.0
-	google.golang.org/grpc/examples v0.0.0-20200723182653-9106c3fff523 // indirect
+	google.golang.org/grpc/examples v0.0.0-20200729200327-d6c4e49aab24 // indirect
 	sigs.k8s.io/yaml v1.2.0 // indirect
 )
