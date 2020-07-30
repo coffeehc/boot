@@ -1,18 +1,18 @@
 package configuration
 
 type ServiceInfo struct {
-	ServiceName string // `yaml:"service_name",json:"service_name"`
-	Version     string // `yaml:"version",json:"version"`
-	Descriptor  string // `yaml:"descriptor" json:"descriptor"`
-	APIDefine   string // `yaml:"api_define" json:"api_define"`
-	Scheme      string // `yaml:"scheme" json:"scheme"`
-	Metadata    map[string]string
+	ServiceName string            `mapstructure:"service_name,omitempty" json:"service_name,omitempty"`
+	Version     string            `mapstructure:"version,omitempty" json:"version,omitempty"`
+	Descriptor  string            `mapstructure:"descriptor,omitempty" json:"descriptor,omitempty"`
+	APIDefine   string            `mapstructure:"api_define,omitempty" json:"api_define,omitempty"`
+	Scheme      string            `mapstructure:"scheme,omitempty" json:"scheme,omitempty"`
+	Metadata    map[string]string `mapstructure:"metadata,omitempty" json:"metadata,omitempty"`
 }
 
 // 以下是本地配置，不可变更
 
 type RemoteConfigProvide struct {
-	Provider string
-	Endpoint string
-	Path     string
+	Provider string `mapstructure:"provider,omitempty" json:"provider,omitempty"`
+	Endpoint string `mapstructure:"endpoint,omitempty" json:"endpoint,omitempty"`
+	Path     string `mapstructure:"path,omitempty" json:"path,omitempty"`
 }

@@ -16,6 +16,7 @@ var mutex = new(sync.RWMutex)
 var rootCtx context.Context
 
 func InitConfiguration(ctx context.Context, serviceInfo ServiceInfo) {
+	viper.SetConfigType("yaml")
 	loadConfig()
 	initDefaultLoggerConfig()
 	initServiceInfo(ctx, serviceInfo)

@@ -9,11 +9,11 @@ import (
 )
 
 type Config struct {
-	Endpoints        []string
-	AutoSyncInterval time.Duration
-	DialTimeout      time.Duration
-	Username         string
-	Password         string
+	Endpoints        []string      `mapstructure:"endpoints,omitempty" json:"endpoints,omitempty"`
+	AutoSyncInterval time.Duration `mapstructure:"auto_sync_interval,omitempty" json:"auto_sync_interval,omitempty"`
+	DialTimeout      time.Duration `mapstructure:"dial_timeout,omitempty" json:"dial_timeout,omitempty"`
+	Username         string        `mapstructure:"username,omitempty" json:"username,omitempty"`
+	Password         string        `mapstructure:"password,omitempty" json:"password,omitempty"`
 }
 
 func (config *Config) getEtcdConfig() *clientv3.Config {

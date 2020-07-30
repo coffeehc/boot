@@ -41,6 +41,7 @@ func loadConfig() {
 	if viper.GetString(_run_model) == "" {
 		log.Fatal("没有指定run model")
 	}
+	log.Info("加载配置", zap.String("run model", viper.GetString(_run_model)))
 }
 
 func initDefaultLoggerConfig() {
