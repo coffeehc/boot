@@ -4,18 +4,16 @@ import (
 	"context"
 	"time"
 
-	"google.golang.org/grpc/grpclog"
+	"google.golang.org/grpc/keepalive"
 
 	"git.xiagaogao.com/coffee/base/errors"
 	"git.xiagaogao.com/coffee/base/log"
 	"git.xiagaogao.com/coffee/boot/component/grpc/grpcrecovery"
-	"github.com/grpc-ecosystem/go-grpc-middleware"
 	"github.com/grpc-ecosystem/go-grpc-prometheus"
 	"github.com/spf13/viper"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
 	_ "google.golang.org/grpc/encoding/gzip"
-	"google.golang.org/grpc/keepalive"
 )
 
 var scope = zap.String("scope", "grpc.server")
@@ -29,15 +27,14 @@ func NewServer(ctx context.Context, grpcConfig *GRPCServerConfig) (*grpc.Server,
 	if err != nil {
 		log.Fatal("解析grpc配置失败", zap.Error(err), scope)
 	}
+	// server := grpc.NewServer()
 	server := grpc.NewServer(BuildGRPCServerOptions(ctx, grpcConfig)...)
 	return server, nil
 }
 
 func BuildGRPCServerOptions(ctx context.Context, config *GRPCServerConfig) []grpc.ServerOption {
-	grpclog.SetLoggerV2(grpcrecovery.NewZapLogger())
-	grpc.EnableTracing = false
 	chainUnaryServers := []grpc.UnaryServerInterceptor{
-		// DebufLoggingInterceptor(),
+		DebugLoggingInterceptor(),
 		grpc_prometheus.UnaryServerInterceptor,
 		grpcrecovery.UnaryServerInterceptor(),
 	}
@@ -53,22 +50,20 @@ func BuildGRPCServerOptions(ctx context.Context, config *GRPCServerConfig) []grp
 			chainStreamServers = append(chainStreamServers, buildAuthStreamServerInterceptor(authService))
 		}
 	}
-	chainUnaryServer := grpc_middleware.ChainUnaryServer(chainUnaryServers...)
-	chainStreamServer := grpc_middleware.ChainStreamServer(chainStreamServers...)
 	opts := []grpc.ServerOption{
 		grpc.Creds(getCerts(ctx)),
 		grpc.InitialWindowSize(4096),
-		grpc.InitialConnWindowSize(100),
+		grpc.InitialConnWindowSize(1000),
 		grpc.MaxConcurrentStreams(config.MaxConcurrentStreams),
-		grpc.StreamInterceptor(chainStreamServer),
-		grpc.UnaryInterceptor(chainUnaryServer),
+		grpc.ChainStreamInterceptor(chainStreamServers...),
+		grpc.ChainUnaryInterceptor(chainUnaryServers...),
 		grpc.KeepaliveParams(keepalive.ServerParameters{
 			MaxConnectionIdle: time.Minute,
-			Timeout:           30 * time.Second, // 類似 ClientParameters.Time 不過默認爲 2小時
-			Time:              10 * time.Second, // 類似 ClientParameters.Timeout 默認 20秒
+			Timeout:           10 * time.Second, // 類似 ClientParameters.Time 不過默認爲 2小時
+			Time:              3 * time.Second,  // 類似 ClientParameters.Timeout 默認 20秒
 		}),
 		grpc.KeepaliveEnforcementPolicy(keepalive.EnforcementPolicy{ // 當服務器不允許ping 或 ping 太頻繁超過 MinTime 限制 服務器 會 返回ping失敗 此時 客戶端 不會認爲這個ping是 active RPCs
-			MinTime:             time.Second * 10,
+			MinTime:             time.Second * 3,
 			PermitWithoutStream: true,
 		}),
 	}
@@ -76,7 +71,6 @@ func BuildGRPCServerOptions(ctx context.Context, config *GRPCServerConfig) []grp
 		opts = append(opts, grpc.MaxRecvMsgSize(config.MaxMsgSize),
 			grpc.MaxSendMsgSize(config.MaxMsgSize))
 	}
-
 	return opts
 }
 

@@ -3,13 +3,14 @@ package engine
 import (
 	"context"
 	"fmt"
+	"os"
+
 	"git.xiagaogao.com/coffee/base/errors"
 	"git.xiagaogao.com/coffee/base/log"
 	"git.xiagaogao.com/coffee/boot/configuration"
 	"git.xiagaogao.com/coffee/boot/plugin"
 	"github.com/spf13/cobra"
 	"go.uber.org/zap"
-	"os"
 )
 
 type ServiceStart func(ctx context.Context, cmd *cobra.Command, args []string) (ServiceCloseCallback, error)

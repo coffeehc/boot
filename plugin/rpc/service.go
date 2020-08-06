@@ -51,6 +51,7 @@ func EnablePlugin(ctx context.Context) {
 		log.Fatal("加载GRPC配置失败", zap.Error(_err))
 	}
 	if viper.GetBool("grpc.openTLS") {
+		log.Debug("开启TLS")
 		grpcserver.SetCerds(ctx, crets.NewServerCreds())
 	}
 	_server, err := grpcserver.NewServer(ctx, &grpcserver.GRPCServerConfig{

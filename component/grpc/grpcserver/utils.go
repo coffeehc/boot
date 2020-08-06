@@ -10,11 +10,11 @@ import (
 	"google.golang.org/grpc/credentials"
 )
 
-func DebufLoggingInterceptor() grpc.UnaryServerInterceptor {
+func DebugLoggingInterceptor() grpc.UnaryServerInterceptor {
 	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp interface{}, err error) {
 		start := time.Now()
 		defer func() {
-			log.Debug(fmt.Sprintf("finished %s, took=%s, err=%v", info.FullMethod, time.Since(start), err), scope)
+			log.Debug(fmt.Sprintf("FullMethod %s, took=%s, err=%v", info.FullMethod, time.Since(start), err), scope)
 		}()
 		resp, err = handler(ctx, req)
 		return resp, err

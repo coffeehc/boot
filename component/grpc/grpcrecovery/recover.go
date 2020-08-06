@@ -6,9 +6,16 @@ import (
 	"git.xiagaogao.com/coffee/base/errors"
 	"git.xiagaogao.com/coffee/base/log"
 	"go.uber.org/zap"
+	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/grpclog"
 	"google.golang.org/grpc/status"
 )
+
+func init() {
+	grpclog.SetLoggerV2(NewZapLogger())
+	grpc.EnableTracing = false
+}
 
 var errCode = codes.Code(18)
 
@@ -72,7 +79,7 @@ func parseRPCError(err interface{}, recover bool, fields ...zap.Field) errors.Er
 		if recover {
 			log.DPanic("不可处理的异常", append(fields, zap.Error(v))...)
 		} else {
-			log.Warn("rpc错误", append(fields, zap.Error(v))...)
+			log.DPanic("rpc错误", append(fields, zap.Error(v))...)
 		}
 		return errors.SystemError("远程服务暂时不可用,请重试")
 	}

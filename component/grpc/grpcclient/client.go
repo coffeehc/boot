@@ -5,21 +5,19 @@ import (
 	"fmt"
 	"time"
 
+	"git.xiagaogao.com/coffee/boot/component/grpc/grpcrecovery"
+	grpc_prometheus "github.com/grpc-ecosystem/go-grpc-prometheus"
+	"google.golang.org/grpc/balancer/roundrobin"
 	"google.golang.org/grpc/credentials"
-	"google.golang.org/grpc/grpclog"
+	"google.golang.org/grpc/keepalive"
 	"google.golang.org/grpc/resolver"
 
 	"git.xiagaogao.com/coffee/base/errors"
 	"git.xiagaogao.com/coffee/base/log"
-	"git.xiagaogao.com/coffee/boot/component/grpc/grpcrecovery"
 	"git.xiagaogao.com/coffee/boot/configuration"
-	"github.com/grpc-ecosystem/go-grpc-middleware"
-	"github.com/grpc-ecosystem/go-grpc-prometheus"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/balancer/roundrobin"
 	_ "google.golang.org/grpc/encoding/gzip"
-	"google.golang.org/grpc/keepalive"
 )
 
 var scope = zap.String("scope", "grpc.client")
@@ -32,12 +30,6 @@ func NewClientConnByRegister(ctx context.Context, serviceInfo configuration.Serv
 	target := fmt.Sprintf("%s://%s/%s", serviceInfo.Scheme, configuration.GetRunModel(), serviceInfo.ServiceName)
 	log.Debug("需要获取的客户端地址", zap.String("target", target))
 	if resolver.Get(serviceInfo.Scheme) == nil {
-		//switch serviceInfo.Scheme {
-		//case configuration.MicroServiceProtocolScheme:
-		//
-		//default:
-		//	log.Fatal("不能识别的协议", zap.String("scheme", serviceInfo.Scheme))
-		//}
 		resolver.Register(resolverBuilder)
 	}
 	ctx, _ = context.WithTimeout(ctx, time.Second*5)
@@ -62,28 +54,33 @@ func NewClientConn(ctx context.Context, block bool, serverAddr string) (*grpc.Cl
 }
 
 func BuildDialOption(ctx context.Context, block bool) []grpc.DialOption {
-	grpclog.SetLoggerV2(grpcrecovery.NewZapLogger())
-	chainUnaryClient := grpc_middleware.ChainUnaryClient(
+	chainUnaryClient := []grpc.UnaryClientInterceptor{
 		grpc_prometheus.UnaryClientInterceptor,
 		grpcrecovery.UnaryClientInterceptor(),
-	)
-	chainStreamClient := grpc_middleware.ChainStreamClient(
+	}
+	chainStreamClient := []grpc.StreamClientInterceptor{
 		grpc_prometheus.StreamClientInterceptor,
 		grpcrecovery.StreamClientInterceptor(),
-	)
+	}
 	opts := []grpc.DialOption{
-		grpc.WithBackoffMaxDelay(time.Second * 10),
+		// grpc.WithBackoffMaxDelay(time.Second * 10),
 		grpc.WithAuthority(configuration.GetRunModel()),
-		grpc.WithDefaultCallOptions(grpc.UseCompressor("gzip")), // , grpc.FailFast(true)),
-		grpc.WithKeepaliveParams(keepalive.ClientParameters{Time: time.Second * 5, Timeout: time.Second * 10, PermitWithoutStream: false}),
-		grpc.WithBalancerName(roundrobin.Name),
+		grpc.WithDefaultCallOptions(grpc.UseCompressor("gzip"), grpc.WaitForReady(false)),
+		grpc.WithKeepaliveParams(keepalive.ClientParameters{
+			Time:                time.Second * 8,
+			Timeout:             time.Second * 30,
+			PermitWithoutStream: false,
+		}),
+		// grpc.WithBalancerName(roundrobin.Name),
+		grpc.WithDefaultServiceConfig(fmt.Sprintf(`{"LoadBalancingPolicy": "%s"}`, roundrobin.Name)),
 		grpc.WithUserAgent("coffee's client"),
-		grpc.WithUnaryInterceptor(chainUnaryClient),
-		grpc.WithStreamInterceptor(chainStreamClient),
+		grpc.WithChainStreamInterceptor(chainStreamClient...),
+		grpc.WithChainUnaryInterceptor(chainUnaryClient...),
 		grpc.WithInitialConnWindowSize(10),
 		grpc.WithInitialWindowSize(1024),
 		grpc.WithChannelzParentID(0),
 		grpc.FailOnNonTempDialError(true),
+		grpc.WithNoProxy(),
 	}
 	perRPCCredentials := ctx.Value(perRPCCredentialsKey)
 	if perRPCCredentials != nil {

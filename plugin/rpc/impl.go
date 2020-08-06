@@ -42,7 +42,7 @@ func (impl *serviceImpl) Start(ctx context.Context) errors.Error {
 		}
 	}()
 	time.Sleep(time.Millisecond * 10)
-	log.Debug("启动RPC服务", zap.String("rpcServerAddr", impl.rpcServerAddr))
+	log.Debug("启动RPC服务", zap.String("rpcServerAddr", impl.rpcServerAddr), zap.String("realAddr", lis.Addr().String()))
 	return nil
 }
 func (impl *serviceImpl) Stop(ctx context.Context) errors.Error {
@@ -50,11 +50,3 @@ func (impl *serviceImpl) Stop(ctx context.Context) errors.Error {
 	log.Info("RPC服务关闭")
 	return nil
 }
-
-//func RegisterRPCMotheds(register func(server *grpc.Server)) {
-//	if server == nil {
-//		log.Error("GRPC服务没有初始化,不能注册")
-//	}
-//	log.Debug("开始注册RPC接口方法")
-//	register(server)
-//}
