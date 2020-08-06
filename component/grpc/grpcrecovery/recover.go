@@ -73,7 +73,7 @@ func parseRPCError(err interface{}, recover bool, fields ...zap.Field) errors.Er
 			return errors.SystemError("无法识别的RPC异常")
 		}
 		if s.Code() == errCode {
-			log.Warn("远程服务暂时不可用", append(fields, zap.Error(v))...)
+			log.Warn("服务端处理调用异常", append(fields, zap.Error(v))...)
 			return errors.ParseError(s.Message())
 		}
 		if recover {

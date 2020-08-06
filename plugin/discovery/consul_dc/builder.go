@@ -65,7 +65,7 @@ func (impl *consulResolver) watch() {
 func (impl *consulResolver) resolver() errors.Error {
 	impl.mutex.Lock()
 	defer impl.mutex.Unlock()
-	services, mateinfo, err := impl.client.Health().ServiceMultipleTags(impl.ServerName, []string{impl.target.Authority}, true, &api.QueryOptions{
+	services, mateinfo, err := impl.client.Health().ServiceMultipleTags(impl.ServerName, []string{configuration.GetRunModel()}, true, &api.QueryOptions{
 		WaitIndex: impl.lastIndex,
 	})
 	if err != nil {

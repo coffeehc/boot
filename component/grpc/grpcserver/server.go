@@ -51,10 +51,18 @@ func BuildGRPCServerOptions(ctx context.Context, config *GRPCServerConfig) []grp
 			chainStreamServers = append(chainStreamServers, buildAuthStreamServerInterceptor(authService))
 		}
 	}
+	if config.MaxConcurrentStreams == 0 {
+		config.MaxConcurrentStreams = 1000
+	}
 	opts := []grpc.ServerOption{
 		grpc.Creds(getCerts(ctx)),
-		grpc.InitialWindowSize(4096),
-		grpc.InitialConnWindowSize(1000),
+		grpc.InitialWindowSize(1024 * 1024),
+		grpc.InitialConnWindowSize(1024 * 1024),
+		grpc.ReadBufferSize(1024 * 1024),
+		grpc.WriteBufferSize(1024 * 1024),
+		grpc.MaxRecvMsgSize(1024 * 1024),
+		grpc.MaxSendMsgSize(1024 * 1024),
+		grpc.NumStreamWorkers(1024),
 		grpc.MaxConcurrentStreams(config.MaxConcurrentStreams),
 		grpc.ChainStreamInterceptor(chainStreamServers...),
 		grpc.ChainUnaryInterceptor(chainUnaryServers...),

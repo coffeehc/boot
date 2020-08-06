@@ -7,6 +7,7 @@ import (
 
 	"git.xiagaogao.com/coffee/boot/component/grpc/grpcrecovery"
 	grpc_prometheus "github.com/grpc-ecosystem/go-grpc-prometheus"
+	"google.golang.org/grpc/backoff"
 	"google.golang.org/grpc/balancer/roundrobin"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/keepalive"
@@ -63,24 +64,38 @@ func BuildDialOption(ctx context.Context, block bool) []grpc.DialOption {
 		grpcrecovery.StreamClientInterceptor(),
 	}
 	opts := []grpc.DialOption{
-		// grpc.WithBackoffMaxDelay(time.Second * 10),
+		grpc.WithConnectParams(grpc.ConnectParams{
+			Backoff: backoff.Config{
+				BaseDelay:  time.Second,      // 第一次失败重试前后需等待多久
+				Multiplier: 1.5,              // 在失败的重试后乘以的倍数
+				Jitter:     0.2,              // 随机抖动因子
+				MaxDelay:   time.Second * 30, // backoff上限
+			},
+			MinConnectTimeout: time.Second,
+		}),
 		grpc.WithAuthority(configuration.GetRunModel()),
-		grpc.WithDefaultCallOptions(grpc.UseCompressor("gzip"), grpc.WaitForReady(false)),
+		grpc.WithDefaultCallOptions(
+			grpc.UseCompressor("gzip"),
+			grpc.WaitForReady(false),
+			// grpc.MaxCallRecvMsgSize(1024*32),
+			// grpc.MaxCallSendMsgSize(1024*32),
+		),
 		grpc.WithKeepaliveParams(keepalive.ClientParameters{
 			Time:                time.Second * 3,
 			Timeout:             time.Second * 10,
 			PermitWithoutStream: false,
 		}),
-		// grpc.WithBalancerName(roundrobin.Name),
 		grpc.WithDefaultServiceConfig(fmt.Sprintf(`{"LoadBalancingPolicy": "%s"}`, roundrobin.Name)),
 		grpc.WithUserAgent("coffee's client"),
 		grpc.WithChainStreamInterceptor(chainStreamClient...),
 		grpc.WithChainUnaryInterceptor(chainUnaryClient...),
-		grpc.WithInitialConnWindowSize(10),
-		grpc.WithInitialWindowSize(1024),
+		grpc.WithInitialConnWindowSize(1024 * 64),
+		grpc.WithInitialWindowSize(1024 * 256),
 		grpc.WithChannelzParentID(0),
 		grpc.FailOnNonTempDialError(false),
 		grpc.WithNoProxy(),
+		grpc.WithReadBufferSize(1024 * 128),
+		grpc.WithWriteBufferSize(1024 * 128),
 	}
 	perRPCCredentials := ctx.Value(perRPCCredentialsKey)
 	if perRPCCredentials != nil {
