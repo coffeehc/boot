@@ -10,6 +10,8 @@ import (
 	"google.golang.org/grpc/credentials"
 )
 
+var EnableAccessLog bool = false
+
 func DebugLoggingInterceptor() grpc.UnaryServerInterceptor {
 	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp interface{}, err error) {
 		start := time.Now()

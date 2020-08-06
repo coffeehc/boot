@@ -26,8 +26,7 @@ func GetService() Service {
 
 type Service interface {
 	internal.RegisterCenter
-	//CheckRegister(ctx context.Context)
-	//CheckDeregister(checkId string)
+	CheckDeregister(checkId string)
 }
 
 func EnablePlugin(ctx context.Context) {

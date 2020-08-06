@@ -2,6 +2,10 @@ package rpc
 
 import (
 	"context"
+
+	"net"
+	"sync"
+
 	"git.xiagaogao.com/coffee/base/log"
 	"git.xiagaogao.com/coffee/base/utils"
 	"git.xiagaogao.com/coffee/boot/component/grpc/grpcserver"
@@ -10,9 +14,8 @@ import (
 	"github.com/spf13/viper"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
-
-	"net"
-	"sync"
+	"google.golang.org/grpc/health"
+	"google.golang.org/grpc/health/grpc_health_v1"
 )
 
 var service Service
@@ -30,6 +33,7 @@ func GetService() Service {
 type Service interface {
 	GetGRPCServer() *grpc.Server
 	GetRPCServerAddr() string
+	GetRegisterServiceId() string
 }
 
 func EnablePlugin(ctx context.Context) {
@@ -41,10 +45,9 @@ func EnablePlugin(ctx context.Context) {
 	if service != nil {
 		return
 	}
-	viper.SetDefault("grpc.MaxConcurrentStreams", 100000)
-	viper.SetDefault("grpc.MaxMsgSize", 1024*1024*4)
-	viper.SetDefault("grpc.RPCServerAddr", "0.0.0.0:0")
-	viper.SetDefault("grpc.openTLS", false)
+	viper.SetDefault("grpc.max_concurrent_streams", 100000)
+	viper.SetDefault("grpc.max_msg_size", 1024*1024*4)
+	viper.SetDefault("grpc.rpc_server_addr", "0.0.0.0:0")
 	config := &RpcConfig{}
 	_err := viper.UnmarshalKey("grpc", config)
 	if _err != nil {
@@ -75,8 +78,11 @@ func EnablePlugin(ctx context.Context) {
 		server:        _server,
 		config:        config,
 		rpcServerAddr: rpcServerAddr,
+		healthServer:  health.NewServer(),
 	}
 	service = impl
+	// reflection.Register(service.GetGRPCServer()) //是否开启远程控制
+	grpc_health_v1.RegisterHealthServer(service.GetGRPCServer(), impl.healthServer)
 	log.Debug("初始化RPC服务", zap.String("rpcServerAddr", impl.GetRPCServerAddr()))
 	plugin.RegisterPlugin("rpcServer", impl)
 }

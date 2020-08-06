@@ -3,7 +3,6 @@ package consul_rc
 import (
 	"context"
 	"fmt"
-	"log"
 	"net"
 
 	"git.xiagaogao.com/coffee/base/errors"
@@ -23,28 +22,6 @@ func newService() *serviceImpl {
 		client: service.GetConsulClient(),
 	}
 	return impl
-}
-
-func GetRegisterServicePrefix(serviceInfo configuration.ServiceInfo) string {
-	rpcServerAddr := rpc.GetService().GetRPCServerAddr()
-	addr, err := net.ResolveTCPAddr("tcp", rpcServerAddr)
-	if err != nil {
-		log.Fatal("RPC服务地址解析失败")
-	}
-	return fmt.Sprintf("%s_%s", serviceInfo.ServiceName, addr.IP.String())
-}
-
-func (impl *serviceImpl) CheckRegister(ctx context.Context, name string) {
-	agent := impl.client.Agent()
-	rpcServerAddr := rpc.GetService().GetRPCServerAddr()
-	agent.CheckRegister(&api.AgentCheckRegistration{
-		ID:        fmt.Sprintf("%s-%s", GetRegisterServicePrefix(configuration.GetServiceInfo()), name),
-		Name:      name,
-		ServiceID: rpcServerAddr,
-		AgentServiceCheck: api.AgentServiceCheck{
-			TCP: rpcServerAddr,
-		},
-	})
 }
 
 func (impl *serviceImpl) CheckDeregister(checkId string) {
@@ -74,17 +51,18 @@ func (impl *serviceImpl) Register(ctx context.Context, serviceInfo configuration
 	for k, v := range serviceInfo.Metadata {
 		meta[k] = v
 	}
-	registerPrefix := GetRegisterServicePrefix(serviceInfo)
+	serviceId := rpc.GetService().GetRegisterServiceId()
 	register := &api.AgentServiceRegistration{
-		ID:      registerPrefix,
+		ID:      serviceId,
 		Name:    serviceInfo.ServiceName,
 		Tags:    []string{configuration.GetRunModel()},
 		Port:    addr.Port,
 		Address: addr.IP.String(),
 		Check: &api.AgentServiceCheck{
-			CheckID:  fmt.Sprintf("%s_rpcAlive", registerPrefix),
-			Name:     fmt.Sprintf("%s_rpcAlive", registerPrefix),
+			CheckID:  fmt.Sprintf("%s_tcpAlive", serviceId),
+			Name:     fmt.Sprintf("%s_tpcAlive", serviceId),
 			Interval: "3s",
+			Timeout:  "1s",
 			TCP:      rpcServerAddr,
 		},
 		Meta: meta,

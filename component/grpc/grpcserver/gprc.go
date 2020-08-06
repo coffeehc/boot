@@ -33,11 +33,12 @@ func NewServer(ctx context.Context, grpcConfig *GRPCServerConfig) (*grpc.Server,
 }
 
 func BuildGRPCServerOptions(ctx context.Context, config *GRPCServerConfig) []grpc.ServerOption {
-	chainUnaryServers := []grpc.UnaryServerInterceptor{
-		DebugLoggingInterceptor(),
-		grpc_prometheus.UnaryServerInterceptor,
-		grpcrecovery.UnaryServerInterceptor(),
+	chainUnaryServers := make([]grpc.UnaryServerInterceptor, 0)
+	if EnableAccessLog {
+		log.Debug("开启GRPC访问日志")
+		chainUnaryServers = append(chainUnaryServers, DebugLoggingInterceptor())
 	}
+	chainUnaryServers = append(chainUnaryServers, grpc_prometheus.UnaryServerInterceptor, grpcrecovery.UnaryServerInterceptor())
 	chainStreamServers := []grpc.StreamServerInterceptor{
 		grpc_prometheus.StreamServerInterceptor,
 		grpcrecovery.StreamServerInterceptor(),

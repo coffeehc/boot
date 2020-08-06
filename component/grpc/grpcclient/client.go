@@ -67,8 +67,8 @@ func BuildDialOption(ctx context.Context, block bool) []grpc.DialOption {
 		grpc.WithAuthority(configuration.GetRunModel()),
 		grpc.WithDefaultCallOptions(grpc.UseCompressor("gzip"), grpc.WaitForReady(false)),
 		grpc.WithKeepaliveParams(keepalive.ClientParameters{
-			Time:                time.Second * 8,
-			Timeout:             time.Second * 30,
+			Time:                time.Second * 3,
+			Timeout:             time.Second * 10,
 			PermitWithoutStream: false,
 		}),
 		// grpc.WithBalancerName(roundrobin.Name),
@@ -79,7 +79,7 @@ func BuildDialOption(ctx context.Context, block bool) []grpc.DialOption {
 		grpc.WithInitialConnWindowSize(10),
 		grpc.WithInitialWindowSize(1024),
 		grpc.WithChannelzParentID(0),
-		grpc.FailOnNonTempDialError(true),
+		grpc.FailOnNonTempDialError(false),
 		grpc.WithNoProxy(),
 	}
 	perRPCCredentials := ctx.Value(perRPCCredentialsKey)
