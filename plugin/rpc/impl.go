@@ -51,7 +51,9 @@ func (impl *serviceImpl) Start(ctx context.Context) errors.Error {
 	}()
 	time.Sleep(time.Millisecond * 10)
 	impl.healthServer.SetServingStatus(configuration.GetServiceInfo().ServiceName, grpc_health_v1.HealthCheckResponse_SERVING)
-	impl.grpcHealthCheckRegister()
+	if !impl.config.DisableRegister {
+		impl.grpcHealthCheckRegister()
+	}
 	log.Debug("启动RPC服务", zap.String("rpcServerAddr", impl.rpcServerAddr), zap.String("realAddr", lis.Addr().String()))
 	return nil
 }

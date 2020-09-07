@@ -57,6 +57,7 @@ func EnablePlugin(ctx context.Context) {
 		log.Debug("开启TLS")
 		grpcserver.SetCerds(ctx, crets.NewServerCreds())
 	}
+	log.Debug("grpc.Config", zap.Any("config", config))
 	_server, err := grpcserver.NewServer(ctx, &grpcserver.GRPCServerConfig{
 		MaxMsgSize:           config.MaxMsgSize,
 		MaxConcurrentStreams: config.MaxConcurrentStreams,
@@ -84,5 +85,5 @@ func EnablePlugin(ctx context.Context) {
 	// reflection.Register(service.GetGRPCServer()) //是否开启远程控制
 	grpc_health_v1.RegisterHealthServer(service.GetGRPCServer(), impl.healthServer)
 	log.Debug("初始化RPC服务", zap.String("rpcServerAddr", impl.GetRPCServerAddr()))
-	plugin.RegisterPlugin("rpcServer", impl)
+	plugin.RegisterPlugin(name, impl)
 }
