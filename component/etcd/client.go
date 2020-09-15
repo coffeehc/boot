@@ -7,8 +7,8 @@ import (
 
 	"git.xiagaogao.com/coffee/base/errors"
 	"git.xiagaogao.com/coffee/base/log"
-	"github.com/coreos/etcd/clientv3"
 	"github.com/spf13/viper"
+	"go.etcd.io/etcd/clientv3"
 	"go.uber.org/zap"
 )
 

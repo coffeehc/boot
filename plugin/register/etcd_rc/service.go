@@ -8,7 +8,7 @@ import (
 	"git.xiagaogao.com/coffee/boot/component/etcd"
 	"git.xiagaogao.com/coffee/boot/plugin"
 	"git.xiagaogao.com/coffee/boot/plugin/register/internal"
-	"github.com/coreos/etcd/clientv3"
+	"go.etcd.io/etcd/clientv3"
 	"go.uber.org/zap"
 )
 
