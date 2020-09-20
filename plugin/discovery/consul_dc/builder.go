@@ -80,7 +80,7 @@ func (impl *consulResolver) resolver() errors.Error {
 		log.Debug("adding service addrs", zap.String("serviceAddr", addr))
 		newAddrs = append(newAddrs, resolver.Address{Addr: addr})
 	}
-	log.Debug("获取了所有的Service地址", zap.Int("count", len(newAddrs)))
+	log.Debug("获取了所有的Service地址", zap.String("ServerName", impl.ServerName), zap.Int("count", len(newAddrs)))
 	impl.cc.UpdateState(resolver.State{Addresses: newAddrs})
 	return nil
 }
