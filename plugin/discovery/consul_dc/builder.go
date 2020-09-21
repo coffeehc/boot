@@ -77,7 +77,7 @@ func (impl *consulResolver) resolver() errors.Error {
 	var newAddrs []resolver.Address
 	for _, service := range services {
 		addr := fmt.Sprintf("%v:%v", service.Service.Address, service.Service.Port)
-		log.Debug("adding service addrs", zap.String("serviceAddr", addr))
+		log.Debug("adding service addrs", zap.String("ServerName", impl.ServerName), zap.String("serviceAddr", addr))
 		newAddrs = append(newAddrs, resolver.Address{Addr: addr})
 	}
 	log.Debug("获取了所有的Service地址", zap.String("ServerName", impl.ServerName), zap.Int("count", len(newAddrs)))
