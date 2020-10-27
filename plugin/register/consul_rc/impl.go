@@ -74,5 +74,6 @@ func (impl *serviceImpl) Register(ctx context.Context, serviceInfo configuration
 	if err != nil {
 		return errors.SystemError(err.Error())
 	}
+
 	return nil
 }
