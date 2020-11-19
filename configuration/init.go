@@ -17,12 +17,12 @@ const (
 
 var configFile = pflag.StringP("config", "c", "./cofnig.yml", "配置文件路径")
 
-func registerAlias() {
-	viper.RegisterAlias(_run_model, "RUN_MODEL")
-}
+// func registerAlias() {
+// 	viper.RegisterAlias(_run_model, "RUN_MODEL")
+// }
 
 func loadConfig() {
-	registerAlias()
+	// registerAlias()
 	pflag.CommandLine.AddGoFlagSet(flag.CommandLine)
 	if !pflag.Parsed() {
 		pflag.Parse()
@@ -42,23 +42,4 @@ func loadConfig() {
 		log.Fatal("没有指定run model")
 	}
 	log.Info("加载配置", zap.String("run model", viper.GetString(_run_model)))
-}
-
-func initDefaultLoggerConfig() {
-	viper.SetDefault("logger", &log.Config{
-		Level: "info",
-		FileConfig: &log.FileLogConfig{
-			FileName:   "./logs/service.log",
-			Disable:    false,
-			Maxsize:    100,
-			MaxBackups: 10,
-			MaxAge:     7,
-			Compress:   false,
-		},
-		EnableConsole: false,
-		EnableColor:   false,
-		EnableSampler: false,
-	})
-	log.InitLogger(true)
-	log.WatchLevel()
 }

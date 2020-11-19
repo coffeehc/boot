@@ -33,3 +33,6 @@ _testmain.go
 *.iml
 out
 gen
+
+*.log
+**/*.log

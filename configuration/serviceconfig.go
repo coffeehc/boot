@@ -1,26 +1,40 @@
 package configuration
 
 import (
+	"bytes"
 	"context"
+	"fmt"
 	"sync"
+	"time"
 
+	"git.xiagaogao.com/coffee/base/errors"
 	"git.xiagaogao.com/coffee/base/log"
 	"git.xiagaogao.com/coffee/base/utils"
+	"git.xiagaogao.com/coffee/boot/component/consul"
+	"github.com/hashicorp/consul/api"
 	"github.com/spf13/viper"
 	"go.uber.org/zap"
 )
 
-var remoteConfigProvide *RemoteConfigProvide
+var onConfigChanges = make([]func(), 0)
 var currentServiceInfo ServiceInfo
 var mutex = new(sync.RWMutex)
 var rootCtx context.Context
 
+func EnableRemoteConfig() {
+	viper.Set("remote_config.enable", true)
+}
+
+func RegisterOnConfigChange(onConfigChange func()) {
+	onConfigChanges = append(onConfigChanges, onConfigChange)
+}
+
 func InitConfiguration(ctx context.Context, serviceInfo ServiceInfo) {
 	viper.SetConfigType("yaml")
 	loadConfig()
-	initDefaultLoggerConfig()
 	initServiceInfo(ctx, serviceInfo)
-	initRemoteConfigProvide(ctx)
+	loadRemoteConfig(ctx, serviceInfo)
+	log.InitLogger(true)
 }
 
 func initServiceInfo(ctx context.Context, serviceInfo ServiceInfo) {
@@ -35,34 +49,62 @@ func initServiceInfo(ctx context.Context, serviceInfo ServiceInfo) {
 	if err1 != nil {
 		log.Fatal("获取本机IP失败", err1.GetFieldsWithCause()...)
 	}
-	log.SetBaseFields(zap.String("serviceName", serviceInfo.ServiceName), zap.String("localIp", localIp.String()))
-	log.Debug("加载服务信息", zap.Any("serviceInfo", serviceInfo))
+	log.ResetLogger(zap.String("serviceName", serviceInfo.ServiceName), zap.String("localIp", localIp.String()))
+	log.Info("加载服务信息", zap.Any("serviceInfo", serviceInfo))
 }
 
-func initRemoteConfigProvide(ctx context.Context) {
-	mutex.Lock()
-	defer mutex.Unlock()
-	if remoteConfigProvide != nil {
+func loadRemoteConfig(ctx context.Context, serviceInfo ServiceInfo) {
+	log.Info("远程配置开关", zap.Bool("enable", viper.GetBool("remote_config.enable")))
+	if !viper.GetBool("remote_config.enable") {
 		return
 	}
-	if rootCtx == nil {
-		rootCtx = ctx
+	consul.EnablePlugin(ctx)
+	path := fmt.Sprintf("configs/%s/config_%s.yaml", serviceInfo.ServiceName, GetRunModel())
+	consulService := consul.GetService()
+	kv := consulService.GetConsulClient().KV()
+	opts := &api.QueryOptions{
+		WaitIndex: 0,
 	}
-	if !viper.IsSet("RemoteConfigProvide") {
-		return
-	}
-	provider := &RemoteConfigProvide{}
-	err := viper.UnmarshalKey("RemoteConfigProvide", provider)
+	opts = opts.WithContext(ctx)
+	err := readRemotConfig(ctx, path, kv, opts)
 	if err != nil {
-		log.Fatal("不能从配置中读取远程服务配置", zap.Error(err))
+		log.Fatal("读取远程配置失败", err.GetFieldsWithCause()...)
 	}
-	if provider.Endpoint == "" || provider.Path == "" || provider.Provider == "" {
-		log.Fatal("没有配置中读取远程服务属性", zap.Error(err))
+	go func() {
+		for {
+			err := readRemotConfig(ctx, path, kv, opts)
+			if err != nil {
+				log.Error("读取远程配置失败", err.GetFieldsWithCause()...)
+				time.Sleep(time.Second * 5)
+			}
+		}
+	}()
+}
+
+func readRemotConfig(ctx context.Context, path string, kv *api.KV, opts *api.QueryOptions) errors.Error {
+	if ctx.Err() != nil {
+		return errors.ConverError(ctx.Err())
 	}
-	remoteConfigProvide = provider
-	viper.AddRemoteProvider(provider.Provider, provider.Endpoint, provider.Path)
-	viper.ReadRemoteConfig()
-	viper.WatchRemoteConfig()
+	kvpair, meta, err := kv.Get(path, opts)
+	if kvpair == nil && err == nil {
+		log.Warn("找不到对应的key", zap.String("path", path))
+		return errors.SystemError("找不到对应的配置Key")
+	}
+	if err != nil {
+		log.Error("获取远程配置失败", zap.Error(err))
+		return errors.SystemError("获取远程配置失败")
+	}
+	opts.WaitIndex = meta.LastIndex
+	err = viper.MergeConfig(bytes.NewReader(kvpair.Value))
+	if err != nil {
+		log.Fatal("读取远程配置失败", zap.Error(err), zap.String("path", path))
+	}
+	log.Info("远程配置已变更，需要重新加载配置", zap.Uint64("lastIndex", meta.LastIndex), zap.String("raw", string(kvpair.Value)))
+	log.LoadConfig()
+	for _, onConfigChange := range onConfigChanges {
+		onConfigChange()
+	}
+	return nil
 }
 
 func GetRunModel() string {
