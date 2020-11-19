@@ -66,13 +66,13 @@ func loadRemoteConfig(ctx context.Context, serviceInfo ServiceInfo) {
 		WaitIndex: 0,
 	}
 	opts = opts.WithContext(ctx)
-	err := readRemotConfig(ctx, path, kv, opts)
+	err := readRemoteConfig(ctx, path, kv, opts)
 	if err != nil {
 		log.Fatal("读取远程配置失败", err.GetFieldsWithCause()...)
 	}
 	go func() {
 		for {
-			err := readRemotConfig(ctx, path, kv, opts)
+			err := readRemoteConfig(ctx, path, kv, opts)
 			if err != nil {
 				log.Error("读取远程配置失败", err.GetFieldsWithCause()...)
 				time.Sleep(time.Second * 5)
@@ -81,7 +81,7 @@ func loadRemoteConfig(ctx context.Context, serviceInfo ServiceInfo) {
 	}()
 }
 
-func readRemotConfig(ctx context.Context, path string, kv *api.KV, opts *api.QueryOptions) errors.Error {
+func readRemoteConfig(ctx context.Context, path string, kv *api.KV, opts *api.QueryOptions) errors.Error {
 	if ctx.Err() != nil {
 		return errors.ConverError(ctx.Err())
 	}
@@ -99,7 +99,7 @@ func readRemotConfig(ctx context.Context, path string, kv *api.KV, opts *api.Que
 	if err != nil {
 		log.Fatal("读取远程配置失败", zap.Error(err), zap.String("path", path))
 	}
-	log.Info("远程配置已变更，需要重新加载配置", zap.Uint64("lastIndex", meta.LastIndex), zap.String("raw", string(kvpair.Value)))
+	log.Debug("远程配置已变更，需要重新加载配置")
 	log.LoadConfig()
 	for _, onConfigChange := range onConfigChanges {
 		onConfigChange()
