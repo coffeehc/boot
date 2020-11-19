@@ -36,3 +36,4 @@ gen
 
 *.log
 **/*.log
+*/logs
