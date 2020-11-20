@@ -13,6 +13,7 @@ type serviceImpl struct {
 }
 
 func newService() *serviceImpl {
+	viper.SetDefault("consul.address", "127.0.0.1:8500")
 	config := &Config{
 		Address:    viper.GetString("consul.address"),
 		Token:      viper.GetString("consul.token"),

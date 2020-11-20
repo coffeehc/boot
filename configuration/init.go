@@ -2,6 +2,7 @@ package configuration
 
 import (
 	"flag"
+	"strings"
 
 	"git.xiagaogao.com/coffee/base/log"
 	"github.com/spf13/pflag"
@@ -12,17 +13,19 @@ import (
 const (
 	Model_dev     = "dev"
 	Model_test    = "test"
-	Model_product = "product"
+	Model_product = "prod"
 )
 
 var configFile = pflag.StringP("config", "c", "./cofnig.yml", "配置文件路径")
 
-// func registerAlias() {
-// 	viper.RegisterAlias(_run_model, "RUN_MODEL")
-// }
+var runModel = ""
+
+func GetRunModel() string {
+	return runModel
+}
 
 func loadConfig() {
-	// registerAlias()
+	viper.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
 	pflag.CommandLine.AddGoFlagSet(flag.CommandLine)
 	if !pflag.Parsed() {
 		pflag.Parse()
@@ -41,5 +44,6 @@ func loadConfig() {
 	if viper.GetString(_run_model) == "" {
 		log.Fatal("没有指定run model")
 	}
+	runModel = viper.GetString(_run_model)
 	log.Info("加载配置", zap.String("run model", viper.GetString(_run_model)))
 }

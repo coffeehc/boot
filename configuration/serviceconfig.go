@@ -30,6 +30,14 @@ func RegisterOnConfigChange(onConfigChange func()) {
 }
 
 func InitConfiguration(ctx context.Context, serviceInfo ServiceInfo) {
+	if serviceInfo.Metadata == nil {
+		serviceInfo.Metadata = map[string]string{
+			"git_rev": GitRev,
+			// "build_version": BuildVersion,
+			"build_time": BuildTime,
+			"git_tag":    GitTag,
+		}
+	}
 	viper.SetConfigType("yaml")
 	loadConfig()
 	initServiceInfo(ctx, serviceInfo)
@@ -94,6 +102,9 @@ func readRemoteConfig(ctx context.Context, path string, kv *api.KV, opts *api.Qu
 		log.Error("获取远程配置失败", zap.Error(err))
 		return errors.SystemError("获取远程配置失败")
 	}
+	if opts.WaitIndex == meta.LastIndex {
+		return nil
+	}
 	opts.WaitIndex = meta.LastIndex
 	err = viper.MergeConfig(bytes.NewReader(kvpair.Value))
 	if err != nil {
@@ -105,11 +116,6 @@ func readRemoteConfig(ctx context.Context, path string, kv *api.KV, opts *api.Qu
 		onConfigChange()
 	}
 	return nil
-}
-
-func GetRunModel() string {
-	// return defaultServiceConfig.RunModel
-	return viper.GetString(_run_model)
 }
 
 func GetServiceName() string {
