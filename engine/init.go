@@ -48,7 +48,7 @@ func StartEngine(ctx context.Context, serviceInfo configuration.ServiceInfo, sta
 	}
 	rootCmd.AddCommand(
 		versionCmd,
-		buildServiceCmd(serviceInfo, start),
+		buildServiceCmd(ctx, serviceInfo, start),
 		buildSetupCmd(serviceInfo),
 		buildUpdataCmd(serviceInfo),
 	)

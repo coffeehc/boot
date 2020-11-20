@@ -3,7 +3,7 @@ module git.xiagaogao.com/coffee/boot
 go 1.15
 
 require (
-	git.xiagaogao.com/coffee/base v0.0.0-20201119090342-0d40cc2f0e98
+	git.xiagaogao.com/coffee/base v0.0.0-20201120071702-457e40da91c0
 	git.xiagaogao.com/coffee/httpx v0.0.0-20200727153159-3e527656e6c7
 	github.com/fsnotify/fsnotify v1.4.9 // indirect
 	github.com/gin-gonic/gin v1.6.3
@@ -23,7 +23,7 @@ require (
 	go.uber.org/multierr v1.6.0 // indirect
 	go.uber.org/zap v1.16.0
 	golang.org/x/net v0.0.0-20200707034311-ab3426394381
-	golang.org/x/sys v0.0.0-20201118182958-a01c418693c7 // indirect
+	golang.org/x/sys v0.0.0-20201119102817-f84b799fce68 // indirect
 	golang.org/x/text v0.3.4 // indirect
 	google.golang.org/genproto v0.0.0-20200804151602-45615f50871c // indirect
 	google.golang.org/grpc v1.31.0

@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"sync"
 	"time"
 
 	"git.xiagaogao.com/coffee/base/errors"
@@ -18,7 +17,6 @@ import (
 
 var onConfigChanges = make([]func(), 0)
 var currentServiceInfo ServiceInfo
-var mutex = new(sync.RWMutex)
 var rootCtx context.Context
 
 func EnableRemoteConfig() {
@@ -67,7 +65,7 @@ func loadRemoteConfig(ctx context.Context, serviceInfo ServiceInfo) {
 		return
 	}
 	consul.EnablePlugin(ctx)
-	path := fmt.Sprintf("configs/%s/config_%s.yaml", serviceInfo.ServiceName, GetRunModel())
+	path := fmt.Sprintf("configs/%s/config_%s", serviceInfo.ServiceName, GetRunModel())
 	consulService := consul.GetService()
 	kv := consulService.GetConsulClient().KV()
 	opts := &api.QueryOptions{
@@ -99,6 +97,9 @@ func readRemoteConfig(ctx context.Context, path string, kv *api.KV, opts *api.Qu
 		return errors.SystemError("找不到对应的配置Key")
 	}
 	if err != nil {
+		if err == context.Canceled {
+			return nil
+		}
 		log.Error("获取远程配置失败", zap.Error(err))
 		return errors.SystemError("获取远程配置失败")
 	}
