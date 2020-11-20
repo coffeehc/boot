@@ -3,31 +3,31 @@ module git.xiagaogao.com/coffee/boot
 go 1.15
 
 require (
-	git.xiagaogao.com/coffee/base v0.0.0-20201120071702-457e40da91c0
+	git.xiagaogao.com/coffee/base v0.0.0-20201120103134-1ab04e01bef8
 	git.xiagaogao.com/coffee/httpx v0.0.0-20200727153159-3e527656e6c7
-	github.com/fsnotify/fsnotify v1.4.9 // indirect
+	github.com/armon/consul-api v0.0.0-20180202201655-eb2c6b5be1b6 // indirect
+	github.com/armon/go-metrics v0.3.4 // indirect
+	github.com/fatih/color v1.10.0 // indirect
 	github.com/gin-gonic/gin v1.6.3
-	github.com/golang/protobuf v1.4.2
+	github.com/go-playground/validator/v10 v10.4.1 // indirect
+	github.com/golang/protobuf v1.4.3
 	github.com/grpc-ecosystem/go-grpc-prometheus v1.2.0
-	github.com/hashicorp/consul/api v1.5.0
-	github.com/magiconair/properties v1.8.4 // indirect
-	github.com/mitchellh/mapstructure v1.3.3 // indirect
-	github.com/pelletier/go-toml v1.8.1 // indirect
-	github.com/prometheus/client_golang v1.7.1
-	github.com/spf13/afero v1.4.1 // indirect
-	github.com/spf13/cast v1.3.1 // indirect
-	github.com/spf13/cobra v1.0.0
-	github.com/spf13/jwalterweatherman v1.1.0 // indirect
+	github.com/hashicorp/consul/api v1.7.0
+	github.com/hashicorp/go-hclog v0.15.0 // indirect
+	github.com/hashicorp/go-immutable-radix v1.3.0 // indirect
+	github.com/hashicorp/golang-lru v0.5.4 // indirect
+	github.com/hashicorp/serf v0.9.5 // indirect
+	github.com/prometheus/client_golang v1.8.0
+	github.com/prometheus/common v0.15.0 // indirect
+	github.com/spf13/cobra v1.1.1
 	github.com/spf13/pflag v1.0.5
 	github.com/spf13/viper v1.7.1
-	go.uber.org/multierr v1.6.0 // indirect
+	github.com/ugorji/go v1.2.0 // indirect
+	github.com/xordataexchange/crypt v0.0.3-0.20170626215501-b2862e3d0a77 // indirect
 	go.uber.org/zap v1.16.0
-	golang.org/x/net v0.0.0-20200707034311-ab3426394381
-	golang.org/x/sys v0.0.0-20201119102817-f84b799fce68 // indirect
-	golang.org/x/text v0.3.4 // indirect
-	google.golang.org/genproto v0.0.0-20200804151602-45615f50871c // indirect
-	google.golang.org/grpc v1.31.0
+	golang.org/x/crypto v0.0.0-20201117144127-c1f2f97bffc9 // indirect
+	golang.org/x/net v0.0.0-20201110031124-69a78807bb2b
+	google.golang.org/genproto v0.0.0-20201119123407-9b1e624d6bc4 // indirect
+	google.golang.org/grpc v1.33.2
 	google.golang.org/grpc/examples v0.0.0-20200729200327-d6c4e49aab24
-	gopkg.in/ini.v1 v1.62.0 // indirect
-	gopkg.in/yaml.v2 v2.3.0 // indirect
 )
