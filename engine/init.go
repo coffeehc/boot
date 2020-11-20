@@ -46,8 +46,13 @@ func StartEngine(ctx context.Context, serviceInfo configuration.ServiceInfo, sta
 
 		},
 	}
-	rootCmd.AddCommand(versionCmd, buildServiceCmd(ctx, serviceInfo, start))
-	_err := rootCmd.Execute()
+	rootCmd.AddCommand(
+		versionCmd,
+		buildServiceCmd(serviceInfo, start),
+		buildSetupCmd(serviceInfo),
+		buildUpdataCmd(serviceInfo),
+	)
+	_err := rootCmd.ExecuteContext(ctx)
 	if _err != nil {
 		log.Error("启动错误", zap.Error(_err))
 		os.Exit(-1)

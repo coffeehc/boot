@@ -11,13 +11,13 @@ import (
 	"go.uber.org/zap"
 )
 
-func buildServiceCmd(ctx context.Context, serviceInfo configuration.ServiceInfo, start ServiceStart) *cobra.Command {
+func buildServiceCmd(serviceInfo configuration.ServiceInfo, start ServiceStart) *cobra.Command {
 	return &cobra.Command{
 		Use:   "start",
 		Short: "启动服务",
 		Long:  serviceInfo.Descriptor,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			ctx, cancelFunc := context.WithCancel(ctx)
+			ctx, cancelFunc := context.WithCancel(cmd.Context())
 			configuration.InitConfiguration(ctx, serviceInfo)
 			defer plugin.StopPlugins(ctx)
 			var closeCallback ServiceCloseCallback = nil
