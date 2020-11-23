@@ -10,8 +10,8 @@ func InitTestConfig() {
 	configuration.SetRunModel("dev")
 	viper.Set("logger", &log.Config{
 		Level: "debug",
-		FileConfig: &log.FileLogConfig{
-			Disable: true,
+		FileConfig: log.FileLogConfig{
+			Enable: false,
 		},
 		EnableConsole: true,
 		EnableColor:   true,
