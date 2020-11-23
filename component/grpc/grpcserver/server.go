@@ -19,7 +19,9 @@ import (
 var scope = zap.String("scope", "grpc.server")
 
 func NewServer(ctx context.Context, grpcConfig *GRPCServerConfig) (*grpc.Server, errors.Error) {
-	grpcConfig = &GRPCServerConfig{}
+	if grpcConfig == nil {
+		grpcConfig = &GRPCServerConfig{}
+	}
 	if !viper.IsSet("grpc") {
 		log.Warn("没有配置GRPCConfig,使用默认配置", scope)
 	}

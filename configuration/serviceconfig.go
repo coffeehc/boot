@@ -19,8 +19,8 @@ var onConfigChanges = make([]func(), 0)
 var currentServiceInfo ServiceInfo
 var rootCtx context.Context
 
-func EnableRemoteConfig() {
-	viper.Set("remote_config", true)
+func DisableRemoteConfig() {
+	viper.Set("remote_config", false)
 }
 
 func RegisterOnConfigChange(onConfigChange func()) {
