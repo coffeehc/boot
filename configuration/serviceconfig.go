@@ -109,7 +109,8 @@ func readRemoteConfig(ctx context.Context, path string, kv *api.KV, opts *api.Qu
 	opts.WaitIndex = meta.LastIndex
 	err = viper.MergeConfig(bytes.NewReader(kvpair.Value))
 	if err != nil {
-		log.Fatal("读取远程配置失败", zap.Error(err), zap.String("path", path))
+		log.Error("读取远程配置失败", zap.Error(err), zap.String("path", path))
+		return errors.ConverError(err)
 	}
 	log.Debug("远程配置已变更，需要重新加载配置")
 	log.LoadConfig()
