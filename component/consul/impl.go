@@ -19,10 +19,18 @@ func newService() *serviceImpl {
 	if err != nil {
 		log.Fatal("加载consul配置失败", zap.Error(err))
 	}
-	config.Address = viper.GetString("consul.address")
-	config.Token = viper.GetString("consul.token")
-	config.Datacenter = viper.GetString("consul.datacenter")
-	config.Namespace = viper.GetString("consul.namespace")
+	if config.Address == "" {
+		config.Address = viper.GetString("consul.address")
+	}
+	if config.Token == "" {
+		config.Token = viper.GetString("consul.token")
+	}
+	if config.Datacenter == "" {
+		config.Datacenter = viper.GetString("consul.datacenter")
+	}
+	if config.Namespace == "" {
+		config.Namespace = viper.GetString("consul.namespace")
+	}
 	log.Info("连接consul服务器", zap.Any("address", config.Address), zap.String("datacenter", config.Datacenter), zap.String("namespace", config.Namespace))
 	client, err := api.NewClient(&api.Config{
 		Datacenter: config.Datacenter,
