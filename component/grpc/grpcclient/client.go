@@ -26,7 +26,7 @@ var scope = zap.String("scope", "grpc.client")
 func NewClientConnByRegister(ctx context.Context, serviceInfo configuration.ServiceInfo, resolverBuilder resolver.Builder, block bool) (*grpc.ClientConn, errors.Error) {
 	opts := BuildDialOption(ctx, block)
 	if serviceInfo.Scheme == "" {
-		log.Fatal("没有指定需要链接的ServiceInfo的RPC协议，无法创建链接")
+		log.Panic("没有指定需要链接的ServiceInfo的RPC协议，无法创建链接")
 	}
 	target := fmt.Sprintf("%s://%s/%s", serviceInfo.Scheme, configuration.GetRunModel(), serviceInfo.ServiceName)
 	log.Debug("需要获取的客户端地址", zap.String("target", target))

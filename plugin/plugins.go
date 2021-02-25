@@ -31,7 +31,7 @@ func StartPlugins(ctx context.Context) {
 	for name, plugin := range plugins {
 		err := plugin.Start(ctx)
 		if err != nil {
-			log.Fatal("启动插件失败", err.GetFieldsWithCause(zap.String("pluginName", name))...)
+			log.Panic("启动插件失败", err.GetFieldsWithCause(zap.String("pluginName", name))...)
 			//continue
 		}
 		log.Info("启动插件成功", zap.String("pluginName", name))

@@ -19,7 +19,7 @@ var scope = zap.String("scope", name)
 
 func GetService() Service {
 	if service == nil {
-		log.Fatal("Service没有初始化", scope)
+		log.Panic("Service没有初始化", scope)
 	}
 	return service
 }
@@ -31,7 +31,7 @@ type Service interface {
 
 func EnablePlugin(ctx context.Context) {
 	if name == "" {
-		log.Fatal("插件名称没有初始化")
+		log.Panic("插件名称没有初始化")
 	}
 	mutex.Lock()
 	defer mutex.Unlock()
@@ -44,7 +44,7 @@ func EnablePlugin(ctx context.Context) {
 	service = newService()
 	err := internal.GetService().SetRegisterCenter(service)
 	if err != nil {
-		log.Fatal("添加注册中心失败", err.GetFieldsWithCause()...)
+		log.Panic("添加注册中心失败", err.GetFieldsWithCause()...)
 	}
 	plugin.RegisterPluginByFast(name, nil, nil)
 }

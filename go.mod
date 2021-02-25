@@ -3,9 +3,8 @@ module git.xiagaogao.com/coffee/boot
 go 1.15
 
 require (
-	git.xiagaogao.com/coffee/base v0.0.0-20201120103134-1ab04e01bef8
+	git.xiagaogao.com/coffee/base v0.0.0-20210225093031-c0146f1a88b2
 	git.xiagaogao.com/coffee/httpx v0.0.0-20200727153159-3e527656e6c7
-	github.com/armon/consul-api v0.0.0-20180202201655-eb2c6b5be1b6 // indirect
 	github.com/armon/go-metrics v0.3.4 // indirect
 	github.com/fatih/color v1.10.0 // indirect
 	github.com/gin-gonic/gin v1.6.3
@@ -23,7 +22,6 @@ require (
 	github.com/spf13/pflag v1.0.5
 	github.com/spf13/viper v1.7.1
 	github.com/ugorji/go v1.2.0 // indirect
-	github.com/xordataexchange/crypt v0.0.3-0.20170626215501-b2862e3d0a77 // indirect
 	go.uber.org/zap v1.16.0
 	golang.org/x/crypto v0.0.0-20201117144127-c1f2f97bffc9 // indirect
 	golang.org/x/net v0.0.0-20201110031124-69a78807bb2b

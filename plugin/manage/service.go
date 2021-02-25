@@ -53,7 +53,7 @@ func EnablePlugin(ctx context.Context) {
 
 	lis, err1 := net.Listen("tcp4", manageEndpoint)
 	if err1 != nil {
-		log.Fatal("启动ManageServer失败", zap.Error(err1))
+		log.Panic("启动ManageServer失败", zap.Error(err1))
 	}
 	manageEndpoint = lis.Addr().String()
 	err1 = lis.Close()
@@ -62,7 +62,7 @@ func EnablePlugin(ctx context.Context) {
 	}
 	showManageEndpoint, err := utils.WarpServiceAddr(manageEndpoint)
 	if err != nil {
-		log.Fatal("转换管理插件服务地址失败", zap.Error(err))
+		log.Panic("转换管理插件服务地址失败", zap.Error(err))
 	}
 	_plugin.endpoint = showManageEndpoint
 	_plugin.httpService = httpx.NewService("manage", &httpx.Config{

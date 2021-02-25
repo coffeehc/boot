@@ -17,7 +17,7 @@ func newService() *serviceImpl {
 	config := &Config{}
 	err := viper.UnmarshalKey("consul", config)
 	if err != nil {
-		log.Fatal("加载consul配置失败", zap.Error(err))
+		log.Panic("加载consul配置失败", zap.Error(err))
 	}
 	if config.Address == "" {
 		config.Address = viper.GetString("consul.address")
@@ -41,7 +41,7 @@ func newService() *serviceImpl {
 		WaitTime:   config.WaitTime,
 	})
 	if err != nil {
-		log.Fatal("启动consul客户端失败", zap.Error(err))
+		log.Panic("启动consul客户端失败", zap.Error(err))
 	}
 	impl := &serviceImpl{
 		client: client,

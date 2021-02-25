@@ -27,7 +27,7 @@ func NewServer(ctx context.Context, grpcConfig *GRPCServerConfig) (*grpc.Server,
 	}
 	err := viper.UnmarshalKey("grpc", grpcConfig)
 	if err != nil {
-		log.Fatal("解析grpc配置失败", zap.Error(err), scope)
+		log.Panic("解析grpc配置失败", zap.Error(err), scope)
 	}
 	// server := grpc.NewServer()
 	server := grpc.NewServer(BuildGRPCServerOptions(ctx, grpcConfig)...)

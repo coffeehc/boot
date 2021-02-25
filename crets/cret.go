@@ -18,7 +18,7 @@ func BuildServerTLSConfig(caPem, serverPem, serverKey []byte) *tls.Config {
 	// 生成证书池，将根证书加入证书池
 	certPool := x509.NewCertPool()
 	if !certPool.AppendCertsFromPEM(caPem) {
-		log.Fatal("添加CA错误")
+		log.Panic("添加CA错误")
 	}
 
 	// 初始化TLSConfig
@@ -43,7 +43,7 @@ func BuildClientTLSConfig(caPem, clientPem, clientKey []byte, serverName string)
 	// 生成证书池，将根证书加入证书池
 	certPool := x509.NewCertPool()
 	if !certPool.AppendCertsFromPEM(caPem) {
-		log.Fatal("添加CA错误")
+		log.Panic("添加CA错误")
 	}
 	// 新建凭证
 	// 注意ServerName需要与服务器证书内的Common Name一致

@@ -42,7 +42,7 @@ func loadConfig() {
 		log.Warn("加载日志文件失败", zap.Error(err))
 	}
 	if viper.GetString(_run_model) == "" {
-		log.Fatal("没有指定run model")
+		log.Panic("没有指定run model")
 	}
 	runModel = viper.GetString(_run_model)
 	log.Info("加载配置", zap.String("run model", viper.GetString(_run_model)))

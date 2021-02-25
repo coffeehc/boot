@@ -48,12 +48,12 @@ func initServiceInfo(ctx context.Context, serviceInfo ServiceInfo) {
 		rootCtx = ctx
 	}
 	if serviceInfo.ServiceName == "" {
-		log.Fatal("服务名没有设置")
+		log.Panic("服务名没有设置")
 	}
 	currentServiceInfo = serviceInfo
 	localIp, err1 := utils.GetLocalIP()
 	if err1 != nil {
-		log.Fatal("获取本机IP失败", err1.GetFieldsWithCause()...)
+		log.Panic("获取本机IP失败", err1.GetFieldsWithCause()...)
 	}
 	log.ResetLogger(zap.String("serviceName", serviceInfo.ServiceName), zap.String("localIp", localIp.String()))
 	log.Info("加载服务信息", zap.Any("serviceInfo", serviceInfo))
@@ -74,7 +74,7 @@ func loadRemoteConfig(ctx context.Context, serviceInfo ServiceInfo) {
 	opts = opts.WithContext(ctx)
 	err := readRemoteConfig(ctx, path, kv, opts)
 	if err != nil {
-		log.Fatal("读取远程配置失败", err.GetFieldsWithCause()...)
+		log.Panic("读取远程配置失败", err.GetFieldsWithCause()...)
 	}
 	go func() {
 		for {

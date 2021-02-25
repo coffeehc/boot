@@ -22,7 +22,7 @@ func buildSetupCmd(serviceInfo configuration.ServiceInfo) *cobra.Command {
 			workDir, _ := os.Getwd()
 			applicationPath, err := filepath.Abs(os.Args[0])
 			if err != nil {
-				log.Fatal("转化程序路径失败", zap.Error(err))
+				log.Panic("转化程序路径失败", zap.Error(err))
 				return err
 			}
 			params := map[string]string{
@@ -32,17 +32,17 @@ func buildSetupCmd(serviceInfo configuration.ServiceInfo) *cobra.Command {
 			}
 			temp, err := template.New("serviceTemp").Parse(serviceTemp)
 			if err != nil {
-				log.Fatal("解析模版错误", zap.Error(err))
+				log.Panic("解析模版错误", zap.Error(err))
 				return err
 			}
 			serviceFile, err := os.OpenFile(path.Join(workDir, fmt.Sprintf("%s.service", serviceInfo.ServiceName)), os.O_CREATE|os.O_TRUNC|os.O_RDWR, 0644)
 			if err != nil {
-				log.Fatal("创建service文件失败", zap.Error(err))
+				log.Panic("创建service文件失败", zap.Error(err))
 				return err
 			}
 			err = temp.Execute(serviceFile, params)
 			if err != nil {
-				log.Fatal("写入service文件失败", zap.Error(err))
+				log.Panic("写入service文件失败", zap.Error(err))
 			}
 			return err
 		},

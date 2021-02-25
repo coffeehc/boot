@@ -26,7 +26,7 @@ type serviceImpl struct {
 
 func (impl *serviceImpl) GetRPCServerAddr() string {
 	if impl.server == nil {
-		log.Fatal("rpc server没有初始化")
+		log.Panic("rpc server没有初始化")
 	}
 	return impl.rpcServerAddr
 }
@@ -40,12 +40,12 @@ func (impl *serviceImpl) Start(ctx context.Context) errors.Error {
 	addr.IP = net.IPv4zero
 	lis, _err := net.Listen("tcp4", addr.String())
 	if _err != nil {
-		log.Fatal("启动RPC服务端口失败", zap.Error(_err))
+		log.Panic("启动RPC服务端口失败", zap.Error(_err))
 	}
 	go func() {
 		err := impl.server.Serve(lis)
 		if err != nil {
-			log.Fatal("RPC服务异常关闭", zap.Error(err))
+			log.Panic("RPC服务异常关闭", zap.Error(err))
 		}
 		impl.healthServer.SetServingStatus(configuration.GetServiceInfo().ServiceName, grpc_health_v1.HealthCheckResponse_NOT_SERVING)
 	}()
@@ -88,7 +88,7 @@ func (impl *serviceImpl) grpcHealthCheckRegister() {
 func (impl *serviceImpl) GetRegisterServiceId() string {
 	addr, err := net.ResolveTCPAddr("tcp", impl.rpcServerAddr)
 	if err != nil {
-		log.Fatal("RPC服务地址解析失败")
+		log.Panic("RPC服务地址解析失败")
 	}
 	serviceInfo := configuration.GetServiceInfo()
 	return fmt.Sprintf("%s_%s", serviceInfo.ServiceName, addr.IP.String())

@@ -17,4 +17,5 @@ func InitTestConfig() {
 		EnableColor:   true,
 		EnableSampler: true,
 	})
+	log.InitLogger(true)
 }
