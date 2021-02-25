@@ -1,6 +1,6 @@
 module git.xiagaogao.com/coffee/boot
 
-go 1.15
+go 1.16
 
 require (
 	git.xiagaogao.com/coffee/base v0.0.0-20210225093031-c0146f1a88b2

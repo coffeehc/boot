@@ -22,6 +22,12 @@ func buildServiceCmd(ctx context.Context, serviceInfo configuration.ServiceInfo,
 			defer plugin.StopPlugins(ctx)
 			var closeCallback ServiceCloseCallback = nil
 			go func() {
+				_closeCallback, err := start(ctx, cmd, args)
+				if err != nil {
+					log.Error("启动服务失败", zap.Error(err))
+					cancelFunc()
+				}
+				closeCallback = _closeCallback
 				defer func() {
 					if e := recover(); e != nil {
 						err := errors.ConverUnknowError(e)
@@ -29,12 +35,6 @@ func buildServiceCmd(ctx context.Context, serviceInfo configuration.ServiceInfo,
 						cancelFunc()
 					}
 				}()
-				_closeCallback, err := start(ctx, cmd, args)
-				if err != nil {
-					log.Error("启动服务失败", zap.Error(err))
-					cancelFunc()
-				}
-				closeCallback = _closeCallback
 				plugin.StartPlugins(ctx)
 				log.Info("服务启动完成")
 			}()
