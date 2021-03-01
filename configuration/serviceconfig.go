@@ -112,7 +112,7 @@ func readRemoteConfig(ctx context.Context, path string, kv *api.KV, opts *api.Qu
 		log.Error("读取远程配置失败", zap.Error(err), zap.String("path", path))
 		return errors.ConverError(err)
 	}
-	log.Debug("远程配置已变更，需要重新加载配置")
+	log.Debug("从远程获取了新的配置，重新加载配置")
 	log.LoadConfig()
 	for _, onConfigChange := range onConfigChanges {
 		onConfigChange()

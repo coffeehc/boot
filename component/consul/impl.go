@@ -13,7 +13,6 @@ type serviceImpl struct {
 }
 
 func newService() *serviceImpl {
-	viper.SetDefault("consul.address", "127.0.0.1:8500")
 	config := &Config{}
 	err := viper.UnmarshalKey("consul", config)
 	if err != nil {
@@ -21,6 +20,9 @@ func newService() *serviceImpl {
 	}
 	if config.Address == "" {
 		config.Address = viper.GetString("consul.address")
+		if config.Address == "" {
+			config.Address = "127.0.0.1:8500"
+		}
 	}
 	if config.Token == "" {
 		config.Token = viper.GetString("consul.token")
@@ -31,7 +33,7 @@ func newService() *serviceImpl {
 	if config.Namespace == "" {
 		config.Namespace = viper.GetString("consul.namespace")
 	}
-	log.Info("连接consul服务器", zap.Any("address", config.Address), zap.String("datacenter", config.Datacenter), zap.String("namespace", config.Namespace))
+	log.Info("连接consul服务器", zap.Any("config", config))
 	client, err := api.NewClient(&api.Config{
 		Datacenter: config.Datacenter,
 		Token:      config.Token,
