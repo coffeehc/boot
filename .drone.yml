@@ -11,7 +11,7 @@ steps:
     commands:
       - echo hello world
   - name: build
-    image: golang
+#    image: golang
     commands:
     - go build
     - go test
