@@ -9,9 +9,8 @@ platform:
 steps:
   - name: greeting
     commands:
-      - echo hello world
+      - go version
   - name: build
-#    image: golang
     commands:
     - go build
     - go test
