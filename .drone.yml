@@ -7,7 +7,8 @@ platform:
   arch: amd64
 
 workspace:
-  path: /data/drone/coffee/boot/src
+  base: /root/drone-go
+  path: src/git.xiagaogao.com/coffee/boot
 
 steps:
   - name: linter
@@ -15,21 +16,19 @@ steps:
       - mkdir -p /data/drone/coffee/boot/src
     pull: if-not-exists
     environment:
+      GOROOT: /root/go
+      GOPATH: /root/drone-go
       GOPROXY: https://goproxy.io
       GOPRIVATE: git.xiagaogao.com
       GOSUMDB: sum.golang.google.cn
-    volumes:
-      - name: cache
-        path: /data/drone/go
   - name: build
     pull: if-not-exists
     environment:
+      GOROOT: /root/go
+      GOPATH: /root/drone-go
       GOPROXY: https://goproxy.io
       GOPRIVATE: git.xiagaogao.com
       GOSUMDB: sum.golang.google.cn
-    volumes:
-      - name: cache
-        path: /data/drone/go
     commands:
       - go build
       - go test
