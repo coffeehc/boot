@@ -23,19 +23,19 @@ steps:
         path: /data/drone/go
   - name: build
     pull: if-not-exists
-      environment:
-        GOPROXY: https://goproxy.io
-        GOPRIVATE: git.xiagaogao.com
-        GOSUMDB: sum.golang.google.cn
-      volumes:
-        - name: cache
-          path: /data/drone/go
+    environment:
+      GOPROXY: https://goproxy.io
+      GOPRIVATE: git.xiagaogao.com
+      GOSUMDB: sum.golang.google.cn
+    volumes:
+      - name: cache
+        path: /data/drone/go
     commands:
-    - go build
-    - go test
+      - go build
+      - go test
     when:
       branch:
-      - master
-      - feature/*
+        - master
+        - feature/*
       event:
         - push
