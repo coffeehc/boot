@@ -6,11 +6,30 @@ platform:
   os: linux
   arch: amd64
 
+workspace:
+  path: /data/drone/coffee/boot/src
+
 steps:
-  - name: greeting
+  - name: linter
     commands:
-      - go version
+      - mkdir -p /data/drone/coffee/boot/src
+    pull: if-not-exists
+    environment:
+      GOPROXY: https://goproxy.io
+      GOPRIVATE: git.xiagaogao.com
+      GOSUMDB: sum.golang.google.cn
+    volumes:
+      - name: cache
+        path: /data/drone/go
   - name: build
+    pull: if-not-exists
+      environment:
+        GOPROXY: https://goproxy.io
+        GOPRIVATE: git.xiagaogao.com
+        GOSUMDB: sum.golang.google.cn
+      volumes:
+        - name: cache
+          path: /data/drone/go
     commands:
     - go build
     - go test
