@@ -11,16 +11,6 @@ workspace:
   path: src/git.xiagaogao.com/coffee/boot
 
 steps:
-  - name: linter
-    commands:
-      - mkdir -p /data/drone/coffee/boot/src
-    pull: if-not-exists
-    environment:
-      GOROOT: /root/go
-      GOPATH: /root/drone-go
-      GOPROXY: https://goproxy.io
-      GOPRIVATE: git.xiagaogao.com
-      GOSUMDB: sum.golang.google.cn
   - name: build
     pull: if-not-exists
     environment:
