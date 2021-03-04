@@ -1,6 +1,8 @@
+
+
 kind: pipeline
 type: exec
-name: default
+name: build
 
 platform:
   os: linux
@@ -10,10 +12,19 @@ workspace:
   base: /root/drone-go
   path: src/git.xiagaogao.com/coffee/boot
 
+#clone:
+#  disable: true
+#  depth: 50
+
 steps:
+#  - name: clone
+#    commands:
+#      - git clone https://github.com/octocat/hello-world.git .
+#      - git checkout $DRONE_COMMIT
   - name: build
-    pull: if-not-exists
+    #    pull: if-not-exists
     environment:
+      PATH: /root/go/bin
       GOROOT: /root/go
       GOPATH: /root/drone-go
       GOPROXY: https://goproxy.io
