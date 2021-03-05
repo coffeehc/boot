@@ -38,8 +38,7 @@ steps:
       - export GOPATH=/root/drone-go
 #      - git config --global url."https://$USERNAME:$PASSWORD@git.xiagaogao.com".insteadOf "https://git.xiagaogao.com"
       - echo "machine git.xiagaogao.com login $USERNAME password $PASSWORD" > ~/.netrc
-      - go build -v
-      - go test
+      - go mod tidy
     when:
       branch:
         include:
