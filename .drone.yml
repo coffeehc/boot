@@ -31,12 +31,14 @@ steps:
         from_secret: password
     commands:
       - echo $USERNAME $PASSWORD
+      - cd ~
+      - pwd
       - export PATH=$PATH:/root/go/bin
       - export GOROOT=/root/go
       - export GOPATH=/root/drone-go
 #      - git config --global url."https://$USERNAME:$PASSWORD@git.xiagaogao.com".insteadOf "https://git.xiagaogao.com"
       - echo "machine git.xiagaogao.com login $USERNAME password $PASSWORD" > ~/.netrc
-      - go -v build
+      - go build -v
       - go test
     when:
       branch:
