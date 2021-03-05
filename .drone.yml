@@ -8,34 +8,14 @@ platform:
 
 workspace:
   base: /root/drone-go
-  path: src/git.xiagaogao.com/coffee/boot
-
-#clone:
-#  disable: true
-#  depth: 50
+  path: src/git.xiagaogao.com/coffee/httpx
 
 steps:
-  #  - name: clone
-  #    commands:
-  #      - git clone https://github.com/octocat/hello-world.git .
-  #      - git checkout $DRONE_COMMIT
   - name: build
-    #    pull: if-not-exists
-    environment:
-      GOPROXY: https://goproxy.io
-      GOPRIVATE: git.xiagaogao.com
-      GOSUMDB: sum.golang.google.cn
-      USERNAME:
-        from_secret: username
-      PASSWORD:
-        from_secret: password
     commands:
-      - echo $USERNAME $PASSWORD
-      - export GOROOT=/root/go
-      - export GOPATH=/root/drone-go
-#      - git config --global url."https://$USERNAME:$PASSWORD@git.xiagaogao.com".insteadOf "https://git.xiagaogao.com"
-      - echo "machine git.xiagaogao.com login $USERNAME password $PASSWORD" > ~/.netrc
-      - /root/go/bin/go mod tidy
+      - cat /root/.netrc >> ~/.netrc
+      - ln -s /root/.gitconfig ~/.gitconfig
+      - go mod tidy
     when:
       branch:
         include:
