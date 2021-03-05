@@ -35,7 +35,7 @@ steps:
       - export PATH=$PATH:/root/go/bin
       - export GOROOT=/root/go
       - export GOPATH=/root/drone-go
-      - git config --global url."https://$USERNAME:$ACCESS_TOKEN@git.xiagaogao.com.com".insteadOf "https://git.xiagaogao.com"
+      - git config --global url."https://$USERNAME:$ACCESS_TOKEN@git.xiagaogao.com".insteadOf "https://git.xiagaogao.com"
       - go build
       - go test
     when:
