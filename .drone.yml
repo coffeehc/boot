@@ -24,18 +24,27 @@ steps:
   - name: build
     #    pull: if-not-exists
     environment:
-      PATH: /root/go/bin
-      GOROOT: /root/go
-      GOPATH: /root/drone-go
       GOPROXY: https://goproxy.io
       GOPRIVATE: git.xiagaogao.com
       GOSUMDB: sum.golang.google.cn
+      USERNAME:
+        from_secret: username
+      ACCESS_TOKEN:
+        from_secret: access_token
     commands:
+      - export PATH=$PATH:/root/go/bin
+      - export GOROOT=/root/go
+      - export GOPATH=/root/drone-go
+      - git config --global url."https://$USERNAME:$ACCESS_TOKEN@git.xiagaogao.com.com".insteadOf "https://git.xiagaogao.com"
       - go build
       - go test
     when:
       branch:
-        - master
-        - feature/*
+        include:
+          - feature/*
+          - master
+          - dev
       event:
-        - push
+        include:
+          - push
+          - pull_request
