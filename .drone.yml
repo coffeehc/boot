@@ -35,7 +35,7 @@ steps:
       - name: data
         path: /data
     commands:
-#      - cat /data/netrc >> ~/.netrc
+      - cat /data/netrc >> ~/.netrc
       - ln -s /data/gitconfig ~/.gitconfig
       - go build -v
     when:
