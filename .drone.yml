@@ -48,3 +48,15 @@ steps:
         include:
           - push
           - pull_request
+  - name: slack
+    image: plugins/slack
+    settings:
+      webhook: https://hooks.slack.com/services/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
+      channel: dev
+      link_names: true
+      template: >
+        {{#success build.status}}
+          build {{build.number}} succeeded. Good job. <@john.doe>
+        {{else}}
+          build {{build.number}} failed. Fix me please. <@channelname> <@someone>
+        {{/success}}
