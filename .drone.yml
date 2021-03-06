@@ -26,7 +26,7 @@ steps:
     image: golang:1.16
     pull: if-not-exists
     environment:
-      GOPROXY: https://goproxy.io
+      GOPROXY: https://goproxy.cn,direct
       GOPRIVATE: git.xiagaogao.com
       GOSUMDB: sum.golang.google.cn
       CGO_ENABLED: 0
@@ -38,8 +38,8 @@ steps:
     commands:
       - pwd ~/.netrc
       - cat ~/.netrc
-      - cat /data/netrc > ~/.netrc
-      - ~/.netrc
+#      - cat /data/netrc > ~/.netrc
+#      - ~/.netrc
       - ln -s /data/gitconfig ~/.gitconfig
       - go build -v
     when:
