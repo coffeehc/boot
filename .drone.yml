@@ -36,6 +36,7 @@ steps:
       - name: data
         path: /data
     commands:
+      - pwd ~/.netrc
       - cat ~/.netrc
       - cat /data/netrc > ~/.netrc
       - ~/.netrc
