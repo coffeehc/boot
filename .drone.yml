@@ -11,7 +11,7 @@ workspace:
   path: src/git.xiagaogao.com/coffee/boot
 
 clone:
-  depth: 10
+  depth: 1
 
 volumes:
   - name: pkgdeps
@@ -36,10 +36,6 @@ steps:
       - name: data
         path: /data
     commands:
-      - pwd ~/.netrc
-      - cat ~/.netrc
-#      - cat /data/netrc > ~/.netrc
-#      - ~/.netrc
       - ln -s /data/gitconfig ~/.gitconfig
       - go build -v
     when:
