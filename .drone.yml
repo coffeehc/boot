@@ -23,7 +23,8 @@ volumes:
 
 steps:
   - name: build
-    image: golang:latest
+    image: golang:1.16
+    pull: if-not-exists
     environment:
       GOPROXY: https://goproxy.io
       GOPRIVATE: git.xiagaogao.com
@@ -35,7 +36,7 @@ steps:
       - name: data
         path: /data
     commands:
-      - cat /data/netrc >> ~/.netrc
+      - cat /data/netrc > ~/.netrc
       - ln -s /data/gitconfig ~/.gitconfig
       - go build -v
     when:
