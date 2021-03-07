@@ -48,7 +48,7 @@ steps:
         include:
           - push
           - pull_request
-  - name: slack
+  - name: notify
     image: plugins/slack
     settings:
       webhook: https://hooks.slack.com/services/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
@@ -56,7 +56,7 @@ steps:
       link_names: true
       template: >
         {{#success build.status}}
-          build {{build.number}} succeeded. Good job. <@john.doe>
+          构建 {{repo.name}} {{build.branch}} {{build.tag}} {{build.commit}} {{build.event}} {{build.number}} 成功.
         {{else}}
-          build {{build.number}} failed. Fix me please. <@channelname> <@someone>
+          构建 {{repo.name}} {{build.branch}} {{build.tag}} {{build.commit}} {{build.event}} {{build.number}} 失败[{{build.link}}].
         {{/success}}
