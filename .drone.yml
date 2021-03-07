@@ -64,4 +64,3 @@ steps:
         {{else}}
         失败 :x: [{{build.link}}].
         {{/success}}
-        [time:{{build.started}}]
