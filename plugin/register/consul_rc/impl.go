@@ -59,11 +59,11 @@ func (impl *serviceImpl) Register(ctx context.Context, serviceInfo configuration
 		Port:    addr.Port,
 		Address: addr.IP.String(),
 		Check: &api.AgentServiceCheck{
-			CheckID:  fmt.Sprintf("%s_tcpAlive", serviceId),
-			Name:     fmt.Sprintf("%s_tpcAlive", serviceId),
-			Interval: "3s",
-			Timeout:  "1s",
-			TCP:      rpcServerAddr,
+			CheckID:  fmt.Sprintf("%s_grpcHealth", serviceId),
+			Name:     fmt.Sprintf("%s_grpcHealth", serviceId),
+			GRPC:     rpcServerAddr,
+			Interval: "10s",
+			Timeout:  "2s",
 		},
 		Meta: meta,
 	}
