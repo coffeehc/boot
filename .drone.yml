@@ -56,9 +56,9 @@ steps:
       channel: dev
       link_names: true
       template: >
-        构建 git.xiagaogao.com/{{repo.owner}}/{{repo.name}} `n
-        {{build.branch}} {{build.tag}} {{build.commit}} `n
-        {{build.event}} #{{build.number}} `n
+        构建 git.xiagaogao.com/{{repo.owner}}/{{repo.name}} <br>
+        {{build.branch}} {{build.tag}} {{build.commit}} <br>
+        {{build.event}} #{{build.number}} <br>
         {{#success build.status}}
            成功.:white_check_mark:
         {{else}}
