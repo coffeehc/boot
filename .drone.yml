@@ -8,7 +8,7 @@ platform:
 
 workspace:
   base: /data/drone-go
-  path: src/git.xiagaogao.com/coffee/boot
+  path: src/$DRONE_REPO
 
 clone:
   depth: 1
@@ -50,13 +50,17 @@ steps:
           - pull_request
   - name: notify
     image: plugins/slack
+    pull: if-not-exists
     settings:
       webhook: https://hooks.slack.com/services/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
       channel: dev
       link_names: true
       template: >
+        构建 $DRONE_REPO
+        {{build.branch}} {{build.tag}} {{build.commit}}
+        {{build.event}} #{{build.number}}
         {{#success build.status}}
-          构建 {{repo.name}} {{build.branch}} {{build.tag}} {{build.commit}} {{build.event}} {{build.number}} 成功.
+           成功.
         {{else}}
-          构建 {{repo.name}} {{build.branch}} {{build.tag}} {{build.commit}} {{build.event}} {{build.number}} 失败[{{build.link}}].
+           失败[{{build.link}}].
         {{/success}}
