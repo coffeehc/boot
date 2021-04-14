@@ -16,7 +16,7 @@ const (
 	Model_product = "prod"
 )
 
-var configFile = pflag.StringP("config", "c", "./cofnig.yml", "配置文件路径")
+var configFile = pflag.StringP("config", "c", "./config.yml", "配置文件路径")
 
 var runModel = ""
 
