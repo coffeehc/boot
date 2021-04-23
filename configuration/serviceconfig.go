@@ -19,8 +19,10 @@ var onConfigChanges = make([]func(), 0)
 var currentServiceInfo ServiceInfo
 var rootCtx context.Context
 
+const enableRemoteConfigKey = "enable_remote_config"
+
 func DisableRemoteConfig() {
-	viper.Set("remote_config", false)
+	viper.Set(enableRemoteConfigKey, false)
 }
 
 func RegisterOnConfigChange(onConfigChange func()) {
@@ -37,6 +39,8 @@ func InitConfiguration(ctx context.Context, serviceInfo ServiceInfo) {
 		}
 	}
 	viper.SetConfigType("yaml")
+	// 默认开启远程配置
+	viper.SetDefault(enableRemoteConfigKey, true)
 	loadConfig()
 	initServiceInfo(ctx, serviceInfo)
 	loadRemoteConfig(ctx, serviceInfo)
@@ -60,8 +64,8 @@ func initServiceInfo(ctx context.Context, serviceInfo ServiceInfo) {
 }
 
 func loadRemoteConfig(ctx context.Context, serviceInfo ServiceInfo) {
-	log.Info("远程配置开关", zap.Bool("enable", viper.GetBool("remote_config")))
-	if !viper.GetBool("remote_config") {
+	log.Info("远程配置开关", zap.Bool("enable", viper.GetBool(enableRemoteConfigKey)))
+	if !viper.GetBool(enableRemoteConfigKey) {
 		return
 	}
 	consul.EnablePlugin(ctx)
