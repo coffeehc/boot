@@ -57,7 +57,7 @@ After=network-online.target
 [Service]
 ExecStart={{.ApplicationPath}} start
 #ExecReload={{.ApplicationPath}} reload
-EnvironmentFile=/data/.env_setting
+EnvironmentFile=-/data/environments/default.env
 KillMode=process
 Restart=always
 RestartSec=5
