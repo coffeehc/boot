@@ -10,6 +10,7 @@ import (
 	"git.xiagaogao.com/coffee/boot/configuration"
 	"git.xiagaogao.com/coffee/boot/plugin/rpc"
 	"github.com/hashicorp/consul/api"
+	"github.com/spf13/viper"
 )
 
 type serviceImpl struct {
@@ -52,6 +53,10 @@ func (impl *serviceImpl) Register(ctx context.Context, serviceInfo configuration
 		meta[k] = v
 	}
 	serviceId := rpc.GetService().GetRegisterServiceId()
+	deregisterCriticalServiceAfter := viper.GetString("register.deregisterCriticalServiceAfter")
+	if configuration.GetRunModel() == configuration.Model_dev && deregisterCriticalServiceAfter == "" {
+		deregisterCriticalServiceAfter = "90m"
+	}
 	register := &api.AgentServiceRegistration{
 		ID:      serviceId,
 		Name:    serviceInfo.ServiceName,
@@ -59,11 +64,12 @@ func (impl *serviceImpl) Register(ctx context.Context, serviceInfo configuration
 		Port:    addr.Port,
 		Address: addr.IP.String(),
 		Check: &api.AgentServiceCheck{
-			CheckID:  fmt.Sprintf("%s_grpcHealth", serviceId),
-			Name:     fmt.Sprintf("%s_grpcHealth", serviceId),
-			GRPC:     rpcServerAddr,
-			Interval: "10s",
-			Timeout:  "2s",
+			CheckID:                        fmt.Sprintf("%s_grpcHealth", serviceId),
+			Name:                           fmt.Sprintf("%s_grpcHealth", serviceId),
+			GRPC:                           rpcServerAddr,
+			Interval:                       "3s",
+			Timeout:                        "2s",
+			DeregisterCriticalServiceAfter: deregisterCriticalServiceAfter,
 		},
 		Meta: meta,
 	}
