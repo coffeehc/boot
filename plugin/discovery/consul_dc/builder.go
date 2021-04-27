@@ -69,7 +69,7 @@ func (impl *consulResolver) resolver() errors.Error {
 		WaitIndex: impl.lastIndex,
 	})
 	if err != nil {
-		log.Error("接收service地址失败", zap.Error(err), zap.String("serviceName", impl.ServerName))
+		log.Error("接收service地址失败", zap.Error(err), zap.String("rpcServiceName", impl.ServerName))
 		time.Sleep(time.Second * 3)
 		return errors.MessageError(err.Error())
 	}
