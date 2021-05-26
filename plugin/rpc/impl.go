@@ -39,15 +39,16 @@ func (impl *serviceImpl) Start(ctx context.Context) errors.Error {
 	if _err != nil {
 		log.Panic("启动RPC服务端口失败", zap.Error(_err))
 	}
+	grpc_health_v1.RegisterHealthServer(impl.server, impl.healthServer)
 	go func() {
+		log.Debug("启动RPC服务", zap.String("rpcServerAddr", impl.rpcServerAddr), zap.String("realAddr", lis.Addr().String()))
+		impl.healthServer.SetServingStatus(configuration.GetServiceInfo().ServiceName, grpc_health_v1.HealthCheckResponse_SERVING)
 		err := impl.server.Serve(lis)
 		if err != nil {
 			log.Panic("RPC服务异常关闭", zap.Error(err))
 		}
 		impl.healthServer.SetServingStatus(configuration.GetServiceInfo().ServiceName, grpc_health_v1.HealthCheckResponse_NOT_SERVING)
 	}()
-	impl.healthServer.SetServingStatus(configuration.GetServiceInfo().ServiceName, grpc_health_v1.HealthCheckResponse_SERVING)
-	log.Debug("启动RPC服务", zap.String("rpcServerAddr", impl.rpcServerAddr), zap.String("realAddr", lis.Addr().String()))
 	return nil
 }
 func (impl *serviceImpl) Stop(ctx context.Context) errors.Error {

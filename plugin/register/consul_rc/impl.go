@@ -55,7 +55,7 @@ func (impl *serviceImpl) Register(ctx context.Context, serviceInfo configuration
 	serviceId := rpc.GetService().GetRegisterServiceId()
 	deregisterCriticalServiceAfter := viper.GetString("register.deregisterCriticalServiceAfter")
 	if configuration.GetRunModel() == configuration.Model_dev && deregisterCriticalServiceAfter == "" {
-		deregisterCriticalServiceAfter = "90m"
+		deregisterCriticalServiceAfter = "30s"
 	}
 	register := &api.AgentServiceRegistration{
 		ID:      serviceId,

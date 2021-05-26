@@ -15,7 +15,6 @@ import (
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/health"
-	"google.golang.org/grpc/health/grpc_health_v1"
 )
 
 var service Service
@@ -83,7 +82,6 @@ func EnablePlugin(ctx context.Context) {
 	}
 	service = impl
 	// reflection.Register(service.GetGRPCServer()) //是否开启远程控制
-	grpc_health_v1.RegisterHealthServer(service.GetGRPCServer(), impl.healthServer)
 	log.Debug("初始化RPC服务", zap.String("rpcServerAddr", impl.GetRPCServerAddr()))
 	plugin.RegisterPlugin(name, impl)
 }
