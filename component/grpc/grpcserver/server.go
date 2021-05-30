@@ -58,13 +58,13 @@ func BuildGRPCServerOptions(ctx context.Context, config *GRPCServerConfig) []grp
 	}
 	opts := []grpc.ServerOption{
 		grpc.Creds(getCerts(ctx)),
-		grpc.InitialWindowSize(1024 * 1024),
-		grpc.InitialConnWindowSize(1024 * 1024),
+		grpc.InitialWindowSize(1024 * 128),
+		grpc.InitialConnWindowSize(1024),
 		grpc.ReadBufferSize(1024 * 1024),
 		grpc.WriteBufferSize(1024 * 1024),
-		grpc.MaxRecvMsgSize(1024 * 1024),
-		grpc.MaxSendMsgSize(1024 * 1024),
-		grpc.NumStreamWorkers(1024),
+		grpc.MaxRecvMsgSize(1024 * 1024 * 2),
+		grpc.MaxSendMsgSize(1024 * 1024 * 8),
+		grpc.NumStreamWorkers(5000),
 		grpc.MaxConcurrentStreams(config.MaxConcurrentStreams),
 		grpc.ChainStreamInterceptor(chainStreamServers...),
 		grpc.ChainUnaryInterceptor(chainUnaryServers...),
