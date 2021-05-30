@@ -78,7 +78,7 @@ func BuildDialOption(ctx context.Context, block bool) []grpc.DialOption {
 			grpc.UseCompressor("gzip"),
 			grpc.WaitForReady(false),
 			grpc.MaxCallRecvMsgSize(1024*1024*8),
-			grpc.MaxCallRecvMsgSize(1024*1024*2),
+			grpc.MaxCallSendMsgSize(1024*1024*2),
 		),
 		grpc.WithKeepaliveParams(keepalive.ClientParameters{
 			Time:                time.Second * 3,
