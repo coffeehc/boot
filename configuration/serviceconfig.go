@@ -25,6 +25,10 @@ func DisableRemoteConfig() {
 	viper.Set(enableRemoteConfigKey, false)
 }
 
+func EnableRemoteConfig() {
+	viper.Set(enableRemoteConfigKey, true)
+}
+
 func RegisterOnConfigChange(onConfigChange func()) {
 	onConfigChanges = append(onConfigChanges, onConfigChange)
 }
@@ -40,7 +44,7 @@ func InitConfiguration(ctx context.Context, serviceInfo ServiceInfo) {
 	}
 	viper.SetConfigType("yaml")
 	// 默认开启远程配置
-	viper.SetDefault(enableRemoteConfigKey, true)
+	viper.SetDefault(enableRemoteConfigKey, false)
 	loadConfig()
 	initServiceInfo(ctx, serviceInfo)
 	loadRemoteConfig(ctx, serviceInfo)

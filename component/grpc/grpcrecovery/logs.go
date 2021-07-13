@@ -7,7 +7,7 @@ import (
 	"google.golang.org/grpc/grpclog"
 )
 
-var level = zap.NewAtomicLevel()
+var level = zap.NewAtomicLevelAt(zap.ErrorLevel)
 
 func SetLogLevel(l zapcore.Level) {
 	level.SetLevel(l)
@@ -17,9 +17,8 @@ type zapLogger struct {
 	logger *zap.SugaredLogger
 }
 
-//创建封装了zap的对象，该对象是对LoggerV2接口的实现
+// 创建封装了zap的对象，该对象是对LoggerV2接口的实现
 func NewZapLogger() grpclog.LoggerV2 {
-	level.SetLevel(zap.ErrorLevel)
 	return &zapLogger{
 		logger: log.GetLogger().WithOptions(zap.AddCallerSkip(2)).Sugar(),
 	}
@@ -78,7 +77,7 @@ func (zl *zapLogger) Errorf(format string, args ...interface{}) {
 }
 
 func (zl *zapLogger) Fatal(args ...interface{}) {
-	if level.Enabled(zap.FatalLevel) {
+	if level.Enabled(zap.ErrorLevel) {
 		zl.logger.Fatal(args...)
 	}
 }
@@ -98,5 +97,5 @@ func (zl *zapLogger) Fatalf(format string, args ...interface{}) {
 
 // V reports whether verbosity level l is at least the requested verbose level.
 func (zl *zapLogger) V(v int) bool {
-	return false
+	return true
 }
