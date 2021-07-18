@@ -6,7 +6,6 @@ import (
 	"net"
 
 	"git.xiagaogao.com/coffee/base/errors"
-	"git.xiagaogao.com/coffee/boot/component/consul"
 	"git.xiagaogao.com/coffee/boot/configuration"
 	"git.xiagaogao.com/coffee/boot/plugin/rpc"
 	"github.com/hashicorp/consul/api"
@@ -18,9 +17,9 @@ type serviceImpl struct {
 }
 
 func newService() *serviceImpl {
-	service := consul.GetService()
+	// service := consul.GetService()
 	impl := &serviceImpl{
-		client: service.GetConsulClient(),
+		// client: service.GetConsulClient(),
 	}
 	return impl
 }

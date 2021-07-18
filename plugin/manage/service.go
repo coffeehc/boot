@@ -3,12 +3,13 @@ package manage
 import (
 	"context"
 	"fmt"
-	"git.xiagaogao.com/coffee/base/utils"
-	"github.com/gin-gonic/gin"
 	"net"
 	"net/http"
 	"strings"
 	"sync"
+
+	"git.xiagaogao.com/coffee/base/utils"
+	"github.com/gin-gonic/gin"
 
 	"git.xiagaogao.com/coffee/base/errors"
 	"git.xiagaogao.com/coffee/base/log"
@@ -47,7 +48,7 @@ func EnablePlugin(ctx context.Context) {
 	}
 	_plugin = &serviceImpl{}
 	if !viper.IsSet("manage.serverAddr") {
-		viper.SetDefault("manage.serverAddr", "0.0.0.0:0")
+		viper.SetDefault("manage.serverAddr", "0.0.0.0:8889")
 	}
 	manageEndpoint := viper.GetString("manage.serverAddr")
 

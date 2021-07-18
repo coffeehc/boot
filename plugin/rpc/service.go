@@ -46,7 +46,7 @@ func EnablePlugin(ctx context.Context) {
 	}
 	viper.SetDefault("grpc.max_concurrent_streams", 100000)
 	viper.SetDefault("grpc.max_msg_size", 1024*1024*4)
-	viper.SetDefault("grpc.rpc_server_addr", "0.0.0.0:0")
+	viper.SetDefault("grpc.rpc_server_addr", "0.0.0.0:8888")
 	config := &RpcConfig{}
 	_err := viper.UnmarshalKey("grpc", config)
 	if _err != nil {

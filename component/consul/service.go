@@ -7,7 +7,6 @@ import (
 	"git.xiagaogao.com/coffee/base/errors"
 	"git.xiagaogao.com/coffee/base/log"
 	"git.xiagaogao.com/coffee/boot/plugin"
-	"github.com/hashicorp/consul/api"
 	"go.uber.org/zap"
 )
 
@@ -24,7 +23,7 @@ func GetService() Service {
 }
 
 type Service interface {
-	GetConsulClient() *api.Client
+	// GetConsulClient() *api.Client
 }
 
 func EnablePlugin(ctx context.Context) {
