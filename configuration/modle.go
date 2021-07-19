@@ -1,12 +1,14 @@
 package configuration
 
+import "google.golang.org/grpc/resolver"
+
 type ServiceInfo struct {
 	ServiceName string            `mapstructure:"service_name,omitempty" json:"service_name,omitempty"`
 	Version     string            `mapstructure:"version,omitempty" json:"version,omitempty"`
 	Descriptor  string            `mapstructure:"descriptor,omitempty" json:"descriptor,omitempty"`
 	APIDefine   string            `mapstructure:"api_define,omitempty" json:"api_define,omitempty"`
-	Scheme      string            `mapstructure:"scheme,omitempty" json:"scheme,omitempty"`
 	Metadata    map[string]string `mapstructure:"metadata,omitempty" json:"metadata,omitempty"`
+	Target      resolver.Target   `mapstructure:"target,omitempty" json:"target,omitempty"`
 }
 
 // 以下是本地配置，不可变更

@@ -7,6 +7,7 @@ import (
 	"go.uber.org/zap"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/metadata"
 )
 
 // UnaryServerInterceptor returns a new unary server interceptor for panic recovery.
@@ -17,7 +18,10 @@ func UnaryServerInterceptor() grpc.UnaryServerInterceptor {
 				err = convertRPCError(r, true, zap.String("rpcMethod", info.FullMethod))
 			}
 		}()
-
+		md, ok := metadata.FromIncomingContext(ctx)
+		if ok {
+			ctx = ParseMetadataToContext(ctx, md)
+		}
 		resp, err := handler(ctx, req)
 		err = convertRPCError(err, false)
 		return resp, err

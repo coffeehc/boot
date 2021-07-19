@@ -3,9 +3,10 @@ package ipsd
 import (
 	"context"
 
-	"git.xiagaogao.com/coffee/boot/configuration"
 	"google.golang.org/grpc/resolver"
 )
+
+const ServiceProtocolScheme = "ip"
 
 type resolverBuilder struct {
 	ctx            context.Context
@@ -27,7 +28,7 @@ func (impl *resolverBuilder) Build(target resolver.Target, cc resolver.ClientCon
 }
 
 func (impl *resolverBuilder) Scheme() string {
-	return configuration.MicroServiceProtocolScheme
+	return ServiceProtocolScheme
 }
 
 type ipResolver struct {

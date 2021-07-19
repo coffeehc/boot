@@ -7,6 +7,7 @@ import (
 	"go.uber.org/zap"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/metadata"
 )
 
 // UnaryServerInterceptor returns a new unary server interceptor for panic recovery.
@@ -17,6 +18,8 @@ func UnaryClientInterceptor() grpc.UnaryClientInterceptor {
 				err = parseRPCError(r, true, zap.String("rpcMethod", method))
 			}
 		}()
+		md := BuildMetadataFromContext(ctx)
+		ctx = metadata.NewOutgoingContext(ctx, md)
 		err = invoker(ctx, method, req, reply, cc, opts...)
 		return parseRPCError(err, false)
 	}
@@ -30,6 +33,8 @@ func StreamClientInterceptor() grpc.StreamClientInterceptor {
 				err = parseRPCError(r, true, zap.String("rpcMethod", method))
 			}
 		}()
+		md := BuildMetadataFromContext(ctx)
+		ctx = metadata.NewOutgoingContext(ctx, md)
 		clientStream, err = streamer(ctx, desc, cc, method, opts...)
 		err = parseRPCError(err, false)
 		return clientStream, err

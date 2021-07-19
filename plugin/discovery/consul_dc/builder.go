@@ -8,12 +8,13 @@ import (
 
 	"git.xiagaogao.com/coffee/base/errors"
 	"git.xiagaogao.com/coffee/base/log"
-	"git.xiagaogao.com/coffee/boot/component/consul"
 	"git.xiagaogao.com/coffee/boot/configuration"
 	"github.com/hashicorp/consul/api"
 	"go.uber.org/zap"
 	"google.golang.org/grpc/resolver"
 )
+
+const ServiceProtocolScheme = "Micro"
 
 type resolverBuilder struct {
 	ctx context.Context
@@ -22,11 +23,11 @@ type resolverBuilder struct {
 func (impl *resolverBuilder) Build(target resolver.Target, cc resolver.ClientConn, opts resolver.BuildOptions) (resolver.Resolver, error) {
 	ctx, cancel := context.WithCancel(impl.ctx)
 	resolver := &consulResolver{
-		target:     target,
-		cc:         cc,
-		ctx:        ctx,
-		cancel:     cancel,
-		client:     consul.GetService().GetConsulClient(),
+		target: target,
+		cc:     cc,
+		ctx:    ctx,
+		cancel: cancel,
+		// client:     consul.GetService().GetConsulClient(),
 		ServerName: target.Endpoint,
 	}
 	go resolver.watch()
@@ -34,7 +35,7 @@ func (impl *resolverBuilder) Build(target resolver.Target, cc resolver.ClientCon
 }
 
 func (impl *resolverBuilder) Scheme() string {
-	return configuration.MicroServiceProtocolScheme
+	return ServiceProtocolScheme
 }
 
 type consulResolver struct {
