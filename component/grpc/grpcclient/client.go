@@ -5,25 +5,23 @@ import (
 	"fmt"
 	"time"
 
+	"git.xiagaogao.com/coffee/base/errors"
+	"git.xiagaogao.com/coffee/base/log"
 	"git.xiagaogao.com/coffee/boot/component/grpc/grpcrecovery"
+	"git.xiagaogao.com/coffee/boot/configuration"
 	grpc_prometheus "github.com/grpc-ecosystem/go-grpc-prometheus"
+	"go.uber.org/zap"
+	"google.golang.org/grpc"
 	"google.golang.org/grpc/backoff"
 	"google.golang.org/grpc/balancer/roundrobin"
 	"google.golang.org/grpc/credentials"
-	"google.golang.org/grpc/keepalive"
-	"google.golang.org/grpc/resolver"
-
-	"git.xiagaogao.com/coffee/base/errors"
-	"git.xiagaogao.com/coffee/base/log"
-	"git.xiagaogao.com/coffee/boot/configuration"
-	"go.uber.org/zap"
-	"google.golang.org/grpc"
 	_ "google.golang.org/grpc/encoding/gzip"
+	"google.golang.org/grpc/keepalive"
 )
 
 var scope = zap.String("scope", "grpc.client")
 
-func NewClientConnByRegister(ctx context.Context, serviceInfo configuration.ServiceInfo, resolverBuilder resolver.Builder, block bool) (*grpc.ClientConn, errors.Error) {
+func NewClientConnByServiceInfo(ctx context.Context, serviceInfo configuration.ServiceInfo, block bool) (*grpc.ClientConn, errors.Error) {
 	opts := BuildDialOption(ctx, block)
 	target := serviceInfo.Target
 	if target.Scheme == "" {
@@ -31,9 +29,6 @@ func NewClientConnByRegister(ctx context.Context, serviceInfo configuration.Serv
 	}
 	targetUrl := fmt.Sprintf("%s://%s/%s", target.Scheme, target.Authority, target.Endpoint)
 	log.Debug("需要获取的客户端地址", zap.String("target", targetUrl))
-	if resolver.Get(target.Scheme) == nil {
-		resolver.Register(resolverBuilder)
-	}
 	ctx, _ = context.WithTimeout(ctx, time.Second*5)
 	clientConn, err := grpc.DialContext(ctx, targetUrl, opts...)
 	if err != nil {
@@ -77,7 +72,7 @@ func BuildDialOption(ctx context.Context, block bool) []grpc.DialOption {
 		grpc.WithAuthority(configuration.GetRunModel()),
 		grpc.WithDefaultCallOptions(
 			grpc.UseCompressor("gzip"),
-			grpc.WaitForReady(false),
+			grpc.WaitForReady(true),
 			grpc.MaxCallRecvMsgSize(1024*1024*8),
 			grpc.MaxCallSendMsgSize(1024*1024*2),
 		),

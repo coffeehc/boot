@@ -2,8 +2,12 @@ package kubernetes
 
 import (
 	"context"
+	"fmt"
+	"net"
 	"sync"
+	"time"
 
+	"git.xiagaogao.com/coffee/base/errors"
 	"git.xiagaogao.com/coffee/base/log"
 	"go.uber.org/zap"
 	"google.golang.org/grpc/resolver"
@@ -27,7 +31,7 @@ func (impl *resolverBuilder) Build(target resolver.Target, cc resolver.ClientCon
 		// client:     consul.GetService().GetConsulClient(),
 		Endpoint: target.Endpoint,
 	}
-	resolver.initServerAddr()
+	go resolver.watch()
 	return resolver, nil
 }
 
@@ -43,6 +47,7 @@ type kubernetesResolver struct {
 	target    resolver.Target
 	Endpoint  string
 	lastIndex uint64
+	addrs     map[string]struct{}
 }
 
 func (impl *kubernetesResolver) ResolveNow(ro resolver.ResolveNowOptions) {
@@ -53,14 +58,34 @@ func (impl *kubernetesResolver) Close() {
 	impl.cancel()
 }
 
-func (impl *kubernetesResolver) initServerAddr() []resolver.Address {
-	// addr,err = net.ResolveTCPAddr("tcp",impl.Endpoint)
-	// if err!=nil{
-	//   return nil
-	// }
-	addrList := []resolver.Address{
-		{Addr: impl.Endpoint},
+func (impl *kubernetesResolver) watch() {
+	for impl.ctx.Err() == nil {
+		impl.resolver()
+		time.Sleep(time.Second * 30)
 	}
-	log.Debug("实际客户端地址", zap.Any("addList", addrList))
-	return addrList
+}
+
+func (impl *kubernetesResolver) resolver() errors.Error {
+	impl.mutex.Lock()
+	defer impl.mutex.Unlock()
+	addrList := make([]resolver.Address, 0)
+	host, port, err := net.SplitHostPort(impl.Endpoint)
+	if err != nil {
+		log.Error("地址解析错误", zap.Error(err))
+		return errors.ConverError(err)
+	}
+	addrs, err := net.LookupHost(host)
+	if err != nil {
+		log.Error("地址DNS解析错误", zap.Error(err))
+		return errors.ConverError(err)
+	}
+	for _, addr := range addrs {
+		log.Debug("获取地址", zap.String("addr", addr))
+		addrList = append(addrList, resolver.Address{
+			Addr: fmt.Sprintf("%s:%s", addr, port),
+		},
+		)
+	}
+	impl.cc.UpdateState(resolver.State{Addresses: addrList})
+	return nil
 }
