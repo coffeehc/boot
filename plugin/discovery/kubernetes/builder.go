@@ -80,7 +80,7 @@ func (impl *kubernetesResolver) resolver() errors.Error {
 		return errors.ConverError(err)
 	}
 	for _, addr := range addrs {
-		log.Debug("获取地址", zap.String("addr", addr))
+		// log.Debug("获取地址", zap.String("host", host), zap.String("addr", addr))
 		addrList = append(addrList, resolver.Address{
 			Addr: fmt.Sprintf("%s:%s", addr, port),
 		},

@@ -1,8 +1,6 @@
 package grpcrecovery
 
 import (
-	"strings"
-
 	"git.xiagaogao.com/coffee/base/errors"
 	"git.xiagaogao.com/coffee/base/log"
 	"go.uber.org/zap"
@@ -29,9 +27,9 @@ func convertRPCError(err interface{}, recover bool, fields ...zap.Field) error {
 		if errors.IsSystemError(v) {
 			log.DPanic(v.Error(), v.GetFields()...)
 		} else {
-			if !strings.HasPrefix(v.Error(), "context") {
-				log.Error(v.Error(), v.GetFields()...)
-			}
+			// if !strings.HasPrefix(v.Error(), "context") {
+			// 	log.Error(v.Error(), v.GetFields()...)
+			// }
 		}
 		errs = v
 	case string:
