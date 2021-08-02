@@ -33,10 +33,6 @@ func loadConfig() {
 	viper.BindPFlags(pflag.CommandLine)
 	viper.SetEnvPrefix("ENV")
 	viper.AutomaticEnv()
-	if *configFile == "" {
-		log.Warn("没有指定config文件路径")
-		return
-	}
 	viper.SetConfigFile(*configFile)
 	if err := viper.MergeInConfig(); err != nil {
 		log.Warn("加载日志文件失败", zap.Error(err))
