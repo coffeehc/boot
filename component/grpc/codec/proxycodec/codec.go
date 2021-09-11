@@ -1,7 +1,7 @@
 package proxycodec
 
 import (
-	"git.xiagaogao.com/coffee/base/log"
+	"github.com/coffeehc/base/log"
 	"google.golang.org/grpc/encoding"
 	"google.golang.org/protobuf/proto"
 )

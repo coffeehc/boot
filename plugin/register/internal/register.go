@@ -3,8 +3,8 @@ package internal
 import (
 	"context"
 
-	"git.xiagaogao.com/coffee/base/errors"
-	"git.xiagaogao.com/coffee/boot/configuration"
+	"github.com/coffeehc/base/errors"
+	"github.com/coffeehc/boot/configuration"
 )
 
 type RegisterCenter interface {

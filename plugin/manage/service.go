@@ -8,13 +8,13 @@ import (
 	"strings"
 	"sync"
 
-	"git.xiagaogao.com/coffee/base/utils"
+	"github.com/coffeehc/base/utils"
 	"github.com/gin-gonic/gin"
 
-	"git.xiagaogao.com/coffee/base/errors"
-	"git.xiagaogao.com/coffee/base/log"
-	"git.xiagaogao.com/coffee/boot/plugin"
-	"git.xiagaogao.com/coffee/httpx"
+	"github.com/coffeehc/base/errors"
+	"github.com/coffeehc/base/log"
+	"github.com/coffeehc/boot/plugin"
+	"github.com/coffeehc/httpx"
 	"github.com/spf13/viper"
 	"go.uber.org/zap"
 )

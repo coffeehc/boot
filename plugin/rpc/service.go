@@ -6,11 +6,9 @@ import (
 	"net"
 	"sync"
 
-	"git.xiagaogao.com/coffee/base/log"
-	"git.xiagaogao.com/coffee/base/utils"
-	"git.xiagaogao.com/coffee/boot/component/grpc/grpcserver"
-	"git.xiagaogao.com/coffee/boot/crets"
-	"git.xiagaogao.com/coffee/boot/plugin"
+	"github.com/coffeehc/base/log"
+	"github.com/coffeehc/boot/component/grpc/grpcserver"
+	"github.com/coffeehc/boot/plugin"
 	"github.com/spf13/viper"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
@@ -52,10 +50,10 @@ func EnablePlugin(ctx context.Context) {
 	if _err != nil {
 		log.Panic("加载GRPC配置失败", zap.Error(_err))
 	}
-	if viper.GetBool("grpc.openTLS") {
-		log.Debug("开启TLS")
-		grpcserver.SetCerds(ctx, crets.NewServerCreds())
-	}
+	// if viper.GetBool("grpc.openTLS") {
+	// 	log.Debug("开启TLS")
+	// 	grpcserver.SetCerds(ctx, crets.NewServerCreds())
+	// }
 	log.Debug("grpc.Config", zap.Any("config", config))
 	_server, err := grpcserver.NewServer(ctx, &grpcserver.GRPCServerConfig{
 		MaxMsgSize:           config.MaxMsgSize,
@@ -64,7 +62,7 @@ func EnablePlugin(ctx context.Context) {
 	if err != nil {
 		log.Panic("创建GRPC服务端失败")
 	}
-	config.RPCServerAddr, err = utils.WarpServiceAddr(config.RPCServerAddr)
+	config.RPCServerAddr, err = WarpServiceAddr(config.RPCServerAddr)
 	if err != nil {
 		log.Panic("GRPC服务地址处理失败", err.GetFieldsWithCause()...)
 	}

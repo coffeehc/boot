@@ -1,7 +1,7 @@
 package grpcrecovery
 
 import (
-	"git.xiagaogao.com/coffee/base/log"
+	"github.com/coffeehc/base/log"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 	"google.golang.org/grpc/grpclog"

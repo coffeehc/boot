@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"git.xiagaogao.com/coffee/base/log"
+	"github.com/coffeehc/base/log"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
 	pb "google.golang.org/grpc/examples/helloworld/helloworld"

@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"net"
 
-	"git.xiagaogao.com/coffee/base/errors"
-	"git.xiagaogao.com/coffee/boot/configuration"
-	"git.xiagaogao.com/coffee/boot/plugin/rpc"
+	"github.com/coffeehc/base/errors"
+	"github.com/coffeehc/boot/configuration"
+	"github.com/coffeehc/boot/plugin/rpc"
 	"github.com/hashicorp/consul/api"
 	"github.com/spf13/viper"
 )

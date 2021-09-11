@@ -3,9 +3,8 @@ package consul_dc
 import (
 	"context"
 
-	"git.xiagaogao.com/coffee/base/log"
-	"git.xiagaogao.com/coffee/boot/component/consul"
-	"git.xiagaogao.com/coffee/boot/plugin"
+	"github.com/coffeehc/base/log"
+	"github.com/coffeehc/boot/plugin"
 	"go.uber.org/zap"
 	"google.golang.org/grpc/resolver"
 
@@ -37,7 +36,6 @@ func EnablePlugin(ctx context.Context) {
 	if service != nil {
 		return
 	}
-	consul.EnablePlugin(ctx)
 	impl := newService()
 	service = impl
 	plugin.RegisterPluginByFast(name, nil, nil)

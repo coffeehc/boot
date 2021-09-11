@@ -4,11 +4,10 @@ import (
 	"context"
 	"sync"
 
-	"git.xiagaogao.com/coffee/base/log"
-	"git.xiagaogao.com/coffee/boot/component/consul"
-	"git.xiagaogao.com/coffee/boot/plugin"
-	"git.xiagaogao.com/coffee/boot/plugin/register/internal"
-	"git.xiagaogao.com/coffee/boot/plugin/rpc"
+	"github.com/coffeehc/base/log"
+	"github.com/coffeehc/boot/plugin"
+	"github.com/coffeehc/boot/plugin/register/internal"
+	"github.com/coffeehc/boot/plugin/rpc"
 	"go.uber.org/zap"
 )
 
@@ -38,7 +37,6 @@ func EnablePlugin(ctx context.Context) {
 	if service != nil {
 		return
 	}
-	consul.EnablePlugin(ctx)
 	rpc.EnablePlugin(ctx)
 	internal.EnablePlugin(ctx)
 	service = newService()

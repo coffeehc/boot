@@ -6,9 +6,9 @@ import (
 
 	"google.golang.org/grpc/keepalive"
 
-	"git.xiagaogao.com/coffee/base/errors"
-	"git.xiagaogao.com/coffee/base/log"
-	"git.xiagaogao.com/coffee/boot/component/grpc/grpcrecovery"
+	"github.com/coffeehc/base/errors"
+	"github.com/coffeehc/base/log"
+	"github.com/coffeehc/boot/component/grpc/grpcrecovery"
 	"github.com/grpc-ecosystem/go-grpc-prometheus"
 	"github.com/spf13/viper"
 	"go.uber.org/zap"

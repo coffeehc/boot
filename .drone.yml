@@ -8,7 +8,7 @@ platform:
 
 workspace:
   base: /data/drone-go
-  path: src/git.xiagaogao.com/coffee/boot
+  path: src/github.com/coffeehc/boot
 
 clone:
   depth: 1

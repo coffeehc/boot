@@ -5,9 +5,9 @@ import (
 	"testing"
 	"time"
 
-	"git.xiagaogao.com/coffee/boot/configuration"
-	"git.xiagaogao.com/coffee/boot/plugin"
-	"git.xiagaogao.com/coffee/boot/testutils"
+	"github.com/coffeehc/boot/configuration"
+	"github.com/coffeehc/boot/plugin"
+	"github.com/coffeehc/boot/testutils"
 )
 
 func TestService(t *testing.T) {

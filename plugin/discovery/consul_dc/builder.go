@@ -6,15 +6,15 @@ import (
 	"sync"
 	"time"
 
-	"git.xiagaogao.com/coffee/base/errors"
-	"git.xiagaogao.com/coffee/base/log"
-	"git.xiagaogao.com/coffee/boot/configuration"
+	"github.com/coffeehc/base/errors"
+	"github.com/coffeehc/base/log"
+	"github.com/coffeehc/boot/configuration"
 	"github.com/hashicorp/consul/api"
 	"go.uber.org/zap"
 	"google.golang.org/grpc/resolver"
 )
 
-const ServiceProtocolScheme = "Micro"
+const ServiceProtocolScheme = "console"
 
 type resolverBuilder struct {
 	ctx context.Context

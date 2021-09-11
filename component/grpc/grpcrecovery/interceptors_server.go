@@ -23,7 +23,7 @@ func UnaryServerInterceptor() grpc.UnaryServerInterceptor {
 			ctx = ParseMetadataToContext(ctx, md)
 		}
 		resp, err := handler(ctx, req)
-		err = convertRPCError(err, false)
+		err = convertRPCError(err, false, zap.String("rpcMethod", info.FullMethod))
 		return resp, err
 	}
 }
@@ -36,6 +36,6 @@ func StreamServerInterceptor() grpc.StreamServerInterceptor {
 				err = convertRPCError(r, true, zap.String("rpcMethod", info.FullMethod))
 			}
 		}()
-		return convertRPCError(handler(srv, stream), false)
+		return convertRPCError(handler(srv, stream), false, zap.String("rpcMethod", info.FullMethod))
 	}
 }

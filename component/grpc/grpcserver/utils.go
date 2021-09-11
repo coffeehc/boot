@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"time"
 
-	"git.xiagaogao.com/coffee/base/log"
+	"github.com/coffeehc/base/log"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"

@@ -1,7 +1,7 @@
 package engine
 
 import (
-	"git.xiagaogao.com/coffee/boot/configuration"
+	"github.com/coffeehc/boot/configuration"
 	"github.com/spf13/cobra"
 )
 

@@ -3,10 +3,10 @@ package register
 import (
 	"context"
 
-	"git.xiagaogao.com/coffee/base/errors"
-	"git.xiagaogao.com/coffee/base/log"
-	"git.xiagaogao.com/coffee/boot/configuration"
-	"git.xiagaogao.com/coffee/boot/plugin/register/internal"
+	"github.com/coffeehc/base/errors"
+	"github.com/coffeehc/base/log"
+	"github.com/coffeehc/boot/configuration"
+	"github.com/coffeehc/boot/plugin/register/internal"
 )
 
 type serviceImpl struct {

@@ -7,11 +7,11 @@ import (
 	"os/signal"
 	"syscall"
 
-	"git.xiagaogao.com/coffee/base/log"
+	"github.com/coffeehc/base/log"
 	"github.com/spf13/cobra"
 	"go.uber.org/zap"
 
-	"git.xiagaogao.com/coffee/boot/configuration"
+	"github.com/coffeehc/boot/configuration"
 )
 
 type ServiceStart func(ctx context.Context, cmd *cobra.Command, args []string) (ServiceCloseCallback, error)

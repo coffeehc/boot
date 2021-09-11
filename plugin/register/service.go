@@ -4,11 +4,11 @@ import (
 	"context"
 	"sync"
 
-	"git.xiagaogao.com/coffee/base/log"
-	"git.xiagaogao.com/coffee/boot/plugin"
-	"git.xiagaogao.com/coffee/boot/plugin/manage"
-	"git.xiagaogao.com/coffee/boot/plugin/register/internal"
-	"git.xiagaogao.com/coffee/boot/plugin/rpc"
+	"github.com/coffeehc/base/log"
+	"github.com/coffeehc/boot/plugin"
+	"github.com/coffeehc/boot/plugin/manage"
+	"github.com/coffeehc/boot/plugin/register/internal"
+	"github.com/coffeehc/boot/plugin/rpc"
 	"go.uber.org/zap"
 )
 

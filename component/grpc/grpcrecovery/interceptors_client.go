@@ -21,7 +21,7 @@ func UnaryClientInterceptor() grpc.UnaryClientInterceptor {
 		md := BuildMetadataFromContext(ctx)
 		ctx = metadata.NewOutgoingContext(ctx, md)
 		err = invoker(ctx, method, req, reply, cc, opts...)
-		return parseRPCError(err, false)
+		return parseRPCError(err, false, zap.String("rpcMethod", method))
 	}
 }
 
@@ -36,7 +36,7 @@ func StreamClientInterceptor() grpc.StreamClientInterceptor {
 		md := BuildMetadataFromContext(ctx)
 		ctx = metadata.NewOutgoingContext(ctx, md)
 		clientStream, err = streamer(ctx, desc, cc, method, opts...)
-		err = parseRPCError(err, false)
+		err = parseRPCError(err, false, zap.String("rpcMethod", method))
 		return clientStream, err
 	}
 }

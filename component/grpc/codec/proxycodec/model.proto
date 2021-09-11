@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package grpcproxy;
 
-option go_package = "git.xiagaogao.com/coffee/boot/component/grpc/codec/proxycodec;proxycodec";
+option go_package = "github.com/coffeehc/boot/component/grpc/codec/proxycodec;proxycodec";
 
 message ProxyFrame{
     string serviceName =1;

@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"time"
 
-	"git.xiagaogao.com/coffee/boot/configuration"
+	"github.com/coffeehc/boot/configuration"
 	"github.com/prometheus/client_golang/prometheus"
 )
 

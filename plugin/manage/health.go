@@ -5,7 +5,7 @@ import (
 	"runtime"
 	"time"
 
-	"git.xiagaogao.com/coffee/boot/configuration"
+	"github.com/coffeehc/boot/configuration"
 	"github.com/gin-gonic/gin"
 )
 

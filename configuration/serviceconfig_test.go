@@ -4,7 +4,7 @@ import (
 	"os"
 	"testing"
 
-	"git.xiagaogao.com/coffee/base/log"
+	"github.com/coffeehc/base/log"
 	"github.com/spf13/viper"
 	"go.uber.org/zap"
 )

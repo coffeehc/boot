@@ -3,10 +3,10 @@ package discovery
 import (
 	"context"
 
-	"git.xiagaogao.com/coffee/base/errors"
-	"git.xiagaogao.com/coffee/base/log"
-	"git.xiagaogao.com/coffee/boot/component/grpc/grpcclient"
-	"git.xiagaogao.com/coffee/boot/configuration"
+	"github.com/coffeehc/base/errors"
+	"github.com/coffeehc/base/log"
+	"github.com/coffeehc/boot/component/grpc/grpcclient"
+	"github.com/coffeehc/boot/configuration"
 	"go.uber.org/zap"
 )
 

@@ -3,8 +3,8 @@ package configuration
 import (
 	"context"
 
-	"git.xiagaogao.com/coffee/base/log"
-	"git.xiagaogao.com/coffee/base/utils"
+	"github.com/coffeehc/base/log"
+	"github.com/coffeehc/base/utils"
 	"github.com/spf13/viper"
 	"go.uber.org/zap"
 )

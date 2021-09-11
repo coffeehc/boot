@@ -1,6 +1,6 @@
 package internal
 
-import "git.xiagaogao.com/coffee/base/errors"
+import "github.com/coffeehc/base/errors"
 
 type serviceImpl struct {
 	registerCenter RegisterCenter

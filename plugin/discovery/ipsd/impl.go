@@ -3,7 +3,7 @@ package ipsd
 import (
 	"context"
 
-	"git.xiagaogao.com/coffee/base/errors"
+	"github.com/coffeehc/base/errors"
 	"google.golang.org/grpc/resolver"
 )
 

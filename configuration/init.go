@@ -4,7 +4,7 @@ import (
 	"flag"
 	"strings"
 
-	"git.xiagaogao.com/coffee/base/log"
+	"github.com/coffeehc/base/log"
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
 	"go.uber.org/zap"
@@ -35,7 +35,7 @@ func loadConfig() {
 	viper.AutomaticEnv()
 	viper.SetConfigFile(*configFile)
 	if err := viper.MergeInConfig(); err != nil {
-		log.Warn("加载日志文件失败", zap.Error(err))
+		log.Warn("加载日志文件失败:", zap.Error(err))
 	}
 	if viper.GetString(_run_model) == "" {
 		log.Panic("没有指定run model")
