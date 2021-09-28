@@ -29,6 +29,7 @@ func RegisterPlugin(name string, plugin Plugin) {
 
 func StartPlugins(ctx context.Context) {
 	for name, plugin := range plugins {
+		log.Info("开始启动插件", zap.String("pluginName", name))
 		err := plugin.Start(ctx)
 		if err != nil {
 			log.Panic("启动插件失败", err.GetFieldsWithCause(zap.String("pluginName", name))...)
