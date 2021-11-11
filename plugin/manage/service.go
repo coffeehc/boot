@@ -22,6 +22,8 @@ import (
 var _plugin *serviceImpl
 var mutex = new(sync.Mutex)
 
+var WebEngine *gin.Engine
+
 type serviceImpl struct {
 	httpService httpx.Service
 	endpoint    string
@@ -82,6 +84,7 @@ func (impl *serviceImpl) registerManager() {
 	// router.Use(gin.BasicAuth(gin.Accounts{
 	// 	"root": "abc###123",
 	// }))
+	WebEngine = router
 	impl.registerServiceRuntimeInfoEndpoint(router)
 	impl.registerHealthEndpoint(router)
 	impl.registerMetricsEndpoint(router)
