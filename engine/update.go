@@ -3,6 +3,7 @@ package engine
 import (
 	"fmt"
 	"io"
+	"io/fs"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -54,25 +55,34 @@ func buildUpdateCmd(serviceInfo configuration.ServiceInfo) *cobra.Command {
 	}
 }
 
-func UpdateSalf(serviceInfo configuration.ServiceInfo, downloadUrl string, version string) errors.Error {
-	if version == serviceInfo.Version {
-		return errors.MessageError("版本一致，无需升级")
-	}
+func UpdateSalf(serviceInfo configuration.ServiceInfo, downloadUrl string) errors.Error {
 	serviceSoftPath, e := filepath.Abs(os.Args[0])
 	if e != nil {
 		log.Error("获取程序绝对路径失败", zap.Error(e))
 		return errors.MessageError("获取程序绝对路径失败")
 	}
 	baseDir := filepath.Dir(serviceSoftPath)
-	fileName := filepath.Base(serviceSoftPath)
 	updateDir := filepath.Join(baseDir, "updates")
 	e = os.MkdirAll(updateDir, 0666)
 	if e != nil {
 		log.Error("创建更新目录失败", zap.Error(e))
 		return errors.MessageError("创建更新目录失败")
 	}
-	vstr := strings.ReplaceAll(version, ".", "_")
-	updateFileName := filepath.Join(updateDir, fmt.Sprintf("%s_%s", fileName, vstr))
+	oldFiles := make([]string, 0)
+	// TODO 开始遍历文件夹
+	fs.WalkDir(os.DirFS(updateDir), ".", func(path string, d fs.DirEntry, err error) error {
+		oldFiles = append(oldFiles, path)
+		return nil
+	})
+	if len(oldFiles) > 5 {
+		for i, path := range oldFiles {
+			if i < 3 {
+				os.Remove(path)
+			}
+		}
+	}
+	log.Debug("创建了升级目录", zap.String("updtaDir", updateDir))
+	updateFileName := fmt.Sprintf("%s%s%s", updateDir, filepath.Separator, fmt.Sprintf("%s_%d", serviceInfo.ServiceName, time.Now().UnixNano()))
 	log.Debug("创建新版本文件", zap.String("updateFileName", updateFileName))
 	updateFile, e := os.OpenFile(updateFileName, os.O_CREATE|os.O_TRUNC|os.O_RDWR, 0777)
 	if e != nil {
@@ -96,7 +106,7 @@ func UpdateSalf(serviceInfo configuration.ServiceInfo, downloadUrl string, versi
 	}
 	log.Debug("写入文件大小", zap.Int64("size", n))
 	log.Debug("开始转储程序")
-	os.Rename(serviceSoftPath, filepath.Join(updateDir, fmt.Sprintf("%s_%d", fileName, time.Now().Unix())))
+	os.Rename(serviceSoftPath, filepath.Join(updateDir, fmt.Sprintf("%s_%s", serviceInfo.ServiceName, strings.ReplaceAll(serviceInfo.Version, ".", "_"))))
 	os.Rename(updateFileName, serviceSoftPath)
 	log.Debug("开始启动后台守护进程")
 	daemon(serviceInfo)

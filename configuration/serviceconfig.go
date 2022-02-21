@@ -34,6 +34,7 @@ func InitConfiguration(ctx context.Context, serviceInfo ServiceInfo) {
 			// "build_version": BuildVersion,
 			"build_time": BuildTime,
 			"git_tag":    GitTag,
+			"version":    Version,
 		}
 	}
 	viper.SetConfigType("yaml")

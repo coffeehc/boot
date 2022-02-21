@@ -35,18 +35,23 @@ func WaitServiceStop(ctx context.Context, cancelFunc context.CancelFunc, closeCa
 }
 
 func StartEngine(ctx context.Context, serviceInfo configuration.ServiceInfo, start ServiceStart) {
+	serviceInfo.Version = configuration.Version
+	if serviceInfo.Version == "" {
+		fmt.Printf("没有指定版本号")
+		os.Exit(-1)
+	}
 	var rootCmd = &cobra.Command{
 		Use:   configuration.GetServiceName(),
 		Short: fmt.Sprintf("%s 服务", configuration.GetServiceName()),
 		Long:  serviceInfo.Descriptor,
 		Run: func(cmd *cobra.Command, args []string) {
-			configuration.PrintVersionInfo(serviceInfo)
+			configuration.PrintVersionInfo()
 			fmt.Println()
 			cmd.Help()
 		},
 	}
 	rootCmd.AddCommand(
-		buildVersionCmd(serviceInfo),
+		buildVersionCmd(),
 		buildStartCmd(ctx, serviceInfo, start),
 		buildSetupCmd(serviceInfo),
 		buildUpdateCmd(serviceInfo),
