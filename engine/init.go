@@ -40,17 +40,16 @@ func StartEngine(ctx context.Context, serviceInfo configuration.ServiceInfo, sta
 		Short: fmt.Sprintf("%s 服务", configuration.GetServiceName()),
 		Long:  serviceInfo.Descriptor,
 		Run: func(cmd *cobra.Command, args []string) {
-			configuration.PrintVersionInfo()
+			configuration.PrintVersionInfo(serviceInfo)
 			fmt.Println()
 			cmd.Help()
-
 		},
 	}
 	rootCmd.AddCommand(
-		versionCmd,
-		buildServiceCmd(ctx, serviceInfo, start),
+		buildVersionCmd(serviceInfo),
+		buildStartCmd(ctx, serviceInfo, start),
 		buildSetupCmd(serviceInfo),
-		buildUpdataCmd(serviceInfo),
+		buildUpdateCmd(serviceInfo),
 	)
 	_err := rootCmd.ExecuteContext(ctx)
 	if _err != nil {

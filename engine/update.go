@@ -1,11 +1,22 @@
 package engine
 
 import (
+	"fmt"
+	"io"
+	"net/http"
+	"os"
+	"path/filepath"
+	"strings"
+	"time"
+
+	"github.com/coffeehc/base/errors"
+	"github.com/coffeehc/base/log"
 	"github.com/coffeehc/boot/configuration"
 	"github.com/spf13/cobra"
+	"go.uber.org/zap"
 )
 
-func buildUpdataCmd(serviceInfo configuration.ServiceInfo) *cobra.Command {
+func buildUpdateCmd(serviceInfo configuration.ServiceInfo) *cobra.Command {
 	return &cobra.Command{
 		Use:   "update",
 		Short: "升级服务程序",
@@ -41,4 +52,53 @@ func buildUpdataCmd(serviceInfo configuration.ServiceInfo) *cobra.Command {
 			return nil
 		},
 	}
+}
+
+func UpdateSalf(serviceInfo configuration.ServiceInfo, downloadUrl string, version string) errors.Error {
+	if version == serviceInfo.Version {
+		return errors.MessageError("版本一致，无需升级")
+	}
+	serviceSoftPath, e := filepath.Abs(os.Args[0])
+	if e != nil {
+		log.Error("获取程序绝对路径失败", zap.Error(e))
+		return errors.MessageError("获取程序绝对路径失败")
+	}
+	baseDir := filepath.Dir(serviceSoftPath)
+	fileName := filepath.Base(serviceSoftPath)
+	updateDir := filepath.Join(baseDir, "updates")
+	e = os.MkdirAll(updateDir, 0666)
+	if e != nil {
+		log.Error("创建更新目录失败", zap.Error(e))
+		return errors.MessageError("创建更新目录失败")
+	}
+	vstr := strings.ReplaceAll(version, ".", "_")
+	updateFileName := filepath.Join(updateDir, fmt.Sprintf("%s_%s", fileName, vstr))
+	log.Debug("创建新版本文件", zap.String("updateFileName", updateFileName))
+	updateFile, e := os.OpenFile(updateFileName, os.O_CREATE|os.O_TRUNC|os.O_RDWR, 0777)
+	if e != nil {
+		log.Error("创建下载文件失败", zap.Error(e))
+		return errors.MessageError("创建下载文件失败")
+	}
+	log.Debug("开始下载程序")
+	resp, e := http.Get(downloadUrl)
+	if e != nil {
+		log.Error("请求下载地址失败", zap.Error(e))
+		return errors.MessageError("请求下载地址失败")
+	}
+	log.Debug("开始保存程序")
+	n, e := io.Copy(updateFile, resp.Body)
+	resp.Body.Close()
+	updateFile.Sync()
+	updateFile.Close()
+	if e != nil {
+		log.Error("写入文件失败", zap.Error(e))
+		return errors.MessageError("写入文件失败")
+	}
+	log.Debug("写入文件大小", zap.Int64("size", n))
+	log.Debug("开始转储程序")
+	os.Rename(serviceSoftPath, filepath.Join(updateDir, fmt.Sprintf("%s_%d", fileName, time.Now().Unix())))
+	os.Rename(updateFileName, serviceSoftPath)
+	log.Debug("开始启动后台守护进程")
+	daemon(serviceInfo)
+	return nil
 }
