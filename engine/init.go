@@ -25,7 +25,7 @@ func WaitServiceStop(ctx context.Context, cancelFunc context.CancelFunc, closeCa
 	}()
 	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM, syscall.SIGKILL)
 	sig := <-sigChan
-	if ctx.Err() == nil {
+	if ctx.Err() == nil && cancelFunc != nil {
 		cancelFunc()
 	}
 	if closeCallback != nil {
@@ -46,7 +46,6 @@ func StartEngine(ctx context.Context, serviceInfo configuration.ServiceInfo, sta
 		Long:  serviceInfo.Descriptor,
 		Run: func(cmd *cobra.Command, args []string) {
 			configuration.PrintVersionInfo()
-			fmt.Println()
 			cmd.Help()
 		},
 	}

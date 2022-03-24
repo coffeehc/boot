@@ -82,7 +82,6 @@ func UpdateSalf(serviceInfo configuration.ServiceInfo, downloadUrl string) error
 		}
 	}
 	log.Debug("创建了升级目录", zap.String("updtaDir", updateDir))
-	filepath.Join()
 	updateFileName := fmt.Sprintf("%s%s%s", updateDir, string(os.PathSeparator), fmt.Sprintf("%s_%d", serviceInfo.ServiceName, time.Now().UnixNano()))
 	log.Debug("创建新版本文件", zap.String("updateFileName", updateFileName))
 	updateFile, e := os.OpenFile(updateFileName, os.O_CREATE|os.O_TRUNC|os.O_RDWR, 0777)
