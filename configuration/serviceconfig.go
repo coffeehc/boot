@@ -90,7 +90,7 @@ func initServiceInfo(ctx context.Context, serviceInfo ServiceInfo) {
 // 	}()
 // }
 
-// func readRemoteConfig(ctx context.Context, path string, kv *api.KV, opts *api.QueryOptions) errors.Error {
+// func readRemoteConfig(ctx context.Context, path string, kv *api.KV, opts *api.QueryOptions) error {
 // 	if ctx.Err() != nil {
 // 		return errors.ConverError(ctx.Err())
 // 	}

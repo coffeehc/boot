@@ -3,7 +3,6 @@ package configuration
 import (
 	"context"
 
-	"github.com/coffeehc/base/errors"
 	"google.golang.org/grpc"
 )
 
@@ -16,5 +15,5 @@ type ServiceRegisterInfo struct {
 
 type RPCService interface {
 	GetRPCServiceInfo() ServiceInfo
-	InitRPCService(ctx context.Context, grpcConn *grpc.ClientConn) errors.Error
+	InitRPCService(ctx context.Context, grpcConn *grpc.ClientConn) error
 }

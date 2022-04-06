@@ -29,12 +29,12 @@ type serviceImpl struct {
 	endpoint    string
 }
 
-func (impl *serviceImpl) Start(ctx context.Context) errors.Error {
+func (impl *serviceImpl) Start(ctx context.Context) error {
 	impl.httpService.Start(nil)
 	log.Debug("启动ManageServer", zap.String("endpoint", GetManageEndpoint()))
 	return nil
 }
-func (impl *serviceImpl) Stop(ctx context.Context) errors.Error {
+func (impl *serviceImpl) Stop(ctx context.Context) error {
 	err := impl.httpService.Shutdown()
 	if err != nil {
 		return errors.ConverError(err)

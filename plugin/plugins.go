@@ -4,7 +4,6 @@ import (
 	"context"
 	"sync"
 
-	"github.com/coffeehc/base/errors"
 	"github.com/coffeehc/base/log"
 	"go.uber.org/zap"
 )
@@ -13,8 +12,8 @@ var plugins = make(map[string]Plugin, 0)
 var mutex = new(sync.RWMutex)
 
 type Plugin interface {
-	Start(ctx context.Context) errors.Error
-	Stop(ctx context.Context) errors.Error
+	Start(ctx context.Context) error
+	Stop(ctx context.Context) error
 }
 
 func RegisterPlugin(name string, plugin Plugin) {
@@ -32,8 +31,8 @@ func StartPlugins(ctx context.Context) {
 		log.Info("开始启动插件", zap.String("pluginName", name))
 		err := plugin.Start(ctx)
 		if err != nil {
-			log.Panic("启动插件失败", err.GetFieldsWithCause(zap.String("pluginName", name))...)
-			//continue
+			log.Panic("启动插件失败", zap.String("pluginName", name), zap.Error(err))
+			// continue
 		}
 		log.Info("启动插件成功", zap.String("pluginName", name))
 	}
@@ -43,14 +42,14 @@ func StopPlugins(ctx context.Context) {
 	for name, plugin := range plugins {
 		err := plugin.Stop(ctx)
 		if err != nil {
-			log.Error("启动插件失败", err.GetFieldsWithCause(zap.String("pluginName", name))...)
+			log.Error("启动插件失败", zap.String("pluginName", name), zap.Error(err))
 			continue
 		}
 		log.Info("关闭插件", zap.String("pluginName", name))
 	}
 }
 
-func RegisterPluginByFast(name string, start func(ctx context.Context) errors.Error, stop func(ctx context.Context) errors.Error) {
+func RegisterPluginByFast(name string, start func(ctx context.Context) error, stop func(ctx context.Context) error) {
 	RegisterPlugin(name, &pluginImpl{
 		stop:  stop,
 		start: start,
@@ -58,17 +57,17 @@ func RegisterPluginByFast(name string, start func(ctx context.Context) errors.Er
 }
 
 type pluginImpl struct {
-	start func(ctx context.Context) errors.Error
-	stop  func(ctx context.Context) errors.Error
+	start func(ctx context.Context) error
+	stop  func(ctx context.Context) error
 }
 
-func (impl *pluginImpl) Start(ctx context.Context) errors.Error {
+func (impl *pluginImpl) Start(ctx context.Context) error {
 	if impl.start != nil {
 		return impl.start(ctx)
 	}
 	return nil
 }
-func (impl *pluginImpl) Stop(ctx context.Context) errors.Error {
+func (impl *pluginImpl) Stop(ctx context.Context) error {
 	if impl.stop != nil {
 		return impl.stop(ctx)
 	}

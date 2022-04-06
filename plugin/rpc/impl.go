@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"net"
 
-	"github.com/coffeehc/base/errors"
 	"github.com/coffeehc/base/log"
 	"github.com/coffeehc/boot/configuration"
 	"go.uber.org/zap"
@@ -32,7 +31,7 @@ func (impl *serviceImpl) GetGRPCServer() *grpc.Server {
 	return impl.server
 }
 
-func (impl *serviceImpl) Start(ctx context.Context) errors.Error {
+func (impl *serviceImpl) Start(ctx context.Context) error {
 	addr, _ := net.ResolveTCPAddr("tcp4", impl.rpcServerAddr)
 	addr.IP = net.IPv4zero
 	lis, _err := net.Listen("tcp4", addr.String())
@@ -51,7 +50,7 @@ func (impl *serviceImpl) Start(ctx context.Context) errors.Error {
 	}()
 	return nil
 }
-func (impl *serviceImpl) Stop(ctx context.Context) errors.Error {
+func (impl *serviceImpl) Stop(ctx context.Context) error {
 	impl.healthServer.SetServingStatus(configuration.GetServiceInfo().ServiceName, grpc_health_v1.HealthCheckResponse_NOT_SERVING)
 	impl.server.Stop()
 	log.Info("RPC服务关闭")

@@ -4,7 +4,6 @@ import (
 	"context"
 	"sync"
 
-	"github.com/coffeehc/base/errors"
 	"github.com/coffeehc/base/log"
 	"github.com/coffeehc/boot/plugin"
 	"go.uber.org/zap"
@@ -24,7 +23,7 @@ func GetService() Service {
 
 type Service interface {
 	GetRegisterCenter() RegisterCenter
-	SetRegisterCenter(center RegisterCenter) errors.Error
+	SetRegisterCenter(center RegisterCenter) error
 }
 
 func EnablePlugin(ctx context.Context) {

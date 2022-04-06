@@ -6,7 +6,6 @@ import (
 
 	"google.golang.org/grpc/keepalive"
 
-	"github.com/coffeehc/base/errors"
 	"github.com/coffeehc/base/log"
 	"github.com/coffeehc/boot/component/grpc/grpcrecovery"
 	"github.com/grpc-ecosystem/go-grpc-prometheus"
@@ -18,7 +17,7 @@ import (
 
 var scope = zap.String("scope", "grpc.server")
 
-func NewServer(ctx context.Context, grpcConfig *GRPCServerConfig) (*grpc.Server, errors.Error) {
+func NewServer(ctx context.Context, grpcConfig *GRPCServerConfig) (*grpc.Server, error) {
 	if grpcConfig == nil {
 		grpcConfig = &GRPCServerConfig{}
 	}

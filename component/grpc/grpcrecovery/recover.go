@@ -50,7 +50,7 @@ func convertRPCError(err interface{}, recover bool, fields ...zap.Field) error {
 	return status.Errorf(errCode, errs.FormatRPCError())
 }
 
-func parseRPCError(err interface{}, recover bool, fields ...zap.Field) errors.Error {
+func parseRPCError(err interface{}, recover bool, fields ...zap.Field) error {
 	if err == nil {
 		return nil
 	}

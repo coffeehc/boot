@@ -21,7 +21,7 @@ import (
 
 var scope = zap.String("scope", "grpc.client")
 
-func NewClientConnByServiceInfo(ctx context.Context, serviceInfo configuration.ServiceInfo, block bool) (*grpc.ClientConn, errors.Error) {
+func NewClientConnByServiceInfo(ctx context.Context, serviceInfo configuration.ServiceInfo, block bool) (*grpc.ClientConn, error) {
 	opts := BuildDialOption(ctx, block)
 	target := serviceInfo.Target
 	if target.Scheme == "" {
@@ -38,7 +38,7 @@ func NewClientConnByServiceInfo(ctx context.Context, serviceInfo configuration.S
 	return clientConn, nil
 }
 
-func NewClientConn(ctx context.Context, block bool, serverAddr string) (*grpc.ClientConn, errors.Error) {
+func NewClientConn(ctx context.Context, block bool, serverAddr string) (*grpc.ClientConn, error) {
 	opts := BuildDialOption(ctx, block)
 	ctx, _ = context.WithTimeout(ctx, time.Second*5)
 	clientConn, err := grpc.DialContext(ctx, serverAddr, opts...)

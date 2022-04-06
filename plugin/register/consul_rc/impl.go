@@ -29,7 +29,7 @@ func (impl *serviceImpl) CheckDeregister(checkId string) {
 	agent.CheckDeregister(checkId)
 }
 
-func (impl *serviceImpl) Register(ctx context.Context, serviceInfo configuration.ServiceInfo) errors.Error {
+func (impl *serviceImpl) Register(ctx context.Context, serviceInfo configuration.ServiceInfo) error {
 	if ctx.Err() != nil {
 		return errors.MessageError("服务注册已经关闭")
 	}
@@ -46,7 +46,6 @@ func (impl *serviceImpl) Register(ctx context.Context, serviceInfo configuration
 	meta["Version"] = serviceInfo.Version
 	meta["Descriptor"] = serviceInfo.Descriptor
 	meta["APIDefine"] = serviceInfo.APIDefine
-	meta["Scheme"] = serviceInfo.Scheme
 	meta["Address"] = rpcServerAddr
 	for k, v := range serviceInfo.Metadata {
 		meta[k] = v

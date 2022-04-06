@@ -3,7 +3,6 @@ package ipsd
 import (
 	"context"
 
-	"github.com/coffeehc/base/errors"
 	"github.com/coffeehc/base/log"
 	"github.com/coffeehc/boot/plugin"
 	"go.uber.org/zap"
@@ -25,7 +24,7 @@ func GetService() Service {
 }
 
 type Service interface {
-	GetResolverBuilder(ctx context.Context) (resolver.Builder, errors.Error)
+	GetResolverBuilder(ctx context.Context) (resolver.Builder, error)
 }
 
 func EnablePlugin(ctx context.Context) {

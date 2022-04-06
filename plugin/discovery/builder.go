@@ -10,7 +10,7 @@ import (
 	"go.uber.org/zap"
 )
 
-func RPCServiceInitializationByAddress(ctx context.Context, rpcService configuration.RPCService, serverAddr string) errors.Error {
+func RPCServiceInitializationByAddress(ctx context.Context, rpcService configuration.RPCService, serverAddr string) error {
 	conn, err := grpcclient.NewClientConn(ctx, false, serverAddr)
 	if err != nil {
 		return errors.ConverError(err)
@@ -25,7 +25,7 @@ func RPCServiceInitializationByAddress(ctx context.Context, rpcService configura
 
 }
 
-func RPCServiceInitialization(ctx context.Context, rpcService configuration.RPCService) errors.Error {
+func RPCServiceInitialization(ctx context.Context, rpcService configuration.RPCService) error {
 	conn, err := grpcclient.NewClientConnByServiceInfo(ctx, rpcService.GetRPCServiceInfo(), false)
 	if err != nil {
 		return err

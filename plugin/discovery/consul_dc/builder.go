@@ -63,7 +63,7 @@ func (impl *consulResolver) watch() {
 	}
 }
 
-func (impl *consulResolver) resolver() errors.Error {
+func (impl *consulResolver) resolver() error {
 	impl.mutex.Lock()
 	defer impl.mutex.Unlock()
 	services, mateinfo, err := impl.client.Health().ServiceMultipleTags(impl.ServerName, []string{configuration.GetRunModel()}, true, &api.QueryOptions{

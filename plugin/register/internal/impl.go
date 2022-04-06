@@ -10,7 +10,7 @@ func (impl *serviceImpl) GetRegisterCenter() RegisterCenter {
 	return impl.registerCenter
 }
 
-func (impl *serviceImpl) SetRegisterCenter(center RegisterCenter) errors.Error {
+func (impl *serviceImpl) SetRegisterCenter(center RegisterCenter) error {
 	if impl.registerCenter != nil {
 		//	其实这个理还可以改造一下，弄多注册中心
 		return errors.SystemError("已经存在注册中心，不能重复注册")

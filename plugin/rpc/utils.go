@@ -12,7 +12,7 @@ import (
 
 const envIPInterfaceName = "NET_INTERFACE"
 
-func GetLocalIP() (net.IP, errors.Error) {
+func GetLocalIP() (net.IP, error) {
 	if interfaceName, ok := os.LookupEnv(envIPInterfaceName); ok && interfaceName != "" {
 		netInterface, err := net.InterfaceByName(interfaceName)
 		if err != nil {
@@ -34,7 +34,7 @@ func GetLocalIP() (net.IP, errors.Error) {
 	return getActiveIP(addrs)
 }
 
-func getActiveIP(addrs []net.Addr) (net.IP, errors.Error) {
+func getActiveIP(addrs []net.Addr) (net.IP, error) {
 	for _, addr := range addrs {
 		if ipnet, ok := addr.(*net.IPNet); ok && !ipnet.IP.IsLoopback() {
 			if ipnet.IP.To4() != nil {
@@ -45,7 +45,7 @@ func getActiveIP(addrs []net.Addr) (net.IP, errors.Error) {
 	return net.IPv4zero, errors.SystemError("没有可用的有效 Ip")
 }
 
-func WarpServiceAddr(serviceAddr string) (string, errors.Error) {
+func WarpServiceAddr(serviceAddr string) (string, error) {
 	if serviceAddr == "" {
 		return "", errors.SystemError("服务地址不能为空")
 	}

@@ -38,5 +38,5 @@ func buildAuthStreamServerInterceptor(authService GRPCServerAuth) grpc.StreamSer
 }
 
 type GRPCServerAuth interface {
-	Auth(ctx context.Context, md metadata.MD) errors.Error
+	Auth(ctx context.Context, md metadata.MD) error
 }

@@ -55,7 +55,7 @@ func buildUpdateCmd(serviceInfo configuration.ServiceInfo) *cobra.Command {
 	}
 }
 
-func UpdateSalf(serviceInfo configuration.ServiceInfo, downloadUrl string) errors.Error {
+func UpdateSalf(serviceInfo configuration.ServiceInfo, downloadUrl string) error {
 	serviceSoftPath, e := filepath.Abs(os.Args[0])
 	if e != nil {
 		log.Error("获取程序绝对路径失败", zap.Error(e))

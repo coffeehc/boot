@@ -65,7 +65,7 @@ func (impl *kubernetesResolver) watch() {
 	}
 }
 
-func (impl *kubernetesResolver) resolver() errors.Error {
+func (impl *kubernetesResolver) resolver() error {
 	impl.mutex.Lock()
 	defer impl.mutex.Unlock()
 	addrList := make([]resolver.Address, 0)
