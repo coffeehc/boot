@@ -64,7 +64,7 @@ func EnablePlugin(ctx context.Context) {
 	}
 	config.RPCServerAddr, err = WarpServiceAddr(config.RPCServerAddr)
 	if err != nil {
-		log.Panic("GRPC服务地址处理失败", err.GetFieldsWithCause()...)
+		log.Panic("GRPC服务地址处理失败", zap.Error(err))
 	}
 	lis, _err := net.Listen("tcp4", config.RPCServerAddr)
 	if _err != nil {
