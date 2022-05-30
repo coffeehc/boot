@@ -9,6 +9,8 @@ import (
 )
 
 var plugins = make(map[string]Plugin, 0)
+var sortPlugins = make([]Plugin, 0)
+var _plugins = make(map[Plugin]string, 0)
 var mutex = new(sync.RWMutex)
 
 type Plugin interface {
@@ -23,11 +25,14 @@ func RegisterPlugin(name string, plugin Plugin) {
 		log.Warn("插件已经注册过,不能重复注册", zap.String("name", name))
 	}
 	plugins[name] = plugin
+	sortPlugins = append(sortPlugins, plugin)
+	_plugins[plugin] = name
 	log.Debug("插件注册", zap.String("plugin", name))
 }
 
 func StartPlugins(ctx context.Context) {
-	for name, plugin := range plugins {
+	for _, plugin := range sortPlugins {
+		name := _plugins[plugin]
 		log.Info("开始启动插件", zap.String("pluginName", name))
 		err := plugin.Start(ctx)
 		if err != nil {
