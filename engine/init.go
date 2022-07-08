@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"os/signal"
+	"runtime"
 	"syscall"
 
 	"github.com/coffeehc/base/log"
@@ -18,12 +19,17 @@ type ServiceStart func(ctx context.Context, cmd *cobra.Command, args []string) (
 type ServiceCloseCallback func()
 
 func WaitServiceStop(ctx context.Context, cancelFunc context.CancelFunc, closeCallback func()) {
-	var sigChan = make(chan os.Signal, 3)
+	var sigChan = make(chan os.Signal, 4)
 	go func() {
 		<-ctx.Done()
 		sigChan <- syscall.SIGINT
 	}()
-	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM, syscall.SIGKILL)
+	if runtime.GOOS != "darwin" && runtime.GOOS != "ios" {
+		signal.Notify(sigChan, syscall.SIGHUP,
+			syscall.SIGINT,
+			syscall.SIGTERM,
+			syscall.SIGQUIT)
+	}
 	sig := <-sigChan
 	if ctx.Err() == nil && cancelFunc != nil {
 		cancelFunc()

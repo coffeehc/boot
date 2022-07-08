@@ -2,6 +2,7 @@ package configuration
 
 import (
 	"flag"
+	"os"
 	"strings"
 
 	"github.com/coffeehc/base/log"
@@ -33,9 +34,12 @@ func loadConfig() {
 	viper.BindPFlags(pflag.CommandLine)
 	viper.SetEnvPrefix("ENV")
 	viper.AutomaticEnv()
-	viper.SetConfigFile(*configFile)
-	if err := viper.MergeInConfig(); err != nil {
-		log.Warn("加载日志文件失败:", zap.Error(err))
+	_, err := os.ReadFile(*configFile)
+	if err == nil {
+		viper.SetConfigFile(*configFile)
+		if err := viper.MergeInConfig(); err != nil {
+			log.Warn("加载日志文件失败:", zap.Error(err))
+		}
 	}
 	if viper.GetString(_run_model) == "" {
 		log.Panic("没有指定run model")

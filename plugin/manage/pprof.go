@@ -6,7 +6,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func registerPprof(route gin.IRouter) {
+func RegisterPprof(route gin.IRouter) {
 	route = route.Group("/debug/pprof")
 	route.GET("/", indexHandler())
 	route.GET("/heap", heapHandler())
