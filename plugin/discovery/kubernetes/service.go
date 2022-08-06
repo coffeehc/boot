@@ -39,5 +39,5 @@ func EnablePlugin(ctx context.Context) {
 	impl := newService()
 	service = impl
 	resolver.Register(impl.GetResolverBuilder(ctx))
-	plugin.RegisterPluginByFast(name, nil, nil)
+	plugin.RegisterPlugin(name, service)
 }
