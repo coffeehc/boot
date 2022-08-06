@@ -28,7 +28,7 @@ func RegisterPlugin(name string, service interface{}) {
 		log.Warn("插件已经注册过,不能重复注册", zap.String("name", name))
 	}
 	var plugin Plugin = nil
-	if _, ok := service.(Plugin); !ok {
+	if _, ok := service.(Plugin); ok {
 		plugin = service.(Plugin)
 	} else {
 		plugin = &pluginImpl{
