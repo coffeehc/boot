@@ -18,11 +18,22 @@ type Plugin interface {
 	Stop(ctx context.Context) error
 }
 
-func RegisterPlugin(name string, plugin Plugin) {
+func RegisterPlugin(name string, service interface{}) {
+	if service == nil {
+		log.Panic("服务为空，不能注册", zap.String("name", name))
+	}
 	mutex.Lock()
 	defer mutex.Unlock()
 	if plugins[name] != nil {
 		log.Warn("插件已经注册过,不能重复注册", zap.String("name", name))
+	}
+	var plugin Plugin = nil
+	if _, ok := service.(Plugin); !ok {
+		plugin = service.(Plugin)
+	} else {
+		plugin = &pluginImpl{
+			service: service,
+		}
 	}
 	plugins[name] = plugin
 	sortPlugins = append(sortPlugins, plugin)
@@ -54,16 +65,17 @@ func StopPlugins(ctx context.Context) {
 	}
 }
 
-func RegisterPluginByFast(name string, start func(ctx context.Context) error, stop func(ctx context.Context) error) {
-	RegisterPlugin(name, &pluginImpl{
-		stop:  stop,
-		start: start,
-	})
-}
+//func RegisterPluginByFast(name string, start func(ctx context.Context) error, stop func(ctx context.Context) error) {
+//	RegisterPlugin(name, &pluginImpl{
+//		stop:  stop,
+//		start: start,
+//	})
+//}
 
 type pluginImpl struct {
-	start func(ctx context.Context) error
-	stop  func(ctx context.Context) error
+	service interface{}
+	start   func(ctx context.Context) error
+	stop    func(ctx context.Context) error
 }
 
 func (impl *pluginImpl) Start(ctx context.Context) error {
