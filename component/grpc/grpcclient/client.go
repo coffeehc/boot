@@ -87,7 +87,7 @@ func BuildDialOption(ctx context.Context, block bool) []grpc.DialOption {
 		grpc.WithChainUnaryInterceptor(chainUnaryClient...),
 		grpc.WithInitialConnWindowSize(1024 * 64),
 		grpc.WithInitialWindowSize(1024 * 256),
-		grpc.WithChannelzParentID(0),
+		//grpc.WithChannelzParentID(&channelz.Identifier{}),
 		grpc.FailOnNonTempDialError(false),
 		grpc.WithNoProxy(),
 		grpc.WithReadBufferSize(1024 * 128),

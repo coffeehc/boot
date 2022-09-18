@@ -25,10 +25,13 @@ func WaitServiceStop(ctx context.Context, cancelFunc context.CancelFunc, closeCa
 		sigChan <- syscall.SIGINT
 	}()
 	if runtime.GOOS != "darwin" && runtime.GOOS != "ios" {
-		signal.Notify(sigChan, syscall.SIGHUP,
-			syscall.SIGINT,
+		signal.Notify(sigChan,
+			//syscall.SIGHUP,
+			//syscall.SIGINT,
+			syscall.SIGKILL,
 			syscall.SIGTERM,
-			syscall.SIGQUIT)
+			//syscall.SIGQUIT
+		)
 	}
 	sig := <-sigChan
 	if ctx.Err() == nil && cancelFunc != nil {
