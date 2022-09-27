@@ -22,19 +22,19 @@ import (
 var _plugin *serviceImpl
 var mutex = new(sync.Mutex)
 
-var WebEngine *gin.Engine
+//var WebEngine *gin.Engine
 
 type serviceImpl struct {
 	httpService httpx.Service
 	endpoint    string
 }
 
-func (impl *serviceImpl) Start(ctx context.Context) error {
+func (impl *serviceImpl) Start(_ context.Context) error {
 	impl.httpService.Start(nil)
 	log.Debug("启动ManageServer", zap.String("endpoint", GetManageEndpoint()))
 	return nil
 }
-func (impl *serviceImpl) Stop(ctx context.Context) error {
+func (impl *serviceImpl) Stop(_ context.Context) error {
 	err := impl.httpService.Shutdown()
 	if err != nil {
 		return errors.ConverError(err)
@@ -42,7 +42,7 @@ func (impl *serviceImpl) Stop(ctx context.Context) error {
 	return nil
 }
 
-func EnablePlugin(ctx context.Context) {
+func EnablePlugin(_ context.Context) {
 	mutex.Lock()
 	defer mutex.Unlock()
 	if _plugin != nil {
@@ -70,7 +70,7 @@ func EnablePlugin(ctx context.Context) {
 	_plugin.endpoint = showManageEndpoint
 	_plugin.httpService = httpx.NewService("manage", &httpx.Config{
 		ServerAddr: manageEndpoint,
-	}, log.GetLogger())
+	})
 	_plugin.registerManager()
 	plugin.RegisterPlugin("manager", _plugin)
 }
@@ -84,7 +84,7 @@ func (impl *serviceImpl) registerManager() {
 	// router.Use(gin.BasicAuth(gin.Accounts{
 	// 	"root": "abc###123",
 	// }))
-	WebEngine = router
+	//WebEngine = router
 	impl.registerServiceRuntimeInfoEndpoint(router)
 	impl.registerHealthEndpoint(router)
 	impl.registerMetricsEndpoint(router)
