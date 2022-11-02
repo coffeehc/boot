@@ -2,8 +2,8 @@ package proxycodec
 
 import (
 	"github.com/coffeehc/base/log"
+	"github.com/gogo/protobuf/proto"
 	"google.golang.org/grpc/encoding"
-	"google.golang.org/protobuf/proto"
 )
 
 const Name = "proxyCodec"
