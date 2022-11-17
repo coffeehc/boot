@@ -2,7 +2,11 @@ package rpc
 
 import (
 	"context"
+	"crypto/tls"
 	"fmt"
+	"github.com/coffeehc/boot/component/grpc/grpcquic"
+	"github.com/lucas-clemente/quic-go"
+	"golang.org/x/net/http2"
 	"net"
 
 	"github.com/coffeehc/base/log"
@@ -32,21 +36,41 @@ func (impl *serviceImpl) GetGRPCServer() *grpc.Server {
 }
 
 func (impl *serviceImpl) Start(ctx context.Context) error {
+	log.Debug("开始启动RPC服务", zap.String("rpcServerAddr", impl.rpcServerAddr))
+	cert, err := grpcquic.GenerateTlsSelfSignedCert()
+	if err != nil {
+		return err
+	}
+	tlsConfig := &tls.Config{
+		Certificates:       []tls.Certificate{cert},
+		NextProtos:         []string{"http/1.1", http2.NextProtoTLS, "coffee"},
+		InsecureSkipVerify: true,
+	}
 	addr, _ := net.ResolveTCPAddr("tcp4", impl.rpcServerAddr)
+	udpAddr, _ := net.ResolveUDPAddr("udp4", impl.rpcServerAddr)
 	addr.IP = net.IPv4zero
-	lis, _err := net.Listen("tcp4", addr.String())
+	udplis, _err := quic.ListenAddr(udpAddr.String(), tlsConfig, nil)
 	if _err != nil {
 		log.Panic("启动RPC服务端口失败", zap.Error(_err))
 	}
+	udpListener := grpcquic.Listen(udplis)
+	//tcpListener, _err := net.Listen("tcp4", addr.String())
+	//if _err != nil {
+	//	log.Panic("启动RPC服务端口失败", zap.Error(_err))
+	//}
 	grpc_health_v1.RegisterHealthServer(impl.server, impl.healthServer)
 	go func() {
-		log.Debug("启动RPC服务", zap.String("rpcServerAddr", impl.rpcServerAddr), zap.String("realAddr", lis.Addr().String()))
 		impl.healthServer.SetServingStatus(configuration.GetServiceInfo().ServiceName, grpc_health_v1.HealthCheckResponse_SERVING)
-		err := impl.server.Serve(lis)
+		err := impl.server.Serve(udpListener)
 		if err != nil {
 			log.Panic("RPC服务异常关闭", zap.Error(err))
 		}
+		//err = impl.server.Serve(tcpListener)
+		//if err != nil {
+		//	log.Panic("RPC服务异常关闭", zap.Error(err))
+		//}
 		impl.healthServer.SetServingStatus(configuration.GetServiceInfo().ServiceName, grpc_health_v1.HealthCheckResponse_NOT_SERVING)
+		log.Debug("启动RPCServer完成", zap.String("rpcServerAddr", impl.rpcServerAddr))
 	}()
 	return nil
 }

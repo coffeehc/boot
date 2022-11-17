@@ -2,7 +2,11 @@ package grpcclient
 
 import (
 	"context"
+	"crypto/tls"
 	"fmt"
+	"github.com/coffeehc/boot/component/grpc/grpcquic"
+	"golang.org/x/net/http2"
+	"google.golang.org/grpc/credentials/insecure"
 	"time"
 
 	"github.com/coffeehc/base/errors"
@@ -18,6 +22,18 @@ import (
 	_ "google.golang.org/grpc/encoding/gzip"
 	"google.golang.org/grpc/keepalive"
 )
+
+func EnableQuic(ctx context.Context, enable bool) context.Context {
+	return context.WithValue(ctx, "_EnableQuic", enable)
+}
+
+func getEnableQuic(ctx context.Context) bool {
+	v := ctx.Value("_EnableQuic")
+	if v == nil {
+		return false
+	}
+	return v.(bool)
+}
 
 var scope = zap.String("scope", "grpc.client")
 
@@ -99,11 +115,25 @@ func BuildDialOption(ctx context.Context, block bool) []grpc.DialOption {
 			opts = append(opts, grpc.WithPerRPCCredentials(prc))
 		}
 	}
-	creds := getCerts(ctx)
-	if creds != nil {
-		opts = append(opts, grpc.WithTransportCredentials(creds))
+	enableQUiC := getEnableQuic(ctx)
+	if !enableQUiC {
+		creds := getCerts(ctx)
+		if creds == nil {
+			opts = append(opts, grpc.WithTransportCredentials(insecure.NewCredentials()))
+		} else {
+			log.Error("暂不支持使用自定义证书")
+		}
 	} else {
-		opts = append(opts, grpc.WithInsecure())
+		creds := grpcquic.NewCredentials(&tls.Config{
+			NextProtos:         []string{"http/1.1", http2.NextProtoTLS, "coffee"},
+			InsecureSkipVerify: true,
+		})
+		opts = append(opts, grpc.WithTransportCredentials(creds))
+		tlsConf := &tls.Config{
+			NextProtos:         []string{"http/1.1", http2.NextProtoTLS, "coffee"},
+			InsecureSkipVerify: true,
+		}
+		opts = append(opts, grpc.WithContextDialer(grpcquic.NewQuicDialer(tlsConf)))
 	}
 	if block {
 		opts = append(opts, grpc.WithBlock())
