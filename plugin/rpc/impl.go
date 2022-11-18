@@ -54,24 +54,31 @@ func (impl *serviceImpl) Start(ctx context.Context) error {
 		log.Panic("启动RPC服务端口失败", zap.Error(_err))
 	}
 	udpListener := grpcquic.Listen(udplis)
-	//tcpListener, _err := net.Listen("tcp4", addr.String())
-	//if _err != nil {
-	//	log.Panic("启动RPC服务端口失败", zap.Error(_err))
-	//}
+	tcpListener, _err := net.Listen("tcp4", addr.String())
+	if _err != nil {
+		log.Panic("启动RPC服务端口失败", zap.Error(_err))
+	}
 	grpc_health_v1.RegisterHealthServer(impl.server, impl.healthServer)
+	go func() {
+		impl.healthServer.SetServingStatus(configuration.GetServiceInfo().ServiceName, grpc_health_v1.HealthCheckResponse_SERVING)
+		err = impl.server.Serve(tcpListener)
+		if err != nil {
+			log.Panic("RPC服务异常关闭", zap.Error(err))
+		}
+		impl.healthServer.SetServingStatus(configuration.GetServiceInfo().ServiceName, grpc_health_v1.HealthCheckResponse_NOT_SERVING)
+		log.Debug("启动RPCServer完成", zap.String("rpcServerAddr", impl.rpcServerAddr))
+	}()
 	go func() {
 		impl.healthServer.SetServingStatus(configuration.GetServiceInfo().ServiceName, grpc_health_v1.HealthCheckResponse_SERVING)
 		err := impl.server.Serve(udpListener)
 		if err != nil {
 			log.Panic("RPC服务异常关闭", zap.Error(err))
 		}
-		//err = impl.server.Serve(tcpListener)
-		//if err != nil {
-		//	log.Panic("RPC服务异常关闭", zap.Error(err))
-		//}
+		log.Debug("QUIC协议支持开启")
 		impl.healthServer.SetServingStatus(configuration.GetServiceInfo().ServiceName, grpc_health_v1.HealthCheckResponse_NOT_SERVING)
 		log.Debug("启动RPCServer完成", zap.String("rpcServerAddr", impl.rpcServerAddr))
 	}()
+
 	return nil
 }
 func (impl *serviceImpl) Stop(ctx context.Context) error {
