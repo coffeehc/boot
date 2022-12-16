@@ -9,7 +9,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func (impl *serviceImpl) registerServiceRuntimeInfoEndpoint(router gin.IRouter) {
+func RegisterServiceRuntimeInfoEndpoint(router gin.IRouter) {
 	serviceInfo := configuration.GetServiceInfo()
 	h := &serviceRuntimeInfo{
 		ServiceName: serviceInfo.ServiceName,
@@ -39,7 +39,7 @@ type serviceRuntimeInfo struct {
 	Model       string    `json:"model"`
 }
 
-func (impl *serviceImpl) registerHealthEndpoint(router gin.IRouter) {
+func RegisterHealthEndpoint(router gin.IRouter) {
 	router.GET("/health", func(context *gin.Context) {
 		context.JSON(http.StatusOK, gin.H{
 			"goroutine_count": runtime.NumGoroutine(),

@@ -5,8 +5,8 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
-func (impl *serviceImpl) registerMetricsEndpoint(router gin.IRouter) {
+func RegisterMetricsEndpoint(router gin.IRouter) {
 	router.GET("/metrics", gin.WrapH(promhttp.Handler()))
-	router.GET("/ping", impl.ping())
+	router.GET("/ping", ping())
 	RegisterPprof(router)
 }

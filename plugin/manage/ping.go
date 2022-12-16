@@ -6,7 +6,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func (impl *serviceImpl) ping() gin.HandlerFunc {
+func ping() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		c.String(http.StatusOK, "pong")
 	}

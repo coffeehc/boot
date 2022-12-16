@@ -85,9 +85,9 @@ func (impl *serviceImpl) registerManager() {
 	// 	"root": "abc###123",
 	// }))
 	//WebEngine = router
-	impl.registerServiceRuntimeInfoEndpoint(router)
-	impl.registerHealthEndpoint(router)
-	impl.registerMetricsEndpoint(router)
+	RegisterServiceRuntimeInfoEndpoint(router)
+	RegisterHealthEndpoint(router)
+	RegisterMetricsEndpoint(router)
 	router.GET("/", func(i *gin.Context) {
 		routesInfos := router.Routes()
 		c := make([]string, 0)
