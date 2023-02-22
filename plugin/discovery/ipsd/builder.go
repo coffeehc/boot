@@ -2,7 +2,7 @@ package ipsd
 
 import (
 	"context"
-
+	"github.com/coffeehc/base/log"
 	"google.golang.org/grpc/resolver"
 )
 
@@ -12,6 +12,12 @@ type resolverBuilder struct {
 	ctx            context.Context
 	defaultSrvAddr []string
 	scheme         string
+	resolver       *ipResolver
+}
+
+func (impl *resolverBuilder) UpdateAddress(addresses []string) {
+	impl.defaultSrvAddr = addresses
+	impl.resolver.initServerAddr()
 }
 
 func (impl *resolverBuilder) Build(target resolver.Target, cc resolver.ClientConn, opts resolver.BuildOptions) (resolver.Resolver, error) {
@@ -40,7 +46,8 @@ type ipResolver struct {
 	target         resolver.Target
 }
 
-func (impl *ipResolver) ResolveNow(ro resolver.ResolveNowOptions) {
+func (impl *ipResolver) ResolveNow(options resolver.ResolveNowOptions) {
+	log.Debug("ResolveNow-----------------")
 }
 
 // Close closes the resolver.

@@ -6,13 +6,14 @@ import (
 	"google.golang.org/grpc/resolver"
 )
 
-type serviceImpl struct {
-}
-
-func (impl *serviceImpl) GetResolverBuilder(ctx context.Context, defaultSrvAddr ...string) (resolver.Builder, error) {
+func GetResolverBuilder(ctx context.Context, defaultSrvAddr ...string) (resolver.Builder, error) {
 	rb := &resolverBuilder{
 		ctx:            ctx,
 		defaultSrvAddr: defaultSrvAddr,
 	}
 	return rb, nil
+}
+
+type ResolverBuilder interface {
+	UpdateAddress(addresses []string)
 }
