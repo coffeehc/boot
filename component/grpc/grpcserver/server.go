@@ -28,7 +28,6 @@ func NewServer(ctx context.Context, grpcConfig *GRPCServerConfig) (*grpc.Server,
 	if err != nil {
 		log.Panic("解析grpc配置失败", zap.Error(err), scope)
 	}
-	// server := grpc.NewServer()
 	server := grpc.NewServer(BuildGRPCServerOptions(ctx, grpcConfig)...)
 	return server, nil
 }

@@ -36,7 +36,7 @@ func TestGrpc(t *testing.T) {
 		}
 	}()
 	time.Sleep(time.Second * 3)
-	c, err := grpc.Dial("192.168.3.128:8899", grpc.WithInsecure(), grpc.WithNoProxy())
+	c, err := grpc.Dial("192.168.3.128:8899", grpc.WithNoProxy())
 	if err != nil {
 		log.Error("创建链接失败", zap.Error(err))
 	}

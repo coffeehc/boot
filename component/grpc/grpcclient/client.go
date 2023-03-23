@@ -108,7 +108,7 @@ func BuildDialOption(ctx context.Context, block bool) []grpc.DialOption {
 		),
 		grpc.WithKeepaliveParams(keepalive.ClientParameters{
 			Time:                time.Second * 3,
-			Timeout:             time.Second * 10,
+			Timeout:             time.Second * 180,
 			PermitWithoutStream: false,
 		}),
 		grpc.WithDefaultServiceConfig(fmt.Sprintf(`{"LoadBalancingPolicy": "%s"}`, roundrobin.Name)),
@@ -129,25 +129,21 @@ func BuildDialOption(ctx context.Context, block bool) []grpc.DialOption {
 			opts = append(opts, grpc.WithPerRPCCredentials(prc))
 		}
 	}
+	tlsConfig := &tls.Config{
+		NextProtos:         []string{"http/1.1", http2.NextProtoTLS, "coffee"},
+		InsecureSkipVerify: true,
+	}
 	enableQUiC := getEnableQuic(ctx)
 	if !enableQUiC {
 		creds := getCerts(ctx)
 		if creds == nil {
-			opts = append(opts, grpc.WithTransportCredentials(insecure.NewCredentials()))
-		} else {
-			log.Error("暂不支持使用自定义证书")
+			creds = insecure.NewCredentials()
 		}
-	} else {
-		creds := grpcquic.NewCredentials(&tls.Config{
-			NextProtos:         []string{"http/1.1", http2.NextProtoTLS, "coffee"},
-			InsecureSkipVerify: true,
-		})
 		opts = append(opts, grpc.WithTransportCredentials(creds))
-		tlsConf := &tls.Config{
-			NextProtos:         []string{"http/1.1", http2.NextProtoTLS, "coffee"},
-			InsecureSkipVerify: true,
-		}
-		opts = append(opts, grpc.WithContextDialer(grpcquic.NewQuicDialer(tlsConf)))
+	} else {
+		creds := grpcquic.NewCredentials(tlsConfig)
+		opts = append(opts, grpc.WithTransportCredentials(creds))
+		opts = append(opts, grpc.WithContextDialer(grpcquic.NewQuicDialer(tlsConfig)))
 	}
 	if block {
 		opts = append(opts, grpc.WithBlock())

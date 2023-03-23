@@ -2,7 +2,6 @@ package ipsd
 
 import (
 	"context"
-	"github.com/coffeehc/base/log"
 	"google.golang.org/grpc/resolver"
 )
 
@@ -47,7 +46,7 @@ type ipResolver struct {
 }
 
 func (impl *ipResolver) ResolveNow(options resolver.ResolveNowOptions) {
-	log.Debug("ResolveNow-----------------")
+	//log.Debug("ResolveNow-----------------")
 }
 
 // Close closes the resolver.
