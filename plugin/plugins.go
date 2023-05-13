@@ -8,6 +8,8 @@ import (
 	"go.uber.org/zap"
 )
 
+var AfterPluginStartedHandler func() error = nil
+
 var plugins = make(map[string]Plugin, 0)
 var sortPlugins = make([]Plugin, 0)
 var _plugins = make(map[Plugin]string, 0)
@@ -48,9 +50,14 @@ func StartPlugins(ctx context.Context) {
 		err := plugin.Start(ctx)
 		if err != nil {
 			log.Panic("启动插件失败", zap.String("pluginName", name), zap.Error(err))
-			// continue
 		}
 		log.Info("启动插件成功", zap.String("pluginName", name))
+	}
+	if AfterPluginStartedHandler != nil {
+		err := AfterPluginStartedHandler()
+		if err != nil {
+			log.Panic("业务启动失败", zap.Error(err))
+		}
 	}
 }
 
@@ -64,13 +71,6 @@ func StopPlugins(ctx context.Context) {
 		log.Info("关闭插件", zap.String("pluginName", name))
 	}
 }
-
-//func RegisterPluginByFast(name string, start func(ctx context.Context) error, stop func(ctx context.Context) error) {
-//	RegisterPlugin(name, &pluginImpl{
-//		stop:  stop,
-//		start: start,
-//	})
-//}
 
 type pluginImpl struct {
 	service interface{}

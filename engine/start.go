@@ -30,6 +30,7 @@ func savePid(serviceInfo configuration.ServiceInfo, pid int) {
 }
 
 func buildStartCmd(ctx context.Context, serviceInfo configuration.ServiceInfo, start ServiceStart) *cobra.Command {
+	ctx, cancelFunc := context.WithCancel(ctx)
 	return &cobra.Command{
 		Use:   "start",
 		Short: "启动服务",
@@ -40,28 +41,27 @@ func buildStartCmd(ctx context.Context, serviceInfo configuration.ServiceInfo, s
 			if *daemonModel {
 				return daemon(serviceInfo)
 			}
-			ctx, cancelFunc := context.WithCancel(ctx)
 			configuration.InitConfiguration(ctx, serviceInfo)
 			defer plugin.StopPlugins(ctx)
 			var closeCallback ServiceCloseCallback = nil
-			go func() {
-				_closeCallback, err := start(ctx, cmd, args)
-				if err != nil {
-					log.Error("启动服务失败", zap.Error(err))
+			//go func() {
+			_closeCallback, err := start(ctx, cmd, args)
+			if err != nil {
+				log.Error("启动服务失败", zap.Error(err))
+				cancelFunc()
+			}
+			closeCallback = _closeCallback
+			defer func() {
+				if e := recover(); e != nil {
+					err := errors.ConverUnknowError(e)
+					log.DPanic("程序捕获不能处理的异常", err.GetFieldsWithCause()...)
 					cancelFunc()
 				}
-				closeCallback = _closeCallback
-				defer func() {
-					if e := recover(); e != nil {
-						err := errors.ConverUnknowError(e)
-						log.DPanic("程序捕获不能处理的异常", err.GetFieldsWithCause()...)
-						cancelFunc()
-					}
-				}()
-				plugin.StartPlugins(ctx)
-				log.Info("服务启动完成")
 			}()
-			WaitServiceStop(ctx, cancelFunc, closeCallback)
+			plugin.StartPlugins(ctx)
+			log.Info("服务启动完成")
+			//}()
+			WaitServiceStop(ctx, closeCallback)
 			return nil
 		},
 	}

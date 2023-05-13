@@ -3,14 +3,13 @@ package engine
 import (
 	"context"
 	"fmt"
+	"github.com/coffeehc/base/log"
+	"github.com/spf13/cobra"
+	"go.uber.org/zap"
 	"os"
 	"os/signal"
 	"runtime"
 	"syscall"
-
-	"github.com/coffeehc/base/log"
-	"github.com/spf13/cobra"
-	"go.uber.org/zap"
 
 	"github.com/coffeehc/boot/configuration"
 )
@@ -18,8 +17,9 @@ import (
 type ServiceStart func(ctx context.Context, cmd *cobra.Command, args []string) (ServiceCloseCallback, error)
 type ServiceCloseCallback func()
 
-func WaitServiceStop(ctx context.Context, cancelFunc context.CancelFunc, closeCallback func()) {
-	var sigChan = make(chan os.Signal, 4)
+func WaitServiceStop(ctx context.Context, closeCallback func()) {
+	ctx, cancelFunc := context.WithCancel(ctx)
+	var sigChan = make(chan os.Signal, 1)
 	go func() {
 		<-ctx.Done()
 		sigChan <- syscall.SIGINT
