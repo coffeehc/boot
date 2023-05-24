@@ -3,13 +3,11 @@ package engine
 import (
 	"context"
 	"fmt"
-	"os"
-	"strconv"
-
 	"github.com/coffeehc/base/errors"
 	"github.com/coffeehc/base/log"
 	"github.com/coffeehc/boot/configuration"
 	"github.com/coffeehc/boot/plugin"
+	"github.com/sevlyar/go-daemon"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 	"go.uber.org/zap"
@@ -17,17 +15,17 @@ import (
 
 var daemonModel = pflag.Bool("daemon", false, "开启守护进程模式")
 
-func readPid(serviceInfo configuration.ServiceInfo) int {
-	pidFile := fmt.Sprintf("./%s.pid", serviceInfo.ServiceName)
-	pidData, _ := os.ReadFile(pidFile)
-	pid, _ := strconv.ParseInt(string(pidData), 10, 64)
-	return int(pid)
-}
-
-func savePid(serviceInfo configuration.ServiceInfo, pid int) {
-	pidFile := fmt.Sprintf("./%s.pid", serviceInfo.ServiceName)
-	os.WriteFile(pidFile, []byte(strconv.FormatInt(int64(pid), 10)), 0644)
-}
+//func readPid(serviceInfo configuration.ServiceInfo) int {
+//	pidFile := fmt.Sprintf("/var/run/%s.pid", serviceInfo.ServiceName)
+//	pidData, _ := os.ReadFile(pidFile)
+//	pid, _ := strconv.ParseInt(string(pidData), 10, 64)
+//	return int(pid)
+//}
+//
+//func savePid(serviceInfo configuration.ServiceInfo, pid int) {
+//	pidFile := fmt.Sprintf("/var/run/%s.pid", serviceInfo.ServiceName)
+//	os.WriteFile(pidFile, []byte(strconv.FormatInt(int64(pid), 10)), 0644)
+//}
 
 func buildStartCmd(ctx context.Context, serviceInfo configuration.ServiceInfo, start ServiceStart) *cobra.Command {
 	ctx, cancelFunc := context.WithCancel(ctx)
@@ -38,8 +36,9 @@ func buildStartCmd(ctx context.Context, serviceInfo configuration.ServiceInfo, s
 		RunE: func(cmd *cobra.Command, args []string) error {
 			fmt.Printf("守护模式:%t\n", *daemonModel)
 			log.Debug("守护模式", zap.Bool("daemonModel", *daemonModel))
+			var daemonContext *daemon.Context
 			if *daemonModel {
-				return daemon(serviceInfo)
+				daemonContext = getDaemonContext(serviceInfo)
 			}
 			configuration.InitConfiguration(ctx, serviceInfo)
 			defer plugin.StopPlugins(ctx)
@@ -60,7 +59,16 @@ func buildStartCmd(ctx context.Context, serviceInfo configuration.ServiceInfo, s
 			}()
 			plugin.StartPlugins(ctx)
 			log.Info("服务启动完成")
-			//}()
+			if daemonContext != nil {
+				child, err := daemonContext.Reborn()
+				if err != nil {
+					log.Error("错误", zap.Error(err))
+				}
+				if child != nil {
+					return nil
+				}
+				defer daemonContext.Release()
+			}
 			WaitServiceStop(ctx, closeCallback)
 			return nil
 		},

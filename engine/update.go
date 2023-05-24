@@ -109,6 +109,6 @@ func UpdateSalf(serviceInfo configuration.ServiceInfo, downloadUrl string) error
 	os.Rename(serviceSoftPath, filepath.Join(updateDir, fmt.Sprintf("%s_%s", serviceInfo.ServiceName, strings.ReplaceAll(serviceInfo.Version, ".", "_"))))
 	os.Rename(updateFileName, serviceSoftPath)
 	log.Debug("开始启动后台守护进程")
-	daemon(serviceInfo)
+	//daemon(serviceInfo)
 	return nil
 }
