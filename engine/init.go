@@ -4,14 +4,12 @@ import (
 	"context"
 	"fmt"
 	"github.com/coffeehc/base/log"
+	"github.com/coffeehc/boot/configuration"
 	"github.com/spf13/cobra"
 	"go.uber.org/zap"
 	"os"
 	"os/signal"
-	"runtime"
 	"syscall"
-
-	"github.com/coffeehc/boot/configuration"
 )
 
 type ServiceStart func(ctx context.Context, cmd *cobra.Command, args []string) (ServiceCloseCallback, error)
@@ -24,16 +22,17 @@ func WaitServiceStop(ctx context.Context, closeCallback func()) {
 		<-ctx.Done()
 		sigChan <- syscall.SIGINT
 	}()
-	if runtime.GOOS != "darwin" && runtime.GOOS != "ios" {
-		signal.Notify(sigChan,
-			//syscall.SIGHUP,
-			//syscall.SIGINT,
-			syscall.SIGKILL,
-			syscall.SIGTERM,
-			//syscall.SIGQUIT
-		)
-	}
+	//if runtime.GOOS != "darwin" && runtime.GOOS != "ios" {
+	signal.Notify(sigChan,
+		//syscall.SIGHUP,
+		//syscall.SIGINT,
+		syscall.SIGKILL,
+		syscall.SIGTERM,
+		//syscall.SIGQUIT
+	)
+	//}
 	sig := <-sigChan
+	log.Debug("收到指令", zap.Any("signal", sig))
 	if ctx.Err() == nil && cancelFunc != nil {
 		cancelFunc()
 	}
@@ -60,7 +59,9 @@ func StartEngine(ctx context.Context, serviceInfo configuration.ServiceInfo, sta
 	}
 	rootCmd.AddCommand(
 		buildVersionCmd(),
+		buildReStartCmd(ctx, serviceInfo, start),
 		buildStartCmd(ctx, serviceInfo, start),
+		buildDaemonStartCmd(ctx, serviceInfo, start),
 		buildStopCmd(ctx, serviceInfo),
 		buildSetupCmd(serviceInfo),
 		buildUpdateCmd(serviceInfo),

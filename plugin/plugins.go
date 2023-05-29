@@ -2,6 +2,7 @@ package plugin
 
 import (
 	"context"
+	"os"
 	"sync"
 
 	"github.com/coffeehc/base/log"
@@ -44,12 +45,18 @@ func RegisterPlugin(name string, service interface{}) {
 }
 
 func StartPlugins(ctx context.Context) {
+	defer func() {
+		if e := recover(); e != nil {
+			log.DPanic("异常", zap.Any("err", e))
+		}
+	}()
 	for _, plugin := range sortPlugins {
 		name := _plugins[plugin]
 		log.Info("开始启动插件", zap.String("pluginName", name))
 		err := plugin.Start(ctx)
 		if err != nil {
 			log.Panic("启动插件失败", zap.String("pluginName", name), zap.Error(err))
+			os.Exit(-1)
 		}
 		log.Info("启动插件成功", zap.String("pluginName", name))
 	}
@@ -57,6 +64,7 @@ func StartPlugins(ctx context.Context) {
 		err := AfterPluginStartedHandler()
 		if err != nil {
 			log.Panic("业务启动失败", zap.Error(err))
+			os.Exit(-1)
 		}
 	}
 }

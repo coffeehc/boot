@@ -25,7 +25,7 @@ package engine
 //			os.Exit(0)
 //		}
 //	}
-//	pid := readPid(serviceInfo)
+//	pid := ReadPid(serviceInfo)
 //	if pid != 0 {
 //		p, _ := os.FindProcess(pid)
 //		if p != nil {
