@@ -2,22 +2,32 @@ package manage
 
 import (
 	"context"
+	"embed"
 	"fmt"
+	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v2/middleware/monitor"
+	"github.com/gofiber/fiber/v2/middleware/pprof"
+	"github.com/gofiber/template/html/v2"
+	"io/fs"
 	"net"
 	"net/http"
+	"os"
+	"runtime"
+	"runtime/debug"
 	"strings"
 	"sync"
 
-	"github.com/coffeehc/base/utils"
-	"github.com/gin-gonic/gin"
-
 	"github.com/coffeehc/base/errors"
 	"github.com/coffeehc/base/log"
+	"github.com/coffeehc/base/utils"
 	"github.com/coffeehc/boot/plugin"
 	"github.com/coffeehc/httpx"
 	"github.com/spf13/viper"
 	"go.uber.org/zap"
 )
+
+//go:embed  views
+var views embed.FS
 
 var _plugin *serviceImpl
 var mutex = new(sync.Mutex)
@@ -30,6 +40,7 @@ type serviceImpl struct {
 }
 
 func (impl *serviceImpl) Start(_ context.Context) error {
+	_plugin.registerManager()
 	impl.httpService.Start(nil)
 	log.Debug("启动ManageServer", zap.String("endpoint", GetManageEndpoint()))
 	return nil
@@ -53,7 +64,6 @@ func EnablePlugin(_ context.Context) {
 		viper.SetDefault("manage.serverAddr", "0.0.0.0:8889")
 	}
 	manageEndpoint := viper.GetString("manage.serverAddr")
-
 	lis, err1 := net.Listen("tcp4", manageEndpoint)
 	if err1 != nil {
 		log.Panic("启动ManageServer失败", zap.Error(err1))
@@ -68,10 +78,22 @@ func EnablePlugin(_ context.Context) {
 		log.Panic("转换管理插件服务地址失败", zap.Error(err))
 	}
 	_plugin.endpoint = showManageEndpoint
-	_plugin.httpService = httpx.NewService("manage", &httpx.Config{
+	webRoot, err2 := fs.Sub(views, "views")
+	if err2 != nil {
+		log.Error("错误", zap.Error(err2))
+		return
+	}
+	httpFileSystem := http.FS(webRoot)
+	engine := html.NewFileSystem(httpFileSystem, ".gohtml")
+	engine.Reload(false)      // Optional. Default: false
+	engine.Debug(false)       // Optional. Default: false
+	engine.Layout("embed")    // Optional. Default: "embed"
+	engine.Delims("{{", "}}") // Optional. Default: engine delimiters
+	_plugin.httpService = httpx.NewService(&httpx.Config{
+		AppName:    "manage",
 		ServerAddr: manageEndpoint,
+		Views:      engine,
 	})
-	_plugin.registerManager()
 	plugin.RegisterPlugin("manager", _plugin)
 }
 
@@ -80,16 +102,36 @@ func GetManageEndpoint() string {
 }
 
 func (impl *serviceImpl) registerManager() {
-	router := impl.httpService.GetGinEngine()
-	// router.Use(gin.BasicAuth(gin.Accounts{
-	// 	"root": "abc###123",
-	// }))
-	//WebEngine = router
-	RegisterServiceRuntimeInfoEndpoint(router)
-	RegisterHealthEndpoint(router)
-	RegisterMetricsEndpoint(router)
-	router.GET("/", func(i *gin.Context) {
-		routesInfos := router.Routes()
+	app := impl.httpService.GetEngine()
+	app.Use(pprof.New())
+	app.Get("/metrics", monitor.New())
+	// ---
+	// ---
+	app.Get("/ping", func(ctx *fiber.Ctx) error {
+		return ctx.SendString("pong")
+	})
+	RegisterServiceRuntimeInfoEndpoint(app)
+	app.Get("/health", func(c *fiber.Ctx) error {
+		return c.Format(map[string]interface{}{
+			"goroutine_count": runtime.NumGoroutine(),
+			"GOGC":            os.Getenv("GOGC"),
+		})
+	})
+	app.Get("/gc/stats", func(c *fiber.Ctx) error {
+		stat := &debug.GCStats{}
+		debug.ReadGCStats(stat)
+		//stat.NumGC
+		return c.Render("gcStats", stat)
+	})
+	app.Get("/gc/stats/setgogc", func(ctx *fiber.Ctx) error {
+		gogc := ctx.QueryInt("gogc", 0)
+		if gogc != 0 {
+			debug.SetGCPercent(gogc)
+		}
+		return nil
+	})
+	app.Get("/", func(ctx *fiber.Ctx) error {
+		routesInfos := app.GetRoutes()
 		c := make([]string, 0)
 		c = append(c, "<html><body>")
 		for _, routeInfo := range routesInfos {
@@ -97,7 +139,7 @@ func (impl *serviceImpl) registerManager() {
 			// c = append(c, fmt.Sprintf("%s %s\n", routeInfo.Method,routeInfo.Path))
 		}
 		c = append(c, "</body></html>")
-		i.Data(http.StatusOK, "text/html; charset=utf-8", []byte(strings.Join(c, "")))
-		// i.String(http.StatusOK,strings.Join(c,""))
+		ctx.Set("Content-Type", "text/html")
+		return ctx.SendString(strings.Join(c, ""))
 	})
 }

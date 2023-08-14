@@ -32,24 +32,24 @@ func RPCServiceInitializationByResolverBuilder(ctx context.Context, rpcService c
 	return nil
 }
 
-func RPCServiceInitializationByAddresses(ctx context.Context, rpcService configuration.RPCService, serverAddr ...string) error {
+func RPCServiceInitializationByAddresses(ctx context.Context, rpcService configuration.RPCService, serverAddr ...string) (resolver.Builder, error) {
 	resolverBuilder, err := ipsd.GetResolverBuilder(ctx, serverAddr...)
 	if err != nil {
 		log.Error("错误", zap.Error(err))
-		return err
+		return nil, err
 	}
 	conn, err := grpcclient.NewClientConnByResolverBuilder(ctx, rpcService.GetRPCServiceInfo(), resolverBuilder)
 	if err != nil {
 		log.Error("构建ResolverBuilder失败", zap.Error(err))
-		return errors.ConverError(err)
+		return resolverBuilder, errors.ConverError(err)
 	}
 	log.Debug("需要链接的服务端地址", zap.Strings("target", serverAddr))
 	_err := rpcService.InitRPCService(ctx, conn)
 	if _err != nil {
-		return _err
+		return resolverBuilder, _err
 	}
 	log.Info("初始化RPCService成功", zap.Any("RPCService", rpcService.GetRPCServiceInfo()))
-	return nil
+	return resolverBuilder, nil
 }
 
 func RPCServiceInitializationByAddress(ctx context.Context, rpcService configuration.RPCService, serverAddr string) error {

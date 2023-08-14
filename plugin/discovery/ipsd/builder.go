@@ -7,19 +7,22 @@ import (
 
 const ServiceProtocolScheme = "ip"
 
-type resolverBuilder struct {
+type IpResolverBuilder struct {
 	ctx            context.Context
 	defaultSrvAddr []string
 	scheme         string
 	resolver       *ipResolver
 }
 
-func (impl *resolverBuilder) UpdateAddress(addresses []string) {
+func (impl *IpResolverBuilder) UpdateAddress(addresses []string) {
 	impl.defaultSrvAddr = addresses
-	impl.resolver.initServerAddr()
+	if impl.resolver != nil {
+		impl.resolver.initServerAddr()
+	}
+
 }
 
-func (impl *resolverBuilder) Build(target resolver.Target, cc resolver.ClientConn, opts resolver.BuildOptions) (resolver.Resolver, error) {
+func (impl *IpResolverBuilder) Build(target resolver.Target, cc resolver.ClientConn, opts resolver.BuildOptions) (resolver.Resolver, error) {
 	ctx, cancel := context.WithCancel(impl.ctx)
 	r := &ipResolver{
 		cc:             cc,
@@ -32,7 +35,7 @@ func (impl *resolverBuilder) Build(target resolver.Target, cc resolver.ClientCon
 	return r, nil
 }
 
-func (impl *resolverBuilder) Scheme() string {
+func (impl *IpResolverBuilder) Scheme() string {
 	return ServiceProtocolScheme
 }
 

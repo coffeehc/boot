@@ -32,7 +32,7 @@ func buildReStartCmd(ctx context.Context, serviceInfo configuration.ServiceInfo,
 			//	return err
 			//}
 			//log.Info("关闭服务", zap.Int("pid", pid))
-			syscall.Kill(pid, syscall.SIGTERM)
+			Kill(pid)
 			//log.Info("args", zap.Strings("args", os.Args))
 			appPath, err := os.Executable()
 			if err != nil {
@@ -135,6 +135,7 @@ func buildStartCmd(ctx context.Context, serviceInfo configuration.ServiceInfo, s
 				return err
 			}
 			plugin.StartPlugins(ctx)
+			log.Debug("插件全部启动完成")
 			WaitServiceStop(ctx, func() {
 				if closeCallback != nil {
 					closeCallback()

@@ -6,7 +6,6 @@ import (
 	"github.com/coffeehc/boot/configuration"
 	"github.com/spf13/cobra"
 	"go.uber.org/zap"
-	"syscall"
 )
 
 func buildStopCmd(ctx context.Context, serviceInfo configuration.ServiceInfo) *cobra.Command {
@@ -17,7 +16,7 @@ func buildStopCmd(ctx context.Context, serviceInfo configuration.ServiceInfo) *c
 		RunE: func(cmd *cobra.Command, args []string) error {
 			pid := ReadPid(serviceInfo)
 			log.Info("关闭服务", zap.Int("pid", pid))
-			return syscall.Kill(pid, syscall.SIGTERM)
+			return Kill(pid)
 		},
 	}
 }

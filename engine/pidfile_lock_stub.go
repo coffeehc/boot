@@ -1,7 +1,7 @@
 //go:build !darwin && !dragonfly && !freebsd && !linux && !netbsd && !openbsd && !plan9 && !solaris
 // +build !darwin,!dragonfly,!freebsd,!linux,!netbsd,!openbsd,!plan9,!solaris
 
-package daemon
+package engine
 
 import "github.com/coffeehc/base/errors"
 

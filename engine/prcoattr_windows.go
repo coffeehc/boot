@@ -3,7 +3,10 @@
 
 package engine
 
-import "syscall"
+import (
+	"fmt"
+	"syscall"
+)
 
 func NewSysProcAttr() *syscall.SysProcAttr {
 	return &syscall.SysProcAttr{

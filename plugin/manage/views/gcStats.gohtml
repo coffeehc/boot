@@ -1,0 +1,19 @@
+<div>GC次数:{{.NumGC}}</div>
+<div>最后GC时间:{{.LastGC.Format "2006-01-02 15:04:05"}}</div>
+<div>GC暂时总时间:{{.PauseTotal}}</div>
+<div>
+    <div>Pause时间</div>
+    <ul>
+        {{range $i, $v := .PauseEnd}}
+            <li>{{$v}}  Pause:{{index $.Pause $i}} </li>
+        {{end}}
+    </ul>
+</div>
+<div>
+    <div>PauseQuantiles时间</div>
+    <ul>
+        {{range $i, $v := .PauseQuantiles}}
+            <li>{{$v}}</li>
+        {{end}}
+    </ul>
+</div>

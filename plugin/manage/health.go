@@ -1,15 +1,14 @@
 package manage
 
 import (
-	"net/http"
+	"github.com/gofiber/fiber/v2"
 	"runtime"
 	"time"
 
 	"github.com/coffeehc/boot/configuration"
-	"github.com/gin-gonic/gin"
 )
 
-func RegisterServiceRuntimeInfoEndpoint(router gin.IRouter) {
+func RegisterServiceRuntimeInfoEndpoint(router *fiber.App) {
 	serviceInfo := configuration.GetServiceInfo()
 	h := &serviceRuntimeInfo{
 		ServiceName: serviceInfo.ServiceName,
@@ -22,8 +21,9 @@ func RegisterServiceRuntimeInfoEndpoint(router gin.IRouter) {
 		StartTime:   time.Now(),
 		Model:       configuration.GetRunModel(),
 	}
-	router.GET("/info", func(context *gin.Context) {
-		context.JSON(http.StatusOK, h)
+	router.Get("/info", func(c *fiber.Ctx) error {
+		return c.Format(h)
+		//context.JSON(http.StatusOK, h)
 	})
 }
 
@@ -37,12 +37,4 @@ type serviceRuntimeInfo struct {
 	CPUNum      int       `json:"cpu_num"`
 	StartTime   time.Time `json:"start_time" time_format:"2006-01-02 15:04:05.999"`
 	Model       string    `json:"model"`
-}
-
-func RegisterHealthEndpoint(router gin.IRouter) {
-	router.GET("/health", func(context *gin.Context) {
-		context.JSON(http.StatusOK, gin.H{
-			"goroutine_count": runtime.NumGoroutine(),
-		})
-	})
 }

@@ -95,7 +95,7 @@ func (impl *serviceImpl) Start(ctx context.Context) error {
 	if _err != nil {
 		log.Panic("启动RPC服务端口失败", zap.Error(_err))
 	}
-	udpListener := grpcquic.Listen(udplis)
+	udpListener := grpcquic.Listen(*udplis)
 	//tcpListener, _err := tls.Listen("tcp4", addr.String(), tlsConfig)
 	tcpListener, _err := net.Listen("tcp4", addr.String())
 	if _err != nil {

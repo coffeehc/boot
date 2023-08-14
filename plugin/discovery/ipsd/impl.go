@@ -7,7 +7,7 @@ import (
 )
 
 func GetResolverBuilder(ctx context.Context, defaultSrvAddr ...string) (resolver.Builder, error) {
-	rb := &resolverBuilder{
+	rb := &IpResolverBuilder{
 		ctx:            ctx,
 		defaultSrvAddr: defaultSrvAddr,
 	}

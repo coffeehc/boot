@@ -162,7 +162,7 @@ func NewPacketConn(addr string) (net.PacketConn, error) {
 
 func NewQuicDialer(tlsConf *tls.Config) func(context.Context, string) (net.Conn, error) {
 	return func(ctx context.Context, target string) (net.Conn, error) {
-		sess, err := quic.DialAddrContext(ctx, target, tlsConf, quicConfig)
+		sess, err := quic.DialAddr(ctx, target, tlsConf, quicConfig)
 		if err != nil {
 			return nil, err
 		}
