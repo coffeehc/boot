@@ -29,7 +29,7 @@ func (impl *resolverBuilder) Build(target resolver.Target, cc resolver.ClientCon
 		ctx:    ctx,
 		cancel: cancel,
 		// client:     consul.GetService().GetConsulClient(),
-		Endpoint: target.Endpoint,
+		Endpoint: target.Endpoint(),
 	}
 	go resolver.watch()
 	return resolver, nil

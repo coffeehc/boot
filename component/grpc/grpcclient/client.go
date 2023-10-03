@@ -21,6 +21,7 @@ import (
 	"google.golang.org/grpc/balancer/roundrobin"
 	"google.golang.org/grpc/credentials"
 	_ "google.golang.org/grpc/encoding/gzip"
+	_ "google.golang.org/grpc/health"
 	"google.golang.org/grpc/keepalive"
 )
 
@@ -39,7 +40,7 @@ func getEnableQuic(ctx context.Context) bool {
 var scope = zap.String("scope", "grpc.client")
 
 func NewClientConnByServiceInfo(ctx context.Context, serviceInfo configuration.ServiceInfo, block bool) (*grpc.ClientConn, error) {
-	opts := BuildDialOption(ctx, block)
+	opts := BuildDialOption(ctx, block, serviceInfo.ServiceName)
 	if serviceInfo.TargetUrl == "" {
 		log.Panic("没有指定需要链接的ServiceInfo的RPC协议，无法创建链接")
 	}
@@ -57,7 +58,7 @@ func NewClientConnByResolverBuilder(ctx context.Context, serviceInfo configurati
 	if serviceInfo.TargetUrl == "" {
 		return nil, errors.MessageError("没有设置TargetUrl")
 	}
-	opts := BuildDialOption(ctx, false)
+	opts := BuildDialOption(ctx, false, serviceInfo.ServiceName)
 	opts = append(opts, grpc.WithResolvers(resolverBuilders...))
 	clientConn, err := grpc.DialContext(ctx, serviceInfo.TargetUrl, opts...)
 	// log.Debug("需要链接的服务端地址", zap.String("target", serverAddr))
@@ -68,8 +69,8 @@ func NewClientConnByResolverBuilder(ctx context.Context, serviceInfo configurati
 	return clientConn, nil
 }
 
-func NewClientConn(ctx context.Context, block bool, serverAddr string) (*grpc.ClientConn, error) {
-	opts := BuildDialOption(ctx, block)
+func NewClientConn(ctx context.Context, block bool, serverAddr string, serverServiceName string) (*grpc.ClientConn, error) {
+	opts := BuildDialOption(ctx, block, serverServiceName)
 	ctx, _ = context.WithTimeout(ctx, time.Second*5)
 	clientConn, err := grpc.DialContext(ctx, serverAddr, opts...)
 	// log.Debug("需要链接的服务端地址", zap.String("target", serverAddr))
@@ -80,7 +81,7 @@ func NewClientConn(ctx context.Context, block bool, serverAddr string) (*grpc.Cl
 	return clientConn, nil
 }
 
-func BuildDialOption(ctx context.Context, block bool) []grpc.DialOption {
+func BuildDialOption(ctx context.Context, block bool, serverServiceName string) []grpc.DialOption {
 	chainUnaryClient := []grpc.UnaryClientInterceptor{
 		grpc_prometheus.UnaryClientInterceptor,
 		grpcrecovery.UnaryClientInterceptor(),
@@ -111,6 +112,7 @@ func BuildDialOption(ctx context.Context, block bool) []grpc.DialOption {
 			Timeout:             time.Second * 180,
 			PermitWithoutStream: false,
 		}),
+		//grpc.WithDefaultServiceConfig(fmt.Sprintf(`{"LoadBalancingPolicy": "%s","HealthCheckConfig": {"ServiceName": "%s"}}`, roundrobin.Name, serverServiceName)),
 		grpc.WithDefaultServiceConfig(fmt.Sprintf(`{"LoadBalancingPolicy": "%s"}`, roundrobin.Name)),
 		grpc.WithUserAgent("coffee's client"),
 		grpc.WithChainStreamInterceptor(chainStreamClient...),
@@ -118,7 +120,7 @@ func BuildDialOption(ctx context.Context, block bool) []grpc.DialOption {
 		grpc.WithInitialConnWindowSize(1024 * 64),
 		grpc.WithInitialWindowSize(1024 * 256),
 		//grpc.WithChannelzParentID(&channelz.Identifier{}),
-		grpc.FailOnNonTempDialError(false),
+		grpc.FailOnNonTempDialError(true),
 		grpc.WithNoProxy(),
 		grpc.WithReadBufferSize(1024 * 128),
 		grpc.WithWriteBufferSize(1024 * 128),

@@ -17,12 +17,16 @@ type IpResolverBuilder struct {
 func (impl *IpResolverBuilder) UpdateAddress(addresses []string) {
 	impl.defaultSrvAddr = addresses
 	if impl.resolver != nil {
+		impl.resolver.defaultSrvAddr = impl.defaultSrvAddr
 		impl.resolver.initServerAddr()
 	}
 
 }
 
 func (impl *IpResolverBuilder) Build(target resolver.Target, cc resolver.ClientConn, opts resolver.BuildOptions) (resolver.Resolver, error) {
+	if impl.resolver != nil {
+		return impl.resolver, nil
+	}
 	ctx, cancel := context.WithCancel(impl.ctx)
 	r := &ipResolver{
 		cc:             cc,
@@ -31,6 +35,7 @@ func (impl *IpResolverBuilder) Build(target resolver.Target, cc resolver.ClientC
 		defaultSrvAddr: impl.defaultSrvAddr,
 		target:         target,
 	}
+	impl.resolver = r
 	r.initServerAddr()
 	return r, nil
 }
@@ -48,7 +53,7 @@ type ipResolver struct {
 	target         resolver.Target
 }
 
-func (impl *ipResolver) ResolveNow(options resolver.ResolveNowOptions) {
+func (impl *ipResolver) ResolveNow(_ resolver.ResolveNowOptions) {
 	//log.Debug("ResolveNow-----------------")
 }
 

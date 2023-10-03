@@ -1,13 +1,11 @@
 package manage
 
 import (
-	"net/http"
-
-	"github.com/gin-gonic/gin"
+	"github.com/gofiber/fiber/v2"
 )
 
-func ping() gin.HandlerFunc {
-	return func(c *gin.Context) {
-		c.String(http.StatusOK, "pong")
+func ping() fiber.Handler {
+	return func(c *fiber.Ctx) error {
+		return c.SendString("pong")
 	}
 }

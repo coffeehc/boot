@@ -9,6 +9,8 @@ import (
 	"go.uber.org/zap"
 )
 
+var serviceImpls = make(map[interface{}]interface{})
+
 var AfterPluginStartedHandler func() error = nil
 
 var plugins = make(map[string]Plugin, 0)
@@ -21,6 +23,10 @@ type Plugin interface {
 	Stop(ctx context.Context) error
 }
 
+func GetPluginByName(name string) interface{} {
+	return plugins[name]
+}
+
 func RegisterPlugin(name string, service interface{}) {
 	if service == nil {
 		log.Panic("服务为空，不能注册", zap.String("name", name))
@@ -28,7 +34,7 @@ func RegisterPlugin(name string, service interface{}) {
 	mutex.Lock()
 	defer mutex.Unlock()
 	if plugins[name] != nil {
-		log.Warn("插件已经注册过,不能重复注册", zap.String("name", name))
+		log.Warn("插件已经注册过,不能重复注册!!!", zap.String("name", name))
 	}
 	var plugin Plugin = nil
 	if _, ok := service.(Plugin); ok {
