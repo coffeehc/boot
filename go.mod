@@ -1,24 +1,23 @@
 module github.com/coffeehc/boot
 
-go 1.19
+go 1.21
 
 require (
-	github.com/coffeehc/base v1.0.2-0.20231003044315-9a5d7605cb92
-	github.com/coffeehc/httpx v0.0.0-20231003050204-6c3bc0a63c39
-	github.com/gofiber/fiber/v2 v2.49.2
+	github.com/coffeehc/base v1.0.0
+	github.com/gofiber/fiber/v2 v2.49.3-0.20231002131935-d00f0b834830
 	github.com/gofiber/template/html/v2 v2.0.5
-	github.com/gogo/protobuf v1.3.2
-	github.com/grpc-ecosystem/go-grpc-prometheus v1.2.0
-	github.com/hashicorp/consul/api v1.25.1
+	github.com/gogo/protobuf v1.3.3-0.20221024144010-f67b8970b736
+	github.com/grpc-ecosystem/go-grpc-prometheus v1.2.1-0.20230405093142-a5446fa24890
+	github.com/hashicorp/consul/api v1.24.0
 	github.com/mitchellh/mapstructure v1.5.0
 	github.com/prometheus/client_golang v1.17.0
-	github.com/quic-go/quic-go v0.39.0
-	github.com/spf13/cobra v1.7.0
-	github.com/spf13/pflag v1.0.5
-	github.com/spf13/viper v1.16.0
-	go.uber.org/zap v1.26.0
-	golang.org/x/net v0.15.0
-	google.golang.org/grpc v1.58.2
+	github.com/quic-go/quic-go v0.39.1-0.20230925112151-49e588a6a990
+	github.com/spf13/cobra v1.5.1-0.20220628211933-69083f81b225
+	github.com/spf13/pflag v1.0.6-0.20210604193023-d5e0c0615ace
+	github.com/spf13/viper v1.16.1-0.20231001150426-3d006fe361ca
+	go.uber.org/zap v1.26.1-0.20231001221916-54430cb4e09b
+	golang.org/x/net v0.15.1-0.20231002202025-a600b3518eed
+	google.golang.org/grpc v1.59.0-dev.0.20231002195225-9e1fc3e9c088
 	google.golang.org/grpc/examples v0.0.0-20231002195225-9e1fc3e9c088
 )
 
@@ -57,6 +56,9 @@ require (
 	github.com/prometheus/procfs v0.12.0 // indirect
 	github.com/quic-go/qtls-go1-20 v0.3.4 // indirect
 	github.com/rivo/uniseg v0.4.4 // indirect
+	github.com/sagikazarmark/locafero v0.3.0 // indirect
+	github.com/sagikazarmark/slog-shim v0.1.0 // indirect
+	github.com/sourcegraph/conc v0.3.0 // indirect
 	github.com/spf13/afero v1.10.0 // indirect
 	github.com/spf13/cast v1.5.1 // indirect
 	github.com/spf13/jwalterweatherman v1.1.0 // indirect
