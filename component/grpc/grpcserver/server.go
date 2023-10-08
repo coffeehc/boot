@@ -52,24 +52,25 @@ func BuildGRPCServerOptions(ctx context.Context, config *GRPCServerConfig) []grp
 		}
 	}
 	if config.MaxConcurrentStreams == 0 {
-		config.MaxConcurrentStreams = 1000
+		config.MaxConcurrentStreams = 10000
 	}
 	opts := []grpc.ServerOption{
 		grpc.Creds(getCerts(ctx)),
-		grpc.InitialWindowSize(1024 * 128),
-		grpc.InitialConnWindowSize(1024),
-		grpc.ReadBufferSize(1024 * 1024),
-		grpc.WriteBufferSize(1024 * 1024),
-		grpc.MaxRecvMsgSize(1024 * 1024 * 2),
+		grpc.InitialWindowSize(1024 * 1024 * 32),
+		grpc.InitialConnWindowSize(1024 * 1024 * 4),
+		grpc.ReadBufferSize(1024 * 16),
+		grpc.WriteBufferSize(1024 * 16),
+		grpc.MaxRecvMsgSize(1024 * 1024 * 8),
 		grpc.MaxSendMsgSize(1024 * 1024 * 8),
-		grpc.NumStreamWorkers(5000),
+		grpc.NumStreamWorkers(8),
 		grpc.MaxConcurrentStreams(config.MaxConcurrentStreams),
 		grpc.ChainStreamInterceptor(chainStreamServers...),
 		grpc.ChainUnaryInterceptor(chainUnaryServers...),
 		grpc.KeepaliveParams(keepalive.ServerParameters{
-			MaxConnectionIdle: time.Minute,
-			Timeout:           10 * time.Second, // 類似 ClientParameters.Time 不過默認爲 2小時
-			Time:              3 * time.Second,  // 類似 ClientParameters.Timeout 默認 20秒
+			MaxConnectionIdle: time.Minute * 30,
+			Timeout:           30 * time.Second, // 類似 ClientParameters.Time 不過默認爲 2小時
+			Time:              10 * time.Second, // 類似 ClientParameters.Timeout 默認 20秒
+
 		}),
 		grpc.KeepaliveEnforcementPolicy(keepalive.EnforcementPolicy{ // 當服務器不允許ping 或 ping 太頻繁超過 MinTime 限制 服務器 會 返回ping失敗 此時 客戶端 不會認爲這個ping是 active RPCs
 			MinTime:             time.Second * 3,

@@ -3,7 +3,6 @@ package grpcclient
 import (
 	"context"
 	"crypto/tls"
-	"fmt"
 	"github.com/coffeehc/boot/component/grpc/grpcquic"
 	"golang.org/x/net/http2"
 	"google.golang.org/grpc/credentials/insecure"
@@ -18,7 +17,6 @@ import (
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/backoff"
-	"google.golang.org/grpc/balancer/roundrobin"
 	"google.golang.org/grpc/credentials"
 	_ "google.golang.org/grpc/encoding/gzip"
 	_ "google.golang.org/grpc/health"
@@ -90,15 +88,27 @@ func BuildDialOption(ctx context.Context, block bool, serverServiceName string) 
 		grpc_prometheus.StreamClientInterceptor,
 		grpcrecovery.StreamClientInterceptor(),
 	}
+	defaultServiceConfig := `{
+	    "LoadBalancingPolicy": "round_robin",
+		"methodConfig": [{
+		  "name": [{}],
+		  "retryPolicy": {
+			  "MaxAttempts": 4,
+			  "InitialBackoff": ".01s",
+			  "MaxBackoff": ".01s",
+			  "BackoffMultiplier": 1.0,
+			  "RetryableStatusCodes": [ "UNAVAILABLE" ]
+		  }
+		}]}`
 	opts := []grpc.DialOption{
 		grpc.WithConnectParams(grpc.ConnectParams{
 			Backoff: backoff.Config{
-				BaseDelay:  time.Second,      // 第一次失败重试前后需等待多久
-				Multiplier: 1.5,              // 在失败的重试后乘以的倍数
-				Jitter:     0.2,              // 随机抖动因子
-				MaxDelay:   time.Second * 30, // backoff上限
+				BaseDelay:  time.Millisecond * 300, // 第一次失败重试前后需等待多久
+				Multiplier: 1.5,                    // 在失败的重试后乘以的倍数
+				Jitter:     0.2,                    // 随机抖动因子
+				MaxDelay:   time.Second * 30,       // backoff上限
 			},
-			MinConnectTimeout: time.Second,
+			MinConnectTimeout: time.Second * 3,
 		}),
 		grpc.WithAuthority(configuration.GetRunModel()),
 		grpc.WithDefaultCallOptions(
@@ -108,17 +118,18 @@ func BuildDialOption(ctx context.Context, block bool, serverServiceName string) 
 			grpc.MaxCallSendMsgSize(1024*1024*2),
 		),
 		grpc.WithKeepaliveParams(keepalive.ClientParameters{
-			Time:                time.Second * 3,
-			Timeout:             time.Second * 180,
-			PermitWithoutStream: false,
+			Time:                time.Second * 10,
+			Timeout:             time.Second * 30,
+			PermitWithoutStream: true,
 		}),
 		//grpc.WithDefaultServiceConfig(fmt.Sprintf(`{"LoadBalancingPolicy": "%s","HealthCheckConfig": {"ServiceName": "%s"}}`, roundrobin.Name, serverServiceName)),
-		grpc.WithDefaultServiceConfig(fmt.Sprintf(`{"LoadBalancingPolicy": "%s"}`, roundrobin.Name)),
+		//grpc.WithDefaultServiceConfig(`{"LoadBalancingPolicy": "round_robin"}`),
+		grpc.WithDefaultServiceConfig(defaultServiceConfig),
 		grpc.WithUserAgent("coffee's client"),
 		grpc.WithChainStreamInterceptor(chainStreamClient...),
 		grpc.WithChainUnaryInterceptor(chainUnaryClient...),
-		grpc.WithInitialConnWindowSize(1024 * 64),
-		grpc.WithInitialWindowSize(1024 * 256),
+		grpc.WithInitialConnWindowSize(1024 * 1024 * 8),
+		grpc.WithInitialWindowSize(1024 * 1024 * 16),
 		//grpc.WithChannelzParentID(&channelz.Identifier{}),
 		grpc.FailOnNonTempDialError(true),
 		grpc.WithNoProxy(),
