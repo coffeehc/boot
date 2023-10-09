@@ -16,6 +16,7 @@ import (
 	"runtime/debug"
 	"strings"
 	"sync"
+	"syscall"
 
 	"github.com/coffeehc/base/errors"
 	"github.com/coffeehc/base/log"
@@ -105,8 +106,6 @@ func (impl *serviceImpl) registerManager() {
 	app := impl.httpService.GetEngine()
 	app.Use(pprof.New())
 	app.Get("/metrics", monitor.New())
-	// ---
-	// ---
 	app.Get("/ping", func(ctx *fiber.Ctx) error {
 		return ctx.SendString("pong")
 	})
@@ -129,6 +128,12 @@ func (impl *serviceImpl) registerManager() {
 			debug.SetGCPercent(gogc)
 		}
 		return nil
+	})
+	app.Get("/shutdown", func(c *fiber.Ctx) error {
+		if c.Query("key", "") != "coffee" {
+			return nil
+		}
+		return syscall.Kill(os.Getpid(), syscall.SIGTERM)
 	})
 	app.Get("/", func(ctx *fiber.Ctx) error {
 		routesInfos := app.GetRoutes()

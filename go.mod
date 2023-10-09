@@ -3,7 +3,8 @@ module github.com/coffeehc/boot
 go 1.21
 
 require (
-	github.com/coffeehc/base v1.0.0
+	github.com/coffeehc/base v1.0.2-0.20231003044315-9a5d7605cb92
+	github.com/coffeehc/httpx v0.0.0-20231003050204-6c3bc0a63c39
 	github.com/gofiber/fiber/v2 v2.49.3-0.20231002131935-d00f0b834830
 	github.com/gofiber/template/html/v2 v2.0.5
 	github.com/gogo/protobuf v1.3.3-0.20221024144010-f67b8970b736
@@ -61,7 +62,6 @@ require (
 	github.com/sourcegraph/conc v0.3.0 // indirect
 	github.com/spf13/afero v1.10.0 // indirect
 	github.com/spf13/cast v1.5.1 // indirect
-	github.com/spf13/jwalterweatherman v1.1.0 // indirect
 	github.com/subosito/gotenv v1.6.0 // indirect
 	github.com/valyala/bytebufferpool v1.0.0 // indirect
 	github.com/valyala/fasthttp v1.50.0 // indirect
