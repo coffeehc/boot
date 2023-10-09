@@ -4,6 +4,7 @@ import (
 	"context"
 	"embed"
 	"fmt"
+	"github.com/coffeehc/boot/configuration"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/monitor"
 	"github.com/gofiber/fiber/v2/middleware/pprof"
@@ -14,7 +15,6 @@ import (
 	"os"
 	"runtime"
 	"runtime/debug"
-	"strings"
 	"sync"
 	"syscall"
 
@@ -65,14 +65,33 @@ func EnablePlugin(_ context.Context) {
 		viper.SetDefault("manage.serverAddr", "0.0.0.0:8889")
 	}
 	manageEndpoint := viper.GetString("manage.serverAddr")
-	lis, err1 := net.Listen("tcp4", manageEndpoint)
-	if err1 != nil {
-		log.Panic("启动ManageServer失败", zap.Error(err1))
-	}
-	manageEndpoint = lis.Addr().String()
-	err1 = lis.Close()
-	if err1 != nil {
-		log.Warn("管理Listen失败")
+	for {
+		lis, err1 := net.Listen("tcp4", manageEndpoint)
+		if err1 != nil {
+			log.Error("启动ManageServer失败,需要更换端口", zap.Error(err1))
+			tcpAddr, err := net.ResolveTCPAddr("tcp", manageEndpoint)
+			if err != nil {
+				log.Error("启动ManageServer地址解析失败", zap.Error(err1))
+				return
+			}
+			tcpAddr.Port = tcpAddr.Port + 1
+			manageEndpoint = tcpAddr.String()
+			continue
+		}
+		manageEndpoint = lis.Addr().String()
+		err1 = lis.Close()
+		if err1 != nil {
+			log.Warn("管理Listen失败", zap.Error(err1))
+			tcpAddr, err := net.ResolveTCPAddr("tcp", manageEndpoint)
+			if err != nil {
+				log.Error("启动ManageServer地址解析失败", zap.Error(err1))
+				return
+			}
+			tcpAddr.Port = tcpAddr.Port + 1
+			manageEndpoint = tcpAddr.String()
+			continue
+		}
+		break
 	}
 	showManageEndpoint, err := utils.WarpServiceAddr(manageEndpoint)
 	if err != nil {
@@ -119,8 +138,23 @@ func (impl *serviceImpl) registerManager() {
 	app.Get("/gc/stats", func(c *fiber.Ctx) error {
 		stat := &debug.GCStats{}
 		debug.ReadGCStats(stat)
-		//stat.NumGC
-		return c.Render("gcStats", stat)
+		data := &struct {
+			debug.GCStats
+			ServiceName string
+			Version     string
+		}{
+			GCStats:     *stat,
+			ServiceName: configuration.GetServiceInfo().ServiceName,
+			Version:     configuration.GetServiceInfo().Version,
+		}
+		return c.Render("gcStats", data)
+	})
+	app.Get("/gc/stats/setmemlimit", func(ctx *fiber.Ctx) error {
+		limit := ctx.QueryInt("limit", 0)
+		if limit != 0 {
+			debug.SetMemoryLimit(int64(limit))
+		}
+		return nil
 	})
 	app.Get("/gc/stats/setgogc", func(ctx *fiber.Ctx) error {
 		gogc := ctx.QueryInt("gogc", 0)
@@ -135,16 +169,26 @@ func (impl *serviceImpl) registerManager() {
 		}
 		return syscall.Kill(os.Getpid(), syscall.SIGTERM)
 	})
-	app.Get("/", func(ctx *fiber.Ctx) error {
+	app.Get("/", func(c *fiber.Ctx) error {
 		routesInfos := app.GetRoutes()
-		c := make([]string, 0)
-		c = append(c, "<html><body>")
-		for _, routeInfo := range routesInfos {
-			c = append(c, fmt.Sprintf("<div><spen>%s</spen><a href='%s'>%s</a></div>", routeInfo.Method, routeInfo.Path, routeInfo.Path))
-			// c = append(c, fmt.Sprintf("%s %s\n", routeInfo.Method,routeInfo.Path))
+		//c := make([]string, 0)
+		//c = append(c, "<html><body>")
+		//for _, routeInfo := range routesInfos {
+		//	c = append(c, fmt.Sprintf("<div><spen>%s</spen><a href='%s'>%s</a></div>", routeInfo.Method, routeInfo.Path, routeInfo.Path))
+		//	// c = append(c, fmt.Sprintf("%s %s\n", routeInfo.Method,routeInfo.Path))
+		//}
+		//c = append(c, "</body></html>")
+		//ctx.Set("Content-Type", "text/html")
+		//return ctx.SendString(strings.Join(c, ""))
+		data := &struct {
+			Routers     []fiber.Route
+			ServiceName string
+			Version     string
+		}{
+			Routers:     routesInfos,
+			ServiceName: configuration.GetServiceInfo().ServiceName,
+			Version:     configuration.GetServiceInfo().Version,
 		}
-		c = append(c, "</body></html>")
-		ctx.Set("Content-Type", "text/html")
-		return ctx.SendString(strings.Join(c, ""))
+		return c.Render("index", data)
 	})
 }

@@ -1,0 +1,6 @@
+<div>服务名称:{{ .ServiceName}}</div>
+<div>版本:{{ .Version}}</div>
+<br>
+{{range .Routers}}
+    <div><spen>{{.Method}}</spen><a href='{{.Path}}'>{{.Path}}</a></div>
+{{end}}
