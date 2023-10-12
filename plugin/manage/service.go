@@ -4,11 +4,19 @@ import (
 	"context"
 	"embed"
 	"fmt"
+	"github.com/coffeehc/base/errors"
+	"github.com/coffeehc/base/log"
+	"github.com/coffeehc/base/utils"
 	"github.com/coffeehc/boot/configuration"
+	"github.com/coffeehc/boot/plugin"
+	"github.com/coffeehc/httpx"
 	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v2/middleware/compress"
 	"github.com/gofiber/fiber/v2/middleware/monitor"
 	"github.com/gofiber/fiber/v2/middleware/pprof"
 	"github.com/gofiber/template/html/v2"
+	"github.com/spf13/viper"
+	"go.uber.org/zap"
 	"io/fs"
 	"net"
 	"net/http"
@@ -16,15 +24,6 @@ import (
 	"runtime"
 	"runtime/debug"
 	"sync"
-	"syscall"
-
-	"github.com/coffeehc/base/errors"
-	"github.com/coffeehc/base/log"
-	"github.com/coffeehc/base/utils"
-	"github.com/coffeehc/boot/plugin"
-	"github.com/coffeehc/httpx"
-	"github.com/spf13/viper"
-	"go.uber.org/zap"
 )
 
 //go:embed  views
@@ -41,7 +40,8 @@ type serviceImpl struct {
 }
 
 func (impl *serviceImpl) Start(_ context.Context) error {
-	_plugin.registerManager()
+	//_plugin.registerManager()
+	RegisterManager(impl.httpService.GetEngine())
 	impl.httpService.Start(nil)
 	log.Debug("启动ManageServer", zap.String("endpoint", GetManageEndpoint()))
 	return nil
@@ -121,9 +121,11 @@ func GetManageEndpoint() string {
 	return fmt.Sprintf("http://%s", _plugin.endpoint)
 }
 
-func (impl *serviceImpl) registerManager() {
-	app := impl.httpService.GetEngine()
+func RegisterManager(app *fiber.App) {
 	app.Use(pprof.New())
+	app.Use(compress.New(compress.Config{
+		Level: compress.LevelBestCompression,
+	}))
 	app.Get("/metrics", monitor.New())
 	app.Get("/ping", func(ctx *fiber.Ctx) error {
 		return ctx.SendString("pong")
@@ -131,6 +133,8 @@ func (impl *serviceImpl) registerManager() {
 	RegisterServiceRuntimeInfoEndpoint(app)
 	app.Get("/health", func(c *fiber.Ctx) error {
 		return c.Format(map[string]interface{}{
+			"service_name":    configuration.GetServiceInfo().ServiceName,
+			"version":         configuration.GetServiceInfo().Version,
 			"goroutine_count": runtime.NumGoroutine(),
 			"GOGC":            os.Getenv("GOGC"),
 		})
@@ -167,7 +171,12 @@ func (impl *serviceImpl) registerManager() {
 		if c.Query("key", "") != "coffee" {
 			return nil
 		}
-		return syscall.Kill(os.Getpid(), syscall.SIGTERM)
+		process, err := os.FindProcess(os.Getpid())
+		if err != nil {
+			return err
+		}
+		return process.Kill()
+		//return syscall.Kill(os.Getpid(), syscall.SIGTERM)
 	})
 	app.Get("/", func(c *fiber.Ctx) error {
 		routesInfos := app.GetRoutes()
