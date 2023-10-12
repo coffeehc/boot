@@ -41,7 +41,30 @@ type serviceImpl struct {
 
 func (impl *serviceImpl) Start(_ context.Context) error {
 	//_plugin.registerManager()
-	RegisterManager(impl.httpService.GetEngine())
+	app := impl.httpService.GetEngine()
+	RegisterManager(app)
+	app.Get("/", func(c *fiber.Ctx) error {
+		routesInfos := app.GetRoutes()
+		//c := make([]string, 0)
+		//c = append(c, "<html><body>")
+		//for _, routeInfo := range routesInfos {
+		//	c = append(c, fmt.Sprintf("<div><spen>%s</spen><a href='%s'>%s</a></div>", routeInfo.Method, routeInfo.Path, routeInfo.Path))
+		//	// c = append(c, fmt.Sprintf("%s %s\n", routeInfo.Method,routeInfo.Path))
+		//}
+		//c = append(c, "</body></html>")
+		//ctx.Set("Content-Type", "text/html")
+		//return ctx.SendString(strings.Join(c, ""))
+		data := &struct {
+			Routers     []fiber.Route
+			ServiceName string
+			Version     string
+		}{
+			Routers:     routesInfos,
+			ServiceName: configuration.GetServiceInfo().ServiceName,
+			Version:     configuration.GetServiceInfo().Version,
+		}
+		return c.Render("index", data)
+	})
 	impl.httpService.Start(nil)
 	log.Debug("启动ManageServer", zap.String("endpoint", GetManageEndpoint()))
 	return nil
@@ -177,27 +200,5 @@ func RegisterManager(app *fiber.App) {
 		}
 		return process.Kill()
 		//return syscall.Kill(os.Getpid(), syscall.SIGTERM)
-	})
-	app.Get("/", func(c *fiber.Ctx) error {
-		routesInfos := app.GetRoutes()
-		//c := make([]string, 0)
-		//c = append(c, "<html><body>")
-		//for _, routeInfo := range routesInfos {
-		//	c = append(c, fmt.Sprintf("<div><spen>%s</spen><a href='%s'>%s</a></div>", routeInfo.Method, routeInfo.Path, routeInfo.Path))
-		//	// c = append(c, fmt.Sprintf("%s %s\n", routeInfo.Method,routeInfo.Path))
-		//}
-		//c = append(c, "</body></html>")
-		//ctx.Set("Content-Type", "text/html")
-		//return ctx.SendString(strings.Join(c, ""))
-		data := &struct {
-			Routers     []fiber.Route
-			ServiceName string
-			Version     string
-		}{
-			Routers:     routesInfos,
-			ServiceName: configuration.GetServiceInfo().ServiceName,
-			Version:     configuration.GetServiceInfo().Version,
-		}
-		return c.Render("index", data)
 	})
 }
