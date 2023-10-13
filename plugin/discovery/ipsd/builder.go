@@ -55,6 +55,7 @@ type ipResolver struct {
 
 func (impl *ipResolver) ResolveNow(_ resolver.ResolveNowOptions) {
 	//log.Debug("ResolveNow-----------------")
+	impl.initServerAddr()
 }
 
 // Close closes the resolver.
