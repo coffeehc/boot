@@ -3,7 +3,11 @@ package grpcclient
 import (
 	"context"
 	"crypto/tls"
+	"fmt"
 	"github.com/coffeehc/boot/component/grpc/grpcquic"
+	"github.com/coffeehc/boot/plugin/manage/metrics"
+	"github.com/piotrkowalczuk/promgrpc/v4"
+	"github.com/prometheus/client_golang/prometheus"
 	"golang.org/x/net/http2"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/resolver"
@@ -13,7 +17,7 @@ import (
 	"github.com/coffeehc/base/log"
 	"github.com/coffeehc/boot/component/grpc/grpcrecovery"
 	"github.com/coffeehc/boot/configuration"
-	grpc_prometheus "github.com/grpc-ecosystem/go-grpc-prometheus"
+
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/backoff"
@@ -81,15 +85,16 @@ func NewClientConn(ctx context.Context, block bool, serverAddr string, serverSer
 
 func BuildDialOption(ctx context.Context, block bool, serverServiceName string) []grpc.DialOption {
 	chainUnaryClient := []grpc.UnaryClientInterceptor{
-		grpc_prometheus.UnaryClientInterceptor,
 		grpcrecovery.UnaryClientInterceptor(),
 	}
 	chainStreamClient := []grpc.StreamClientInterceptor{
-		grpc_prometheus.StreamClientInterceptor,
 		grpcrecovery.StreamClientInterceptor(),
 	}
 	defaultServiceConfig := `{
-	    "LoadBalancingPolicy": "round_robin",
+	   "LoadBalancingPolicy": "round_robin",
+		"HealthCheckConfig":{
+			"ServiceName":"%s"
+		},
 		"methodConfig": [{
 		  "name": [{}],
 		  "retryPolicy": {
@@ -97,16 +102,35 @@ func BuildDialOption(ctx context.Context, block bool, serverServiceName string) 
 			  "InitialBackoff": ".01s",
 			  "MaxBackoff": ".01s",
 			  "BackoffMultiplier": 1.0,
-			  "RetryableStatusCodes": [ "UNAVAILABLE" ]
+			  "RetryableStatusCodes": [ "UNAVAILABLE","UNKNOWN","ABORTED" ]
 		  }
 		}]}`
+	defaultServiceConfig = fmt.Sprintf(defaultServiceConfig, serverServiceName)
+	defaultServiceConfig = `{
+	   "LoadBalancingPolicy": "round_robin",
+		"methodConfig": [{
+		  "name": [{}],
+		  "retryPolicy": {
+			  "MaxAttempts": 4,
+			  "InitialBackoff": ".01s",
+			  "MaxBackoff": ".01s",
+			  "BackoffMultiplier": 1.0,
+			  "RetryableStatusCodes": [ "UNAVAILABLE","UNKNOWN","ABORTED" ]
+		  }
+		}]}`
+	//defaultServiceConfig = `{"LoadBalancingPolicy": "round_robin"}`
+	csh := promgrpc.ClientStatsHandler(
+		promgrpc.CollectorWithNamespace("grpc"),
+		promgrpc.CollectorWithConstLabels(prometheus.Labels{"service": serverServiceName}),
+	)
+	metrics.RegisterMetrics(csh)
 	opts := []grpc.DialOption{
 		grpc.WithConnectParams(grpc.ConnectParams{
 			Backoff: backoff.Config{
 				BaseDelay:  time.Millisecond * 300, // 第一次失败重试前后需等待多久
-				Multiplier: 1.5,                    // 在失败的重试后乘以的倍数
+				Multiplier: 1.2,                    // 在失败的重试后乘以的倍数
 				Jitter:     0.2,                    // 随机抖动因子
-				MaxDelay:   time.Second * 30,       // backoff上限
+				MaxDelay:   time.Second * 5,        // backoff上限
 			},
 			MinConnectTimeout: time.Second * 3,
 		}),
@@ -117,13 +141,14 @@ func BuildDialOption(ctx context.Context, block bool, serverServiceName string) 
 			grpc.MaxCallRecvMsgSize(1024*1024*8),
 			grpc.MaxCallSendMsgSize(1024*1024*2),
 		),
+		grpc.WithReturnConnectionError(),
+		grpc.WithIdleTimeout(0),
+		//grpc.WithDisableRetry(),
 		grpc.WithKeepaliveParams(keepalive.ClientParameters{
 			Time:                time.Second * 10,
-			Timeout:             time.Second * 30,
+			Timeout:             time.Second * 5,
 			PermitWithoutStream: true,
 		}),
-		//grpc.WithDefaultServiceConfig(fmt.Sprintf(`{"LoadBalancingPolicy": "%s","HealthCheckConfig": {"ServiceName": "%s"}}`, roundrobin.Name, serverServiceName)),
-		//grpc.WithDefaultServiceConfig(`{"LoadBalancingPolicy": "round_robin"}`),
 		grpc.WithDefaultServiceConfig(defaultServiceConfig),
 		grpc.WithUserAgent("coffee's client"),
 		grpc.WithChainStreamInterceptor(chainStreamClient...),
@@ -161,5 +186,6 @@ func BuildDialOption(ctx context.Context, block bool, serverServiceName string) 
 	if block {
 		opts = append(opts, grpc.WithBlock())
 	}
+	opts = append(opts, grpc.WithStatsHandler(csh))
 	return opts
 }

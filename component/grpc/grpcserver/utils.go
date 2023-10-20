@@ -7,6 +7,7 @@ import (
 	"crypto/x509"
 	"crypto/x509/pkix"
 	"fmt"
+	"github.com/spf13/viper"
 	"go.uber.org/zap"
 	"math/big"
 	"time"
@@ -16,6 +17,18 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 )
+
+func init() {
+	viper.SetDefault("grpc.MaxConnectionIdle", time.Minute*30)
+}
+
+func GetMaxConnectionIdle() time.Duration {
+	return viper.Get("grpc.MaxConnectionIdle").(time.Duration)
+}
+
+func SetMaxConnectionIdle(idle time.Duration) {
+	viper.Set("grpc.MaxConnectionIdle", idle)
+}
 
 var EnableAccessLog bool = false
 

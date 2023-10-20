@@ -2,13 +2,17 @@ package grpcserver
 
 import (
 	"context"
+	"github.com/coffeehc/boot/configuration"
+	"github.com/coffeehc/boot/plugin/manage/metrics"
+	"github.com/piotrkowalczuk/promgrpc/v4"
+	"github.com/prometheus/client_golang/prometheus"
+	"math"
 	"time"
 
 	"google.golang.org/grpc/keepalive"
 
 	"github.com/coffeehc/base/log"
 	"github.com/coffeehc/boot/component/grpc/grpcrecovery"
-	"github.com/grpc-ecosystem/go-grpc-prometheus"
 	"github.com/spf13/viper"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
@@ -38,9 +42,9 @@ func BuildGRPCServerOptions(ctx context.Context, config *GRPCServerConfig) []grp
 		log.Debug("开启GRPC访问日志")
 		chainUnaryServers = append(chainUnaryServers, DebugLoggingInterceptor())
 	}
-	chainUnaryServers = append(chainUnaryServers, grpc_prometheus.UnaryServerInterceptor, grpcrecovery.UnaryServerInterceptor())
+	chainUnaryServers = append(chainUnaryServers, grpcrecovery.UnaryServerInterceptor())
 	chainStreamServers := []grpc.StreamServerInterceptor{
-		grpc_prometheus.StreamServerInterceptor,
+		//grpc_prometheus.StreamServerInterceptor,
 		grpcrecovery.StreamServerInterceptor(),
 	}
 	grpcAuth := ctx.Value(serverGrpcAuthKey)
@@ -52,9 +56,15 @@ func BuildGRPCServerOptions(ctx context.Context, config *GRPCServerConfig) []grp
 		}
 	}
 	if config.MaxConcurrentStreams == 0 {
-		config.MaxConcurrentStreams = 10000
+		config.MaxConcurrentStreams = math.MaxUint32
 	}
+	ssh := promgrpc.ServerStatsHandler(
+		promgrpc.CollectorWithNamespace("grpc"),
+		promgrpc.CollectorWithConstLabels(prometheus.Labels{"service": configuration.GetServiceInfo().ServiceName}),
+	)
+	metrics.RegisterMetrics(ssh)
 	opts := []grpc.ServerOption{
+		grpc.StatsHandler(ssh),
 		grpc.Creds(getCerts(ctx)),
 		grpc.InitialWindowSize(1024 * 1024 * 32),
 		grpc.InitialConnWindowSize(1024 * 1024 * 4),
@@ -67,13 +77,13 @@ func BuildGRPCServerOptions(ctx context.Context, config *GRPCServerConfig) []grp
 		grpc.ChainStreamInterceptor(chainStreamServers...),
 		grpc.ChainUnaryInterceptor(chainUnaryServers...),
 		grpc.KeepaliveParams(keepalive.ServerParameters{
-			MaxConnectionIdle: time.Minute * 30,
-			Timeout:           30 * time.Second, // 類似 ClientParameters.Time 不過默認爲 2小時
-			Time:              10 * time.Second, // 類似 ClientParameters.Timeout 默認 20秒
+			MaxConnectionIdle: GetMaxConnectionIdle(), //time.Minute * 30,
+			Timeout:           60 * time.Second,       // 類似 ClientParameters.Time 不過默認爲 2小時
+			Time:              30 * time.Second,       // 類似 ClientParameters.Timeout 默認 20秒
 
 		}),
 		grpc.KeepaliveEnforcementPolicy(keepalive.EnforcementPolicy{ // 當服務器不允許ping 或 ping 太頻繁超過 MinTime 限制 服務器 會 返回ping失敗 此時 客戶端 不會認爲這個ping是 active RPCs
-			MinTime:             time.Second * 3,
+			MinTime:             time.Second * 5,
 			PermitWithoutStream: true,
 		}),
 	}

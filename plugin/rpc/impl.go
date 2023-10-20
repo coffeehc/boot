@@ -20,6 +20,10 @@ import (
 	"google.golang.org/grpc/health/grpc_health_v1"
 )
 
+func SetRPCServerAddr(addr string) {
+	viper.Set("grpc.rpc_server_addr", addr)
+}
+
 func newService(ctx context.Context) Service {
 	viper.SetDefault("grpc.max_concurrent_streams", 100000)
 	viper.SetDefault("grpc.max_msg_size", 1024*1024*4)

@@ -15,7 +15,9 @@ import (
 	"github.com/gofiber/fiber/v2/middleware/monitor"
 	"github.com/gofiber/fiber/v2/middleware/pprof"
 	"github.com/gofiber/template/html/v2"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/spf13/viper"
+	"github.com/valyala/fasthttp/fasthttpadaptor"
 	"go.uber.org/zap"
 	"io/fs"
 	"net"
@@ -149,7 +151,12 @@ func RegisterManager(app *fiber.App) {
 	app.Use(compress.New(compress.Config{
 		Level: compress.LevelBestCompression,
 	}))
-	app.Get("/metrics", monitor.New())
+	pHanfler := fasthttpadaptor.NewFastHTTPHandler(promhttp.Handler())
+	app.Get("/metrics", func(c *fiber.Ctx) error {
+		pHanfler(c.Context())
+		return nil
+	})
+	app.Get("/monitor", monitor.New())
 	app.Get("/ping", func(ctx *fiber.Ctx) error {
 		return ctx.SendString("pong")
 	})
