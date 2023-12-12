@@ -63,7 +63,7 @@ func NewClientConnByResolverBuilder(ctx context.Context, serviceInfo configurati
 	opts := BuildDialOption(ctx, false, serviceInfo.ServiceName)
 	opts = append(opts, grpc.WithResolvers(resolverBuilders...))
 	clientConn, err := grpc.DialContext(ctx, serviceInfo.TargetUrl, opts...)
-	// log.Debug("需要链接的服务端地址", zap.String("target", serverAddr))
+	log.Debug("需要链接的服务端地址", zap.String("target", clientConn.Target()))
 	if err != nil {
 		log.Error("创建客户端链接失败", zap.Error(err))
 		return nil, errors.WrappedSystemError(err)

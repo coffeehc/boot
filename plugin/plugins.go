@@ -34,7 +34,7 @@ func RegisterPlugin(name string, service interface{}) {
 	mutex.Lock()
 	defer mutex.Unlock()
 	if plugins[name] != nil {
-		log.Warn("插件已经注册过,不能重复注册!!!", zap.String("name", name))
+		log.DPanic("插件已经注册过,不能重复注册!!!", zap.String("name", name))
 	}
 	var plugin Plugin = nil
 	if _, ok := service.(Plugin); ok {
