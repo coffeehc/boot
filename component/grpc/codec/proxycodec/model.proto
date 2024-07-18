@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package grpcproxy;
 
-option go_package = "proxycodec";
+option go_package = "./proxycodec";
 
 message ProxyFrame{
     string serviceName =1;

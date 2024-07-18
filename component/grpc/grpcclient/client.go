@@ -167,18 +167,20 @@ func BuildDialOption(ctx context.Context, block bool, serverServiceName string) 
 			opts = append(opts, grpc.WithPerRPCCredentials(prc))
 		}
 	}
-	tlsConfig := &tls.Config{
-		NextProtos:         []string{"http/1.1", http2.NextProtoTLS, "coffee"},
-		InsecureSkipVerify: true,
-	}
 	enableQUiC := getEnableQuic(ctx)
 	if !enableQUiC {
 		creds := getCerts(ctx)
 		if creds == nil {
+			//creds = credentials.NewTLS(tlsConfig)
 			creds = insecure.NewCredentials()
 		}
 		opts = append(opts, grpc.WithTransportCredentials(creds))
 	} else {
+		tlsConfig := &tls.Config{
+			NextProtos:         []string{"http/1.1", http2.NextProtoTLS, "coffee"},
+			InsecureSkipVerify: true,
+			//ClientAuth:         tls.NoClientCert,
+		}
 		creds := grpcquic.NewCredentials(tlsConfig)
 		opts = append(opts, grpc.WithTransportCredentials(creds))
 		opts = append(opts, grpc.WithContextDialer(grpcquic.NewQuicDialer(tlsConfig)))
