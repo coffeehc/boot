@@ -41,14 +41,13 @@ func getEnableQuic(ctx context.Context) bool {
 
 var scope = zap.String("scope", "grpc.client")
 
-func NewClientConnByServiceInfo(ctx context.Context, serviceInfo configuration.ServiceInfo, block bool) (*grpc.ClientConn, error) {
-	opts := BuildDialOption(ctx, block, serviceInfo.ServiceName)
+func NewClientConnByServiceInfo(ctx context.Context, serviceInfo configuration.ServiceInfo) (*grpc.ClientConn, error) {
+	opts := BuildDialOption(ctx, serviceInfo.ServiceName)
 	if serviceInfo.TargetUrl == "" {
 		log.Panic("没有指定需要链接的ServiceInfo的RPC协议，无法创建链接")
 	}
 	log.Debug("需要获取的客户端地址", zap.String("target", serviceInfo.TargetUrl))
-	ctx, _ = context.WithTimeout(ctx, time.Second*5)
-	clientConn, err := grpc.DialContext(ctx, serviceInfo.TargetUrl, opts...)
+	clientConn, err := grpc.NewClient(serviceInfo.TargetUrl, opts...)
 	if err != nil {
 		log.Error("创建服务端链接失败", zap.Error(err))
 		return nil, errors.SystemError("创建grpc客户端")
@@ -60,9 +59,9 @@ func NewClientConnByResolverBuilder(ctx context.Context, serviceInfo configurati
 	if serviceInfo.TargetUrl == "" {
 		return nil, errors.MessageError("没有设置TargetUrl")
 	}
-	opts := BuildDialOption(ctx, false, serviceInfo.ServiceName)
+	opts := BuildDialOption(ctx, serviceInfo.ServiceName)
 	opts = append(opts, grpc.WithResolvers(resolverBuilders...))
-	clientConn, err := grpc.DialContext(ctx, serviceInfo.TargetUrl, opts...)
+	clientConn, err := grpc.NewClient(serviceInfo.TargetUrl, opts...)
 	if err != nil {
 		log.Error("创建客户端链接失败", zap.Error(err))
 		return nil, errors.WrappedSystemError(err)
@@ -71,10 +70,9 @@ func NewClientConnByResolverBuilder(ctx context.Context, serviceInfo configurati
 	return clientConn, nil
 }
 
-func NewClientConn(ctx context.Context, block bool, serverAddr string, serverServiceName string) (*grpc.ClientConn, error) {
-	opts := BuildDialOption(ctx, block, serverServiceName)
-	ctx, _ = context.WithTimeout(ctx, time.Second*5)
-	clientConn, err := grpc.DialContext(ctx, serverAddr, opts...)
+func NewClientConn(ctx context.Context, serverAddr string, serverServiceName string) (*grpc.ClientConn, error) {
+	opts := BuildDialOption(ctx, serverServiceName)
+	clientConn, err := grpc.NewClient(serverAddr, opts...)
 	// log.Debug("需要链接的服务端地址", zap.String("target", serverAddr))
 	if err != nil {
 		log.Error("创建客户端链接失败", zap.Error(err))
@@ -83,7 +81,7 @@ func NewClientConn(ctx context.Context, block bool, serverAddr string, serverSer
 	return clientConn, nil
 }
 
-func BuildDialOption(ctx context.Context, block bool, serverServiceName string) []grpc.DialOption {
+func BuildDialOption(ctx context.Context, serverServiceName string) []grpc.DialOption {
 	chainUnaryClient := []grpc.UnaryClientInterceptor{
 		grpcrecovery.UnaryClientInterceptor(),
 	}
@@ -130,7 +128,7 @@ func BuildDialOption(ctx context.Context, block bool, serverServiceName string) 
 				BaseDelay:  time.Millisecond * 300, // 第一次失败重试前后需等待多久
 				Multiplier: 1.2,                    // 在失败的重试后乘以的倍数
 				Jitter:     0.2,                    // 随机抖动因子
-				MaxDelay:   time.Second * 5,        // backoff上限
+				MaxDelay:   time.Second * 2,        // backoff上限
 			},
 			MinConnectTimeout: time.Second * 3,
 		}),
@@ -141,7 +139,7 @@ func BuildDialOption(ctx context.Context, block bool, serverServiceName string) 
 			grpc.MaxCallRecvMsgSize(1024*1024*8),
 			grpc.MaxCallSendMsgSize(1024*1024*2),
 		),
-		grpc.WithReturnConnectionError(),
+		//grpc.WithReturnConnectionError(),
 		grpc.WithIdleTimeout(0),
 		//grpc.WithDisableRetry(),
 		grpc.WithKeepaliveParams(keepalive.ClientParameters{
@@ -156,37 +154,30 @@ func BuildDialOption(ctx context.Context, block bool, serverServiceName string) 
 		grpc.WithInitialConnWindowSize(1024 * 1024 * 8),
 		grpc.WithInitialWindowSize(1024 * 1024 * 16),
 		//grpc.WithChannelzParentID(&channelz.Identifier{}),
-		grpc.FailOnNonTempDialError(true),
+		//grpc.FailOnNonTempDialError(true),
 		grpc.WithNoProxy(),
 		grpc.WithReadBufferSize(1024 * 128),
 		grpc.WithWriteBufferSize(1024 * 128),
 	}
+	//考虑把这里升级成必须的
 	perRPCCredentials := ctx.Value(perRPCCredentialsKey)
 	if perRPCCredentials != nil {
 		if prc, ok := perRPCCredentials.(credentials.PerRPCCredentials); ok {
 			opts = append(opts, grpc.WithPerRPCCredentials(prc))
 		}
 	}
+	creds := getCerts(ctx)
+	if creds == nil {
+		creds = insecure.NewCredentials()
+	}
+	opts = append(opts, grpc.WithTransportCredentials(creds))
 	enableQUiC := getEnableQuic(ctx)
-	if !enableQUiC {
-		creds := getCerts(ctx)
-		if creds == nil {
-			//creds = credentials.NewTLS(tlsConfig)
-			creds = insecure.NewCredentials()
-		}
-		opts = append(opts, grpc.WithTransportCredentials(creds))
-	} else {
+	if enableQUiC {
 		tlsConfig := &tls.Config{
 			NextProtos:         []string{"http/1.1", http2.NextProtoTLS, "coffee"},
 			InsecureSkipVerify: true,
-			//ClientAuth:         tls.NoClientCert,
 		}
-		creds := grpcquic.NewCredentials(tlsConfig)
-		opts = append(opts, grpc.WithTransportCredentials(creds))
 		opts = append(opts, grpc.WithContextDialer(grpcquic.NewQuicDialer(tlsConfig)))
-	}
-	if block {
-		opts = append(opts, grpc.WithBlock())
 	}
 	opts = append(opts, grpc.WithStatsHandler(csh))
 	return opts

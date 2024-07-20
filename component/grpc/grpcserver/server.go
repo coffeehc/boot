@@ -80,12 +80,12 @@ func BuildGRPCServerOptions(ctx context.Context, config *GRPCServerConfig) []grp
 			MaxConnectionIdle: GetMaxConnectionIdle(), //time.Minute * 30,
 			Timeout:           60 * time.Second,       // 類似 ClientParameters.Time 不過默認爲 2小時
 			Time:              30 * time.Second,       // 類似 ClientParameters.Timeout 默認 20秒
-
 		}),
 		grpc.KeepaliveEnforcementPolicy(keepalive.EnforcementPolicy{ // 當服務器不允許ping 或 ping 太頻繁超過 MinTime 限制 服務器 會 返回ping失敗 此時 客戶端 不會認爲這個ping是 active RPCs
 			MinTime:             time.Second * 5,
 			PermitWithoutStream: true,
 		}),
+		grpc.SharedWriteBuffer(true),
 	}
 	if config.MaxMsgSize > 0 {
 		opts = append(opts, grpc.MaxRecvMsgSize(config.MaxMsgSize),

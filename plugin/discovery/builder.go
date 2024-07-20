@@ -15,7 +15,7 @@ import (
 )
 
 func RPCServiceInitializationByResolverBuilder(ctx context.Context, rpcService configuration.RPCService, resolverBuilder ...resolver.Builder) error {
-	opts := grpcclient.BuildDialOption(ctx, true, rpcService.GetRPCServiceInfo().ServiceName)
+	opts := grpcclient.BuildDialOption(ctx, rpcService.GetRPCServiceInfo().ServiceName)
 	ctx, _ = context.WithTimeout(ctx, time.Second*5)
 	opts = append(opts, grpc.WithResolvers(resolverBuilder...))
 	clientConn, err := grpc.DialContext(ctx, rpcService.GetRPCServiceInfo().TargetUrl, opts...)
@@ -53,7 +53,7 @@ func RPCServiceInitializationByAddresses(ctx context.Context, rpcService configu
 }
 
 func RPCServiceInitializationByAddress(ctx context.Context, rpcService configuration.RPCService, serverAddr string) error {
-	conn, err := grpcclient.NewClientConn(ctx, false, serverAddr, rpcService.GetRPCServiceInfo().ServiceName)
+	conn, err := grpcclient.NewClientConn(ctx, serverAddr, rpcService.GetRPCServiceInfo().ServiceName)
 	if err != nil {
 		return errors.ConverError(err)
 	}
@@ -67,7 +67,7 @@ func RPCServiceInitializationByAddress(ctx context.Context, rpcService configura
 }
 
 func RPCServiceInitialization(ctx context.Context, rpcService configuration.RPCService) error {
-	conn, err := grpcclient.NewClientConnByServiceInfo(ctx, rpcService.GetRPCServiceInfo(), false)
+	conn, err := grpcclient.NewClientConnByServiceInfo(ctx, rpcService.GetRPCServiceInfo())
 	if err != nil {
 		return err
 	}

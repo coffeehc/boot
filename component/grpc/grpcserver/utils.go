@@ -67,6 +67,10 @@ func SetSelfSignedCerds(ctx context.Context) context.Context {
 }
 
 func SetCerds(ctx context.Context, creds credentials.TransportCredentials) context.Context {
+	if ctx.Value(contextkeyServerCerds) != nil {
+		log.DPanic("****已经设置了TransportCredentials,不能多次设置****")
+		return ctx
+	}
 	return context.WithValue(ctx, contextkeyServerCerds, creds)
 }
 
@@ -78,6 +82,7 @@ func getCerts(ctx context.Context) credentials.TransportCredentials {
 	if cerds, ok := v.(credentials.TransportCredentials); ok {
 		return cerds
 	}
+	//return alts.NewServerCreds(alts.DefaultServerOptions())
 	return nil
 }
 

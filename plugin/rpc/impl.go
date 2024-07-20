@@ -92,8 +92,8 @@ func (impl *serviceImpl) Start(ctx context.Context) error {
 		NextProtos:         []string{"http/1.1", http2.NextProtoTLS, "coffee"},
 		InsecureSkipVerify: true,
 	}
-	addr, _ := net.ResolveTCPAddr("tcp4", impl.rpcServerAddr)
-	udpAddr, _ := net.ResolveUDPAddr("udp4", impl.rpcServerAddr)
+	addr, _ := net.ResolveTCPAddr("tcp", impl.rpcServerAddr)
+	udpAddr, _ := net.ResolveUDPAddr("udp", impl.rpcServerAddr)
 	addr.IP = net.IPv4zero
 	udplis, _err := quic.ListenAddr(udpAddr.String(), tlsConfig, nil)
 	if _err != nil {
@@ -101,7 +101,7 @@ func (impl *serviceImpl) Start(ctx context.Context) error {
 	}
 	udpListener := grpcquic.Listen(*udplis)
 	//tcpListener, _err := tls.Listen("tcp4", addr.String(), tlsConfig)
-	tcpListener, _err := net.Listen("tcp4", addr.String())
+	tcpListener, _err := net.Listen("tcp", addr.String())
 	if _err != nil {
 		log.Panic("启动RPC服务端口失败", zap.Error(_err))
 	}
