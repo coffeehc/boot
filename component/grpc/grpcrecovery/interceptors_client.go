@@ -28,13 +28,6 @@ func UnaryClientInterceptor() grpc.UnaryClientInterceptor {
 		md := BuildMetadataFromContext(ctx)
 		ctx = metadata.NewOutgoingContext(ctx, md)
 		err = invoker(ctx, method, req, reply, cc, opts...)
-		//if err != nil {
-		//	log.DPanic("", zap.Error(err))
-		//}
-		//if err == context.DeadlineExceeded {
-		//	log.Debug("DeadlineExceeded--------")
-		//	cc.Connect()
-		//}
 		return parseRPCError(err, false, zap.String("rpcMethod", method), zap.Any("connState", cc.GetState()), zap.String("target", cc.Target()))
 	}
 }

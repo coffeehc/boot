@@ -8,6 +8,7 @@ import (
 	"github.com/coffeehc/boot/component/grpc/alts/altsproto"
 	"github.com/coffeehc/boot/component/grpc/alts/internal/commons"
 	"github.com/coffeehc/boot/component/grpc/alts/internal/service"
+	"go.uber.org/zap"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/grpclog"
 	"net"
@@ -70,13 +71,14 @@ type AuthInfo interface {
 // altsTC is the credentials required for authenticating a connection using ALTS.
 // It implements credentials.TransportCredentials interface.
 type altsTC struct {
-	info      *credentials.ProtocolInfo
-	side      int
-	accounts  []string
-	hsAddress string
+	info        *credentials.ProtocolInfo
+	side        int
+	accounts    []string
+	hsAddress   string
+	serviceName string
 }
 
-func NewALTS(side int, accounts []string, hsAddress string) credentials.TransportCredentials {
+func NewALTS(side int, accounts []string, hsAddress string, serviceName string) credentials.TransportCredentials {
 	if hsAddress == "" {
 		log.Error("没有指定ALTS中心地址")
 		return nil
@@ -86,9 +88,10 @@ func NewALTS(side int, accounts []string, hsAddress string) credentials.Transpor
 			SecurityProtocol: "alts",
 			SecurityVersion:  "1.0",
 		},
-		side:      side,
-		accounts:  accounts,
-		hsAddress: hsAddress,
+		side:        side,
+		accounts:    accounts,
+		hsAddress:   hsAddress,
+		serviceName: serviceName,
 	}
 }
 
@@ -97,6 +100,7 @@ func (g *altsTC) ClientHandshake(ctx context.Context, addr string, rawConn net.C
 	// Connecting to ALTS handshaker service.
 	hsConn, err := service.Dial(g.hsAddress)
 	if err != nil {
+		log.Debug("连接认证中心失败", zap.Error(err))
 		return nil, nil, err
 	}
 	// Do not close hsConn since it is shared with other handshakes.
@@ -111,9 +115,12 @@ func (g *altsTC) ClientHandshake(ctx context.Context, addr string, rawConn net.C
 			cancel()
 		}
 	}()
-	opts := commons.DefaultClientHandshakerOptions()
+	opts := commons.DefaultClientHandshakerOptions(g.serviceName)
 	opts.TargetName = addr
 	opts.TargetServiceAccounts = g.accounts
+	opts.ClientIdentity = &altsproto.Identity{
+		ServiceName: g.serviceName,
+	}
 	opts.RPCVersions = &altsproto.RpcProtocolVersions{
 		MaxRpcVersion: maxRPCVersion,
 		MinRpcVersion: minRPCVersion,
@@ -129,6 +136,7 @@ func (g *altsTC) ClientHandshake(ctx context.Context, addr string, rawConn net.C
 	}()
 	secConn, authInfo, err := chs.ClientHandshake(ctx)
 	if err != nil {
+		log.Debug("认证握手是失败", zap.Error(err))
 		return nil, nil, err
 	}
 	altsAuthInfo, ok := authInfo.(AuthInfo)
@@ -137,6 +145,7 @@ func (g *altsTC) ClientHandshake(ctx context.Context, addr string, rawConn net.C
 	}
 	match, _ := checkRPCVersions(opts.RPCVersions, altsAuthInfo.PeerRPCVersions())
 	if !match {
+		log.Debug("RPC版本不匹配", zap.Error(err))
 		return nil, nil, fmt.Errorf("server-side RPC versions are not compatible with this client, local versions: %v, peer versions: %v", opts.RPCVersions, altsAuthInfo.PeerRPCVersions())
 	}
 	return secConn, authInfo, nil
@@ -152,7 +161,8 @@ func (g *altsTC) ServerHandshake(rawConn net.Conn) (_ net.Conn, _ credentials.Au
 	// Do not close hsConn since it's shared with other handshakes.
 	ctx, cancel := context.WithTimeout(context.Background(), defaultTimeout)
 	defer cancel()
-	opts := commons.DefaultServerHandshakerOptions()
+	opts := commons.DefaultServerHandshakerOptions(g.serviceName)
+	opts.TargetServiceAccounts = g.accounts
 	opts.RPCVersions = &altsproto.RpcProtocolVersions{
 		MaxRpcVersion: maxRPCVersion,
 		MinRpcVersion: minRPCVersion,

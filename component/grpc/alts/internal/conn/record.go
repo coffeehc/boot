@@ -95,20 +95,11 @@ func NewConn(c net.Conn, side int, recordProtocol string, key []byte, protected 
 	payloadLengthLimit := altsRecordDefaultLength - overhead
 	var protectedBuf []byte
 	if protected == nil {
-		// We pre-allocate protected to be of size
-		// 2*altsRecordDefaultLength-1 during initialization. We only
-		// read from the network into protected when protected does not
-		// contain a complete frame, which is at most
-		// altsRecordDefaultLength-1 (bytes). And we read at most
-		// altsRecordDefaultLength (bytes) data into protected at one
-		// time. Therefore, 2*altsRecordDefaultLength-1 is large enough
-		// to buffer data read from the network.
 		protectedBuf = make([]byte, 0, 2*altsRecordDefaultLength-1)
 	} else {
 		protectedBuf = make([]byte, len(protected))
 		copy(protectedBuf, protected)
 	}
-
 	altsConn := &conn{
 		Conn:               c,
 		crypto:             crypto,

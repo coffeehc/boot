@@ -4,9 +4,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/coffeehc/base/log"
 	"github.com/coffeehc/boot/component/grpc/alts/altsproto"
 	"github.com/coffeehc/boot/component/grpc/alts/internal"
 	"github.com/coffeehc/boot/component/grpc/alts/internal/conn"
+	"go.uber.org/zap"
 	"golang.org/x/sync/semaphore"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -55,34 +57,31 @@ func init() {
 // ClientHandshakerOptions contains the client handshaker options that can
 // provided by the caller.
 type ClientHandshakerOptions struct {
-	// ClientIdentity is the handshaker client local identity.
-	ClientIdentity *altsproto.Identity
-	// TargetName is the server service account name for secure name
-	// checking.
-	TargetName string
-	// TargetServiceAccounts contains a list of expected target service
-	// accounts. One of these accounts should match one of the accounts in
-	// the handshaker results. Otherwise, the handshake fails.
+	ClientIdentity        *altsproto.Identity
+	TargetName            string
 	TargetServiceAccounts []string
-	// RPCVersions specifies the gRPC versions accepted by the client.
-	RPCVersions *altsproto.RpcProtocolVersions
+	RPCVersions           *altsproto.RpcProtocolVersions
+	ServiceName           string
 }
 
 // ServerHandshakerOptions contains the server handshaker options that can
 // provided by the caller.
 type ServerHandshakerOptions struct {
-	// RPCVersions specifies the gRPC versions accepted by the server.
-	RPCVersions *altsproto.RpcProtocolVersions
+	RPCVersions           *altsproto.RpcProtocolVersions
+	TargetServiceAccounts []string
+	ServiceName           string
 }
 
 // DefaultClientHandshakerOptions returns the default client handshaker options.
-func DefaultClientHandshakerOptions() *ClientHandshakerOptions {
-	return &ClientHandshakerOptions{}
+func DefaultClientHandshakerOptions(serviceName string) *ClientHandshakerOptions {
+	return &ClientHandshakerOptions{
+		ServiceName: serviceName,
+	}
 }
 
 // DefaultServerHandshakerOptions returns the default client handshaker options.
-func DefaultServerHandshakerOptions() *ServerHandshakerOptions {
-	return &ServerHandshakerOptions{}
+func DefaultServerHandshakerOptions(serviceName string) *ServerHandshakerOptions {
+	return &ServerHandshakerOptions{ServiceName: serviceName}
 }
 
 // altsHandshaker is used to complete an ALTS handshake between client and
@@ -103,9 +102,6 @@ type altsHandshaker struct {
 	side int
 }
 
-// NewClientHandshaker creates a Handshaker that performs a client-side
-// ALTS handshake by acting as a proxy between the peer and the ALTS handshaker
-// service in the metadata server.
 func NewClientHandshaker(ctx context.Context, conn *grpc.ClientConn, c net.Conn, opts *ClientHandshakerOptions) (internal.Handshaker, error) {
 	return &altsHandshaker{
 		stream:     nil,
@@ -116,9 +112,6 @@ func NewClientHandshaker(ctx context.Context, conn *grpc.ClientConn, c net.Conn,
 	}, nil
 }
 
-// NewServerHandshaker creates a Handshaker that performs a server-side
-// ALTS handshake by acting as a proxy between the peer and the ALTS handshaker
-// service in the metadata server.
 func NewServerHandshaker(ctx context.Context, conn *grpc.ClientConn, c net.Conn, opts *ServerHandshakerOptions) (internal.Handshaker, error) {
 	return &altsHandshaker{
 		stream:     nil,
@@ -129,10 +122,9 @@ func NewServerHandshaker(ctx context.Context, conn *grpc.ClientConn, c net.Conn,
 	}, nil
 }
 
-// ClientHandshake starts and completes a client ALTS handshake for GCP. Once
-// done, ClientHandshake returns a secure connection.
 func (h *altsHandshaker) ClientHandshake(ctx context.Context) (net.Conn, credentials.AuthInfo, error) {
 	if err := clientHandshakes.Acquire(ctx, 1); err != nil {
+		log.Error("握手头读取失败", zap.Error(err))
 		return nil, nil, err
 	}
 	defer clientHandshakes.Release(1)
@@ -146,6 +138,7 @@ func (h *altsHandshaker) ClientHandshake(ctx context.Context) (net.Conn, credent
 	if h.stream == nil {
 		stream, err := altsproto.NewHandshakerServiceClient(h.clientConn).DoHandshake(ctx)
 		if err != nil {
+			log.Error("创建握手流失败", zap.Error(err))
 			return nil, nil, fmt.Errorf("failed to establish stream to ALTS handshaker service: %v", err)
 		}
 		h.stream = stream
@@ -176,6 +169,7 @@ func (h *altsHandshaker) ClientHandshake(ctx context.Context) (net.Conn, credent
 
 	conn, result, err := h.doHandshake(req)
 	if err != nil {
+		log.Error("实际握手失败", zap.Error(err))
 		return nil, nil, err
 	}
 	authInfo := NewAuthInfo(result)
@@ -209,11 +203,20 @@ func (h *altsHandshaker) ServerHandshake(ctx context.Context) (net.Conn, credent
 	if err != nil {
 		return nil, nil, err
 	}
-
+	localIdentities := make([]*altsproto.Identity, 0, len(h.serverOpts.TargetServiceAccounts))
+	for _, account := range h.serverOpts.TargetServiceAccounts {
+		localIdentities = append(localIdentities, &altsproto.Identity{
+			IdentityOneof: &altsproto.Identity_ServiceAccount{
+				ServiceAccount: account,
+			},
+			ServiceName: h.serverOpts.ServiceName,
+		})
+	}
 	// Prepare server parameters.
 	params := make(map[int32]*altsproto.ServerHandshakeParameters)
 	params[int32(altsproto.HandshakeProtocol_ALTS)] = &altsproto.ServerHandshakeParameters{
 		RecordProtocols: recordProtocols,
+		LocalIdentities: localIdentities,
 	}
 	req := &altsproto.HandshakerReq{
 		ReqOneof: &altsproto.HandshakerReq_ServerStart{
