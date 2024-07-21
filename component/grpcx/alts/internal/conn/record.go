@@ -23,7 +23,7 @@ package conn
 import (
 	"encoding/binary"
 	"fmt"
-	"github.com/coffeehc/boot/component/grpc/alts/internal"
+	"github.com/coffeehc/boot/component/grpcx/alts/internal"
 	"math"
 	"net"
 )

@@ -3,7 +3,7 @@ package alts
 import (
 	"context"
 	"errors"
-	"github.com/coffeehc/boot/component/grpc/alts/internal"
+	"github.com/coffeehc/boot/component/grpcx/alts/internal"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/peer"
 	"google.golang.org/grpc/status"

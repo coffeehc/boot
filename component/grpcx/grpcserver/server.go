@@ -2,7 +2,6 @@ package grpcserver
 
 import (
 	"context"
-	"github.com/coffeehc/boot/component/grpcx"
 	"github.com/coffeehc/boot/configuration"
 	"github.com/coffeehc/boot/plugin/manage/metrics"
 	"github.com/piotrkowalczuk/promgrpc/v4"
@@ -66,7 +65,7 @@ func BuildGRPCServerOptions(ctx context.Context, config *GRPCServerConfig) []grp
 	metrics.RegisterMetrics(ssh)
 	opts := []grpc.ServerOption{
 		grpc.StatsHandler(ssh),
-		grpc.Creds(grpcx.GetCerts(ctx)),
+		grpc.Creds(GetServerCerts(ctx)),
 		grpc.InitialWindowSize(1024 * 1024 * 32),
 		grpc.InitialConnWindowSize(1024 * 1024 * 4),
 		grpc.ReadBufferSize(1024 * 16),

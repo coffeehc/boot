@@ -20,7 +20,7 @@ syntax = "proto3";
 package grpc.alts;
 
 
-option go_package = "github.com/coffeehc/boot/component/grpc/alts/altsproto";
+option go_package = "github.com/coffeehc/boot/component/grpcx/alts/altsproto";
 option java_multiple_files = true;
 option java_outer_classname = "HandshakerProto";
 option java_package = "io.grpc.alts.internal";

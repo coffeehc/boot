@@ -18,7 +18,7 @@
 
 package conn
 
-import "github.com/coffeehc/boot/component/grpc/alts/internal"
+import "github.com/coffeehc/boot/component/grpcx/alts/internal"
 
 // NewOutCounter returns an outgoing counter initialized to the starting sequence
 // number for the client/server side of a connection.

@@ -426,7 +426,7 @@ type Identity struct {
 	IdentityOneof isIdentity_IdentityOneof `protobuf_oneof:"identity_oneof"`
 	// Additional attributes of the identity.
 	Attributes  map[string]string `protobuf:"bytes,3,rep,name=attributes,proto3" json:"attributes,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
-	ServiceName string            `protobuf:"bytes,4,opt,name=service_name,json=serviceName,proto3" json:"service_name,omitempty"`
+	ServiceName string            `protobuf:"bytes,4,opt,name=service_name,json=serviceName,proto3" json:"service_name,omitempty"` //新加的，后面考虑怎么去掉
 }
 
 func (x *Identity) Reset() {
@@ -519,40 +519,17 @@ type StartClientHandshakeReq struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Handshake security protocol requested by the client.
-	HandshakeSecurityProtocol HandshakeProtocol `protobuf:"varint,1,opt,name=handshake_security_protocol,json=handshakeSecurityProtocol,proto3,enum=grpc.alts.HandshakeProtocol" json:"handshake_security_protocol,omitempty"`
-	// The application protocols supported by the client, e.g., "h2" (for http2),
-	// "grpc".
-	ApplicationProtocols []string `protobuf:"bytes,2,rep,name=application_protocols,json=applicationProtocols,proto3" json:"application_protocols,omitempty"`
-	// The record protocols supported by the client, e.g.,
-	// "ALTSRP_GCM_AES128".
-	RecordProtocols []string `protobuf:"bytes,3,rep,name=record_protocols,json=recordProtocols,proto3" json:"record_protocols,omitempty"`
-	// (Optional) Describes which server identities are acceptable by the client.
-	// If target identities are provided and none of them matches the peer
-	// identity of the server, handshake will fail.
-	TargetIdentities []*Identity `protobuf:"bytes,4,rep,name=target_identities,json=targetIdentities,proto3" json:"target_identities,omitempty"`
-	// (Optional) Application may specify a local identity. Otherwise, the
-	// handshaker chooses a default local identity.
-	LocalIdentity *Identity `protobuf:"bytes,5,opt,name=local_identity,json=localIdentity,proto3" json:"local_identity,omitempty"`
-	// (Optional) Local endpoint information of the connection to the server,
-	// such as local IP address, port number, and network protocol.
-	LocalEndpoint *Endpoint `protobuf:"bytes,6,opt,name=local_endpoint,json=localEndpoint,proto3" json:"local_endpoint,omitempty"`
-	// (Optional) Endpoint information of the remote server, such as IP address,
-	// port number, and network protocol.
-	RemoteEndpoint *Endpoint `protobuf:"bytes,7,opt,name=remote_endpoint,json=remoteEndpoint,proto3" json:"remote_endpoint,omitempty"`
-	// (Optional) If target name is provided, a secure naming check is performed
-	// to verify that the peer authenticated identity is indeed authorized to run
-	// the target name.
-	TargetName string `protobuf:"bytes,8,opt,name=target_name,json=targetName,proto3" json:"target_name,omitempty"`
-	// (Optional) RPC protocol versions supported by the client.
-	RpcVersions *RpcProtocolVersions `protobuf:"bytes,9,opt,name=rpc_versions,json=rpcVersions,proto3" json:"rpc_versions,omitempty"`
-	// (Optional) Maximum frame size supported by the client.
-	MaxFrameSize uint32 `protobuf:"varint,10,opt,name=max_frame_size,json=maxFrameSize,proto3" json:"max_frame_size,omitempty"`
-	// (Optional) An access token created by the caller only intended for use in
-	// ALTS connections. The access token that should be used to authenticate to
-	// the peer. The access token MUST be strongly bound to the ALTS credentials
-	// used to establish the connection that the token is sent over.
-	AccessToken string `protobuf:"bytes,11,opt,name=access_token,json=accessToken,proto3" json:"access_token,omitempty"`
+	HandshakeSecurityProtocol HandshakeProtocol    `protobuf:"varint,1,opt,name=handshake_security_protocol,json=handshakeSecurityProtocol,proto3,enum=grpc.alts.HandshakeProtocol" json:"handshake_security_protocol,omitempty"`
+	ApplicationProtocols      []string             `protobuf:"bytes,2,rep,name=application_protocols,json=applicationProtocols,proto3" json:"application_protocols,omitempty"`
+	RecordProtocols           []string             `protobuf:"bytes,3,rep,name=record_protocols,json=recordProtocols,proto3" json:"record_protocols,omitempty"`
+	TargetIdentities          []*Identity          `protobuf:"bytes,4,rep,name=target_identities,json=targetIdentities,proto3" json:"target_identities,omitempty"`
+	LocalIdentity             *Identity            `protobuf:"bytes,5,opt,name=local_identity,json=localIdentity,proto3" json:"local_identity,omitempty"`
+	LocalEndpoint             *Endpoint            `protobuf:"bytes,6,opt,name=local_endpoint,json=localEndpoint,proto3" json:"local_endpoint,omitempty"`
+	RemoteEndpoint            *Endpoint            `protobuf:"bytes,7,opt,name=remote_endpoint,json=remoteEndpoint,proto3" json:"remote_endpoint,omitempty"`
+	TargetName                string               `protobuf:"bytes,8,opt,name=target_name,json=targetName,proto3" json:"target_name,omitempty"`
+	RpcVersions               *RpcProtocolVersions `protobuf:"bytes,9,opt,name=rpc_versions,json=rpcVersions,proto3" json:"rpc_versions,omitempty"`
+	MaxFrameSize              uint32               `protobuf:"varint,10,opt,name=max_frame_size,json=maxFrameSize,proto3" json:"max_frame_size,omitempty"`
+	AccessToken               string               `protobuf:"bytes,11,opt,name=access_token,json=accessToken,proto3" json:"access_token,omitempty"`
 }
 
 func (x *StartClientHandshakeReq) Reset() {
@@ -669,17 +646,9 @@ type ServerHandshakeParameters struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// The record protocols supported by the server, e.g.,
-	// "ALTSRP_GCM_AES128".
-	RecordProtocols []string `protobuf:"bytes,1,rep,name=record_protocols,json=recordProtocols,proto3" json:"record_protocols,omitempty"`
-	// (Optional) A list of local identities supported by the server, if
-	// specified. Otherwise, the handshaker chooses a default local identity.
+	RecordProtocols []string    `protobuf:"bytes,1,rep,name=record_protocols,json=recordProtocols,proto3" json:"record_protocols,omitempty"`
 	LocalIdentities []*Identity `protobuf:"bytes,2,rep,name=local_identities,json=localIdentities,proto3" json:"local_identities,omitempty"`
-	// A token created by the caller only intended for use in
-	// ALTS connections. The token should be used to authenticate to
-	// the peer. The token MUST be strongly bound to the ALTS credentials
-	// used to establish the connection that the token is sent over.
-	Token *string `protobuf:"bytes,3,opt,name=token,proto3,oneof" json:"token,omitempty"`
+	Token           *string     `protobuf:"bytes,3,opt,name=token,proto3,oneof" json:"token,omitempty"`
 }
 
 func (x *ServerHandshakeParameters) Reset() {
@@ -740,28 +709,13 @@ type StartServerHandshakeReq struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// The application protocols supported by the server, e.g., "h2" (for http2),
-	// "grpc".
-	ApplicationProtocols []string `protobuf:"bytes,1,rep,name=application_protocols,json=applicationProtocols,proto3" json:"application_protocols,omitempty"`
-	// Handshake parameters (record protocols and local identities supported by
-	// the server) mapped by the handshake protocol. Each handshake security
-	// protocol (e.g., TLS or ALTS) has its own set of record protocols and local
-	// identities. Since protobuf does not support enum as key to the map, the key
-	// to handshake_parameters is the integer value of HandshakeProtocol enum.
-	HandshakeParameters map[int32]*ServerHandshakeParameters `protobuf:"bytes,2,rep,name=handshake_parameters,json=handshakeParameters,proto3" json:"handshake_parameters,omitempty" protobuf_key:"varint,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
-	// Bytes in out_frames returned from the peer's HandshakerResp. It is possible
-	// that the peer's out_frames are split into multiple HandshakReq messages.
-	InBytes []byte `protobuf:"bytes,3,opt,name=in_bytes,json=inBytes,proto3" json:"in_bytes,omitempty"`
-	// (Optional) Local endpoint information of the connection to the client,
-	// such as local IP address, port number, and network protocol.
-	LocalEndpoint *Endpoint `protobuf:"bytes,4,opt,name=local_endpoint,json=localEndpoint,proto3" json:"local_endpoint,omitempty"`
-	// (Optional) Endpoint information of the remote client, such as IP address,
-	// port number, and network protocol.
-	RemoteEndpoint *Endpoint `protobuf:"bytes,5,opt,name=remote_endpoint,json=remoteEndpoint,proto3" json:"remote_endpoint,omitempty"`
-	// (Optional) RPC protocol versions supported by the server.
-	RpcVersions *RpcProtocolVersions `protobuf:"bytes,6,opt,name=rpc_versions,json=rpcVersions,proto3" json:"rpc_versions,omitempty"`
-	// (Optional) Maximum frame size supported by the server.
-	MaxFrameSize uint32 `protobuf:"varint,7,opt,name=max_frame_size,json=maxFrameSize,proto3" json:"max_frame_size,omitempty"`
+	ApplicationProtocols []string                             `protobuf:"bytes,1,rep,name=application_protocols,json=applicationProtocols,proto3" json:"application_protocols,omitempty"`
+	HandshakeParameters  map[int32]*ServerHandshakeParameters `protobuf:"bytes,2,rep,name=handshake_parameters,json=handshakeParameters,proto3" json:"handshake_parameters,omitempty" protobuf_key:"varint,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
+	InBytes              []byte                               `protobuf:"bytes,3,opt,name=in_bytes,json=inBytes,proto3" json:"in_bytes,omitempty"`
+	LocalEndpoint        *Endpoint                            `protobuf:"bytes,4,opt,name=local_endpoint,json=localEndpoint,proto3" json:"local_endpoint,omitempty"`
+	RemoteEndpoint       *Endpoint                            `protobuf:"bytes,5,opt,name=remote_endpoint,json=remoteEndpoint,proto3" json:"remote_endpoint,omitempty"`
+	RpcVersions          *RpcProtocolVersions                 `protobuf:"bytes,6,opt,name=rpc_versions,json=rpcVersions,proto3" json:"rpc_versions,omitempty"`
+	MaxFrameSize         uint32                               `protobuf:"varint,7,opt,name=max_frame_size,json=maxFrameSize,proto3" json:"max_frame_size,omitempty"`
 }
 
 func (x *StartServerHandshakeReq) Reset() {
@@ -850,13 +804,7 @@ type NextHandshakeMessageReq struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Bytes in out_frames returned from the peer's HandshakerResp. It is possible
-	// that the peer's out_frames are split into multiple NextHandshakerMessageReq
-	// messages.
-	InBytes []byte `protobuf:"bytes,1,opt,name=in_bytes,json=inBytes,proto3" json:"in_bytes,omitempty"`
-	// Number of milliseconds between when the application send the last handshake
-	// message to the peer and when the application received the current handshake
-	// message (in the in_bytes field) from the peer.
+	InBytes          []byte `protobuf:"bytes,1,opt,name=in_bytes,json=inBytes,proto3" json:"in_bytes,omitempty"`
 	NetworkLatencyMs uint32 `protobuf:"varint,2,opt,name=network_latency_ms,json=networkLatencyMs,proto3" json:"network_latency_ms,omitempty"`
 }
 
@@ -984,17 +932,14 @@ type isHandshakerReq_ReqOneof interface {
 }
 
 type HandshakerReq_ClientStart struct {
-	// The start client handshake request message.
 	ClientStart *StartClientHandshakeReq `protobuf:"bytes,1,opt,name=client_start,json=clientStart,proto3,oneof"`
 }
 
 type HandshakerReq_ServerStart struct {
-	// The start server handshake request message.
 	ServerStart *StartServerHandshakeReq `protobuf:"bytes,2,opt,name=server_start,json=serverStart,proto3,oneof"`
 }
 
 type HandshakerReq_Next struct {
-	// The next handshake request message.
 	Next *NextHandshakeMessageReq `protobuf:"bytes,3,opt,name=next,proto3,oneof"`
 }
 
@@ -1009,26 +954,14 @@ type HandshakerResult struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// The application protocol negotiated for this connection.
-	ApplicationProtocol string `protobuf:"bytes,1,opt,name=application_protocol,json=applicationProtocol,proto3" json:"application_protocol,omitempty"`
-	// The record protocol negotiated for this connection.
-	RecordProtocol string `protobuf:"bytes,2,opt,name=record_protocol,json=recordProtocol,proto3" json:"record_protocol,omitempty"`
-	// Cryptographic key data. The key data may be more than the key length
-	// required for the record protocol, thus the client of the handshaker
-	// service needs to truncate the key data into the right key length.
-	KeyData []byte `protobuf:"bytes,3,opt,name=key_data,json=keyData,proto3" json:"key_data,omitempty"`
-	// The authenticated identity of the peer.
-	PeerIdentity *Identity `protobuf:"bytes,4,opt,name=peer_identity,json=peerIdentity,proto3" json:"peer_identity,omitempty"`
-	// The local identity used in the handshake.
-	LocalIdentity *Identity `protobuf:"bytes,5,opt,name=local_identity,json=localIdentity,proto3" json:"local_identity,omitempty"`
-	// Indicate whether the handshaker service client should keep the channel
-	// between the handshaker service open, e.g., in order to handle
-	// post-handshake messages in the future.
-	KeepChannelOpen bool `protobuf:"varint,6,opt,name=keep_channel_open,json=keepChannelOpen,proto3" json:"keep_channel_open,omitempty"`
-	// The RPC protocol versions supported by the peer.
-	PeerRpcVersions *RpcProtocolVersions `protobuf:"bytes,7,opt,name=peer_rpc_versions,json=peerRpcVersions,proto3" json:"peer_rpc_versions,omitempty"`
-	// The maximum frame size of the peer.
-	MaxFrameSize uint32 `protobuf:"varint,8,opt,name=max_frame_size,json=maxFrameSize,proto3" json:"max_frame_size,omitempty"`
+	ApplicationProtocol string               `protobuf:"bytes,1,opt,name=application_protocol,json=applicationProtocol,proto3" json:"application_protocol,omitempty"`
+	RecordProtocol      string               `protobuf:"bytes,2,opt,name=record_protocol,json=recordProtocol,proto3" json:"record_protocol,omitempty"`
+	KeyData             []byte               `protobuf:"bytes,3,opt,name=key_data,json=keyData,proto3" json:"key_data,omitempty"`
+	PeerIdentity        *Identity            `protobuf:"bytes,4,opt,name=peer_identity,json=peerIdentity,proto3" json:"peer_identity,omitempty"`
+	LocalIdentity       *Identity            `protobuf:"bytes,5,opt,name=local_identity,json=localIdentity,proto3" json:"local_identity,omitempty"`
+	KeepChannelOpen     bool                 `protobuf:"varint,6,opt,name=keep_channel_open,json=keepChannelOpen,proto3" json:"keep_channel_open,omitempty"`
+	PeerRpcVersions     *RpcProtocolVersions `protobuf:"bytes,7,opt,name=peer_rpc_versions,json=peerRpcVersions,proto3" json:"peer_rpc_versions,omitempty"`
+	MaxFrameSize        uint32               `protobuf:"varint,8,opt,name=max_frame_size,json=maxFrameSize,proto3" json:"max_frame_size,omitempty"`
 }
 
 func (x *HandshakerResult) Reset() {
@@ -1124,9 +1057,7 @@ type HandshakerStatus struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// The status code. This could be the gRPC status code.
-	Code uint32 `protobuf:"varint,1,opt,name=code,proto3" json:"code,omitempty"`
-	// The status details.
+	Code    uint32 `protobuf:"varint,1,opt,name=code,proto3" json:"code,omitempty"`
 	Details string `protobuf:"bytes,2,opt,name=details,proto3" json:"details,omitempty"`
 }
 
@@ -1181,21 +1112,10 @@ type HandshakerResp struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Frames to be given to the peer for the NextHandshakeMessageReq. May be
-	// empty if no out_frames have to be sent to the peer or if in_bytes in the
-	// HandshakerReq are incomplete. All the non-empty out frames must be sent to
-	// the peer even if the handshaker status is not OK as these frames may
-	// contain the alert frames.
-	OutFrames []byte `protobuf:"bytes,1,opt,name=out_frames,json=outFrames,proto3" json:"out_frames,omitempty"`
-	// Number of bytes in the in_bytes consumed by the handshaker. It is possible
-	// that part of in_bytes in HandshakerReq was unrelated to the handshake
-	// process.
-	BytesConsumed uint32 `protobuf:"varint,2,opt,name=bytes_consumed,json=bytesConsumed,proto3" json:"bytes_consumed,omitempty"`
-	// This is set iff the handshake was successful. out_frames may still be set
-	// to frames that needs to be forwarded to the peer.
-	Result *HandshakerResult `protobuf:"bytes,3,opt,name=result,proto3" json:"result,omitempty"`
-	// Status of the handshaker.
-	Status *HandshakerStatus `protobuf:"bytes,4,opt,name=status,proto3" json:"status,omitempty"`
+	OutFrames     []byte            `protobuf:"bytes,1,opt,name=out_frames,json=outFrames,proto3" json:"out_frames,omitempty"`
+	BytesConsumed uint32            `protobuf:"varint,2,opt,name=bytes_consumed,json=bytesConsumed,proto3" json:"bytes_consumed,omitempty"`
+	Result        *HandshakerResult `protobuf:"bytes,3,opt,name=result,proto3" json:"result,omitempty"`
+	Status        *HandshakerStatus `protobuf:"bytes,4,opt,name=status,proto3" json:"status,omitempty"`
 }
 
 func (x *HandshakerResp) Reset() {
@@ -1558,14 +1478,14 @@ var file_handshaker_proto_rawDesc = []byte{
 	0x65, 0x12, 0x18, 0x2e, 0x67, 0x72, 0x70, 0x63, 0x2e, 0x61, 0x6c, 0x74, 0x73, 0x2e, 0x48, 0x61,
 	0x6e, 0x64, 0x73, 0x68, 0x61, 0x6b, 0x65, 0x72, 0x52, 0x65, 0x71, 0x1a, 0x19, 0x2e, 0x67, 0x72,
 	0x70, 0x63, 0x2e, 0x61, 0x6c, 0x74, 0x73, 0x2e, 0x48, 0x61, 0x6e, 0x64, 0x73, 0x68, 0x61, 0x6b,
-	0x65, 0x72, 0x52, 0x65, 0x73, 0x70, 0x22, 0x00, 0x28, 0x01, 0x30, 0x01, 0x42, 0x62, 0x0a, 0x15,
+	0x65, 0x72, 0x52, 0x65, 0x73, 0x70, 0x22, 0x00, 0x28, 0x01, 0x30, 0x01, 0x42, 0x63, 0x0a, 0x15,
 	0x69, 0x6f, 0x2e, 0x67, 0x72, 0x70, 0x63, 0x2e, 0x61, 0x6c, 0x74, 0x73, 0x2e, 0x69, 0x6e, 0x74,
 	0x65, 0x72, 0x6e, 0x61, 0x6c, 0x42, 0x0f, 0x48, 0x61, 0x6e, 0x64, 0x73, 0x68, 0x61, 0x6b, 0x65,
-	0x72, 0x50, 0x72, 0x6f, 0x74, 0x6f, 0x50, 0x01, 0x5a, 0x36, 0x67, 0x69, 0x74, 0x68, 0x75, 0x62,
+	0x72, 0x50, 0x72, 0x6f, 0x74, 0x6f, 0x50, 0x01, 0x5a, 0x37, 0x67, 0x69, 0x74, 0x68, 0x75, 0x62,
 	0x2e, 0x63, 0x6f, 0x6d, 0x2f, 0x63, 0x6f, 0x66, 0x66, 0x65, 0x65, 0x68, 0x63, 0x2f, 0x62, 0x6f,
 	0x6f, 0x74, 0x2f, 0x63, 0x6f, 0x6d, 0x70, 0x6f, 0x6e, 0x65, 0x6e, 0x74, 0x2f, 0x67, 0x72, 0x70,
-	0x63, 0x2f, 0x61, 0x6c, 0x74, 0x73, 0x2f, 0x61, 0x6c, 0x74, 0x73, 0x70, 0x72, 0x6f, 0x74, 0x6f,
-	0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x63, 0x78, 0x2f, 0x61, 0x6c, 0x74, 0x73, 0x2f, 0x61, 0x6c, 0x74, 0x73, 0x70, 0x72, 0x6f, 0x74,
+	0x6f, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (

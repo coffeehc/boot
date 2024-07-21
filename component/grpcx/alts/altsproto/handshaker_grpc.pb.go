@@ -43,12 +43,6 @@ const (
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type HandshakerServiceClient interface {
-	// Handshaker service accepts a stream of handshaker request, returning a
-	// stream of handshaker response. Client is expected to send exactly one
-	// message with either client_start or server_start followed by one or more
-	// messages with next. Each time client sends a request, the handshaker
-	// service expects to respond. Client does not have to wait for service's
-	// response before sending next request.
 	DoHandshake(ctx context.Context, opts ...grpc.CallOption) (HandshakerService_DoHandshakeClient, error)
 }
 
@@ -96,12 +90,6 @@ func (x *handshakerServiceDoHandshakeClient) Recv() (*HandshakerResp, error) {
 // All implementations should embed UnimplementedHandshakerServiceServer
 // for forward compatibility
 type HandshakerServiceServer interface {
-	// Handshaker service accepts a stream of handshaker request, returning a
-	// stream of handshaker response. Client is expected to send exactly one
-	// message with either client_start or server_start followed by one or more
-	// messages with next. Each time client sends a request, the handshaker
-	// service expects to respond. Client does not have to wait for service's
-	// response before sending next request.
 	DoHandshake(HandshakerService_DoHandshakeServer) error
 }
 

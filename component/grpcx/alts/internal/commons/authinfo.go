@@ -1,7 +1,7 @@
 package commons
 
 import (
-	"github.com/coffeehc/boot/component/grpc/alts/altsproto"
+	"github.com/coffeehc/boot/component/grpcx/alts/altsproto"
 	"google.golang.org/grpc/credentials"
 )
 

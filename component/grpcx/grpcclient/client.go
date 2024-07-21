@@ -4,7 +4,6 @@ import (
 	"context"
 	"crypto/tls"
 	"fmt"
-	"github.com/coffeehc/boot/component/grpcx"
 	"github.com/coffeehc/boot/component/grpcx/grpcquic"
 	"github.com/coffeehc/boot/plugin/manage/metrics"
 	"github.com/piotrkowalczuk/promgrpc/v4"
@@ -166,7 +165,7 @@ func BuildDialOption(ctx context.Context, serverServiceName string) []grpc.DialO
 			opts = append(opts, grpc.WithPerRPCCredentials(prc))
 		}
 	}
-	creds := grpcx.GetCerts(ctx)
+	creds := GetClientCerts(ctx)
 	if creds != nil {
 		//return nil
 		//tlsConfig := &tls.Config{

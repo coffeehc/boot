@@ -21,7 +21,7 @@ package conn
 import (
 	"crypto/aes"
 	"crypto/cipher"
-	"github.com/coffeehc/boot/component/grpc/alts/internal"
+	"github.com/coffeehc/boot/component/grpcx/alts/internal"
 )
 
 const (
