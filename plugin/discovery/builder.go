@@ -9,7 +9,7 @@ import (
 
 	"github.com/coffeehc/base/errors"
 	"github.com/coffeehc/base/log"
-	"github.com/coffeehc/boot/component/grpc/grpcclient"
+	"github.com/coffeehc/boot/component/grpcx/grpcclient"
 	"github.com/coffeehc/boot/configuration"
 	"go.uber.org/zap"
 )

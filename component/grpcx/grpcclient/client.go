@@ -4,18 +4,18 @@ import (
 	"context"
 	"crypto/tls"
 	"fmt"
-	"github.com/coffeehc/boot/component/grpc/grpcquic"
+	"github.com/coffeehc/boot/component/grpcx"
+	"github.com/coffeehc/boot/component/grpcx/grpcquic"
 	"github.com/coffeehc/boot/plugin/manage/metrics"
 	"github.com/piotrkowalczuk/promgrpc/v4"
 	"github.com/prometheus/client_golang/prometheus"
 	"golang.org/x/net/http2"
-	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/resolver"
 	"time"
 
 	"github.com/coffeehc/base/errors"
 	"github.com/coffeehc/base/log"
-	"github.com/coffeehc/boot/component/grpc/grpcrecovery"
+	"github.com/coffeehc/boot/component/grpcx/grpcrecovery"
 	"github.com/coffeehc/boot/configuration"
 
 	"go.uber.org/zap"
@@ -160,17 +160,23 @@ func BuildDialOption(ctx context.Context, serverServiceName string) []grpc.DialO
 		grpc.WithWriteBufferSize(1024 * 128),
 	}
 	//考虑把这里升级成必须的
-	perRPCCredentials := ctx.Value(perRPCCredentialsKey)
+	perRPCCredentials := GetPerRPCCredentials(ctx) //ctx.Value(perRPCCredentialsKey)
 	if perRPCCredentials != nil {
 		if prc, ok := perRPCCredentials.(credentials.PerRPCCredentials); ok {
 			opts = append(opts, grpc.WithPerRPCCredentials(prc))
 		}
 	}
-	creds := getCerts(ctx)
-	if creds == nil {
-		creds = insecure.NewCredentials()
+	creds := grpcx.GetCerts(ctx)
+	if creds != nil {
+		//return nil
+		//tlsConfig := &tls.Config{
+		//	NextProtos:         []string{"http/1.1", http2.NextProtoTLS, "coffee"},
+		//	InsecureSkipVerify: true,
+		//}
+		//creds = credentials.NewTLS(tlsConfig)
+		//creds = insecure.NewCredentials()
+		opts = append(opts, grpc.WithTransportCredentials(creds))
 	}
-	opts = append(opts, grpc.WithTransportCredentials(creds))
 	enableQUiC := getEnableQuic(ctx)
 	if enableQUiC {
 		tlsConfig := &tls.Config{

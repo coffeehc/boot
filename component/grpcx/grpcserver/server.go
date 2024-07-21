@@ -2,6 +2,7 @@ package grpcserver
 
 import (
 	"context"
+	"github.com/coffeehc/boot/component/grpcx"
 	"github.com/coffeehc/boot/configuration"
 	"github.com/coffeehc/boot/plugin/manage/metrics"
 	"github.com/piotrkowalczuk/promgrpc/v4"
@@ -12,7 +13,7 @@ import (
 	"google.golang.org/grpc/keepalive"
 
 	"github.com/coffeehc/base/log"
-	"github.com/coffeehc/boot/component/grpc/grpcrecovery"
+	"github.com/coffeehc/boot/component/grpcx/grpcrecovery"
 	"github.com/spf13/viper"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
@@ -65,7 +66,7 @@ func BuildGRPCServerOptions(ctx context.Context, config *GRPCServerConfig) []grp
 	metrics.RegisterMetrics(ssh)
 	opts := []grpc.ServerOption{
 		grpc.StatsHandler(ssh),
-		grpc.Creds(getCerts(ctx)),
+		grpc.Creds(grpcx.GetCerts(ctx)),
 		grpc.InitialWindowSize(1024 * 1024 * 32),
 		grpc.InitialConnWindowSize(1024 * 1024 * 4),
 		grpc.ReadBufferSize(1024 * 16),

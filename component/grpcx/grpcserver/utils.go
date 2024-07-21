@@ -7,6 +7,7 @@ import (
 	"crypto/x509"
 	"crypto/x509/pkix"
 	"fmt"
+	"github.com/coffeehc/boot/component/grpcx"
 	"github.com/spf13/viper"
 	"go.uber.org/zap"
 	"math/big"
@@ -44,8 +45,7 @@ func DebugLoggingInterceptor() grpc.UnaryServerInterceptor {
 }
 
 const (
-	contextkeyServerCerds = "_grpc.serverCredentials"
-	serverGrpcAuthKey     = "__ServerGrpcAuthKey"
+	serverGrpcAuthKey = "__ServerGrpcAuthKey"
 )
 
 func SetGrpcAuth(ctx context.Context, auth GRPCServerAuth) context.Context {
@@ -63,27 +63,7 @@ func SetSelfSignedCerds(ctx context.Context) context.Context {
 		Leaf:        cret,
 		PrivateKey:  pk,
 	}
-	return SetCerds(ctx, credentials.NewServerTLSFromCert(tlsCrt))
-}
-
-func SetCerds(ctx context.Context, creds credentials.TransportCredentials) context.Context {
-	if ctx.Value(contextkeyServerCerds) != nil {
-		log.DPanic("****已经设置了TransportCredentials,不能多次设置****")
-		return ctx
-	}
-	return context.WithValue(ctx, contextkeyServerCerds, creds)
-}
-
-func getCerts(ctx context.Context) credentials.TransportCredentials {
-	v := ctx.Value(contextkeyServerCerds)
-	if v == nil {
-		return nil
-	}
-	if cerds, ok := v.(credentials.TransportCredentials); ok {
-		return cerds
-	}
-	//return alts.NewServerCreds(alts.DefaultServerOptions())
-	return nil
+	return grpcx.SetCerds(ctx, credentials.NewServerTLSFromCert(tlsCrt))
 }
 
 func generateSelfSignedCertKey(keySize int) (*x509.Certificate, *rsa.PrivateKey, error) {
