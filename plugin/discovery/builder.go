@@ -18,7 +18,8 @@ func RPCServiceInitializationByResolverBuilder(ctx context.Context, rpcService c
 	opts := grpcclient.BuildDialOption(ctx, rpcService.GetRPCServiceInfo().ServiceName)
 	ctx, _ = context.WithTimeout(ctx, time.Second*5)
 	opts = append(opts, grpc.WithResolvers(resolverBuilder...))
-	clientConn, err := grpc.DialContext(ctx, rpcService.GetRPCServiceInfo().TargetUrl, opts...)
+	clientConn, err := grpc.NewClient(rpcService.GetRPCServiceInfo().TargetUrl, opts...)
+	//clientConn, err := grpc.DialContext(ctx, rpcService.GetRPCServiceInfo().TargetUrl, opts...)
 	// log.Debug("需要链接的服务端地址", zap.String("target", serverAddr))
 	if err != nil {
 		log.Error("创建客户端链接失败", zap.Error(err))
@@ -28,7 +29,7 @@ func RPCServiceInitializationByResolverBuilder(ctx context.Context, rpcService c
 	if _err != nil {
 		return _err
 	}
-	log.Info("初始化RPCService成功", zap.Any("RPCService", rpcService.GetRPCServiceInfo()))
+	log.Debug("初始化RPCService成功", zap.Any("RPCService", rpcService.GetRPCServiceInfo()))
 	return nil
 }
 
@@ -48,7 +49,7 @@ func RPCServiceInitializationByAddresses(ctx context.Context, rpcService configu
 	if _err != nil {
 		return resolverBuilder, _err
 	}
-	log.Info("初始化RPCService成功", zap.Any("RPCService", rpcService.GetRPCServiceInfo()))
+	log.Debug("初始化RPCService成功", zap.Any("RPCService", rpcService.GetRPCServiceInfo()))
 	return resolverBuilder, nil
 }
 
@@ -62,7 +63,7 @@ func RPCServiceInitializationByAddress(ctx context.Context, rpcService configura
 	if _err != nil {
 		return _err
 	}
-	log.Info("初始化RPCService成功", zap.Any("RPCService", rpcService.GetRPCServiceInfo()))
+	log.Debug("初始化RPCService成功", zap.Any("RPCService", rpcService.GetRPCServiceInfo()))
 	return nil
 }
 
@@ -75,6 +76,6 @@ func RPCServiceInitialization(ctx context.Context, rpcService configuration.RPCS
 	if err != nil {
 		return err
 	}
-	log.Info("初始化RPCService成功", zap.Any("RPCService", rpcService.GetRPCServiceInfo()))
+	log.Debug("初始化RPCService成功", zap.Any("RPCService", rpcService.GetRPCServiceInfo()))
 	return nil
 }

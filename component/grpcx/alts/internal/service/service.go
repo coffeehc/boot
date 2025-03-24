@@ -21,40 +21,64 @@
 package service
 
 import (
+	"google.golang.org/grpc/backoff"
+	"google.golang.org/grpc/keepalive"
 	"sync"
+	"time"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 )
 
 var (
-	// mu guards hsConnMap and hsDialer.
+	// mu guards altsCenterConnMap and hsDialer.
 	mu sync.Mutex
 	// hsConn represents a mapping from a hypervisor handshaker service address
 	// to a corresponding connection to a hypervisor handshaker service
 	// instance.
-	hsConnMap = make(map[string]*grpc.ClientConn)
-	// hsDialer will be reassigned in tests.
-	hsDialer = grpc.Dial
+	altsCenterConnMap = make(map[string]*grpc.ClientConn)
 )
 
 // Dial dials the handshake service in the hypervisor. If a connection has
 // already been established, this function returns it. Otherwise, a new
 // connection is created.
-func Dial(hsAddress string) (*grpc.ClientConn, error) {
+func Dial(atlsCenterAddress string) (*grpc.ClientConn, error) {
 	mu.Lock()
 	defer mu.Unlock()
-
-	hsConn, ok := hsConnMap[hsAddress]
+	altsCenterConn, ok := altsCenterConnMap[atlsCenterAddress]
 	if !ok {
 		// Create a new connection to the handshaker service. Note that
 		// this connection stays open until the application is closed.
 		var err error
-		hsConn, err = hsDialer(hsAddress, grpc.WithTransportCredentials(insecure.NewCredentials()))
+		altsCenterConn, err = grpc.NewClient(atlsCenterAddress,
+			grpc.WithTransportCredentials(insecure.NewCredentials()),
+			grpc.WithConnectParams(grpc.ConnectParams{
+				Backoff: backoff.Config{
+					BaseDelay:  time.Millisecond * 300, // 第一次失败重试前后需等待多久
+					Multiplier: 1.2,                    // 在失败的重试后乘以的倍数
+					Jitter:     0.2,                    // 随机抖动因子
+					MaxDelay:   time.Second * 2,        // backoff上限
+				},
+				MinConnectTimeout: time.Second * 60,
+			}),
+			grpc.WithDefaultCallOptions(
+				grpc.UseCompressor("gzip"),
+				grpc.WaitForReady(true),
+				grpc.MaxCallRecvMsgSize(1024*1024*8),
+				grpc.MaxCallSendMsgSize(1024*1024*2),
+			),
+			grpc.WithKeepaliveParams(keepalive.ClientParameters{
+				Time:                time.Second * 120,
+				Timeout:             time.Second * 60,
+				PermitWithoutStream: true,
+			}),
+			grpc.WithUserAgent("alts client"),
+			//grpc.ConnectionTimeout(time.Second*5),
+		)
 		if err != nil {
 			return nil, err
 		}
-		hsConnMap[hsAddress] = hsConn
+		altsCenterConnMap[atlsCenterAddress] = altsCenterConn
 	}
-	return hsConn, nil
+	return altsCenterConn, nil
 }

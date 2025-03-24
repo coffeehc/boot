@@ -60,7 +60,6 @@ func (pt *Credentials) ClientHandshake(ctx context.Context, authority string, co
 		pt.isQuicConnection = true
 		return conn, NewInfo(c), nil
 	}
-
 	return pt.grpcCreds.ClientHandshake(ctx, authority, conn)
 }
 

@@ -175,7 +175,5 @@ message HandshakerResp {
 }
 
 service HandshakerService {
-    rpc DoHandshake(stream HandshakerReq)
-            returns (stream HandshakerResp) {
-    }
+    rpc DoHandshake(stream HandshakerReq) returns (stream HandshakerResp) {}
 }

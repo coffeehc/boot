@@ -20,7 +20,7 @@ const (
 	// handshaker service address in the hypervisor.
 	//hypervisorHandshakerServiceAddress = "dns:///metadata.google.internal.:8080"
 	// defaultTimeout specifies the server handshake timeout.
-	defaultTimeout = 30.0 * time.Second
+	defaultTimeout = 60.0 * time.Second
 	// The following constants specify the minimum and maximum acceptable
 	// protocol versions.
 	protocolVersionMaxMajor = 2
@@ -71,15 +71,15 @@ type AuthInfo interface {
 // altsTC is the credentials required for authenticating a connection using ALTS.
 // It implements credentials.TransportCredentials interface.
 type altsTC struct {
-	info        *credentials.ProtocolInfo
-	side        int
-	accounts    []string
-	hsAddress   string
-	serviceName string
+	info              *credentials.ProtocolInfo
+	side              int
+	accounts          []string
+	altsCenterAddress string
+	serviceName       string
 }
 
-func NewALTS(side int, accounts []string, hsAddress string, serviceName string) credentials.TransportCredentials {
-	if hsAddress == "" {
+func NewALTS(side int, accounts []string, altsCenterAddress string, serviceName string) credentials.TransportCredentials {
+	if altsCenterAddress == "" {
 		log.Error("没有指定ALTS中心地址")
 		return nil
 	}
@@ -88,34 +88,30 @@ func NewALTS(side int, accounts []string, hsAddress string, serviceName string) 
 			SecurityProtocol: "alts",
 			SecurityVersion:  "1.0",
 		},
-		side:        side,
-		accounts:    accounts,
-		hsAddress:   hsAddress,
-		serviceName: serviceName,
+		side:              side,
+		accounts:          accounts,
+		altsCenterAddress: altsCenterAddress,
+		serviceName:       serviceName,
 	}
 }
 
 // ClientHandshake implements the client side handshake protocol.
 func (g *altsTC) ClientHandshake(ctx context.Context, addr string, rawConn net.Conn) (_ net.Conn, _ credentials.AuthInfo, err error) {
-	// Connecting to ALTS handshaker service.
-	hsConn, err := service.Dial(g.hsAddress)
+	log.Debug("ClientHandshake", zap.String("addr", addr), zap.String("rawConn", rawConn.RemoteAddr().String()))
+	hsConn, err := service.Dial(g.altsCenterAddress)
 	if err != nil {
 		log.Debug("连接认证中心失败", zap.Error(err))
 		return nil, nil, err
 	}
-	// Do not close hsConn since it is shared with other handshakes.
-
-	// Possible context leak:
-	// The cancel function for the child context we create will only be
-	// called a non-nil error is returned.
-	var cancel context.CancelFunc
-	ctx, cancel = context.WithCancel(ctx)
+	//var cancel context.CancelFunc
+	//ctx, cancel = context.WithCancel(ctx)
 	defer func() {
 		if err != nil {
-			cancel()
+			log.Error("认证失败", zap.Error(err))
+			//cancel()
 		}
 	}()
-	opts := commons.DefaultClientHandshakerOptions(g.serviceName)
+	opts := commons.DefaultClientHandshakeOptions(g.serviceName)
 	opts.TargetName = addr
 	opts.TargetServiceAccounts = g.accounts
 	opts.ClientIdentity = &altsproto.Identity{
@@ -125,7 +121,7 @@ func (g *altsTC) ClientHandshake(ctx context.Context, addr string, rawConn net.C
 		MaxRpcVersion: maxRPCVersion,
 		MinRpcVersion: minRPCVersion,
 	}
-	chs, err := commons.NewClientHandshaker(ctx, hsConn, rawConn, opts)
+	chs, err := commons.NewClientHandshake(ctx, hsConn, rawConn, opts)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -136,7 +132,7 @@ func (g *altsTC) ClientHandshake(ctx context.Context, addr string, rawConn net.C
 	}()
 	secConn, authInfo, err := chs.ClientHandshake(ctx)
 	if err != nil {
-		log.Debug("认证握手是失败", zap.Error(err))
+		log.Error("认证握手是失败", zap.Error(err))
 		return nil, nil, err
 	}
 	altsAuthInfo, ok := authInfo.(AuthInfo)
@@ -152,22 +148,23 @@ func (g *altsTC) ClientHandshake(ctx context.Context, addr string, rawConn net.C
 }
 
 // ServerHandshake implements the server side ALTS handshaker.
-func (g *altsTC) ServerHandshake(rawConn net.Conn) (_ net.Conn, _ credentials.AuthInfo, err error) {
+func (g *altsTC) ServerHandshake(rawConn net.Conn) (net.Conn, credentials.AuthInfo, error) {
 	// Connecting to ALTS handshaker service.
-	hsConn, err := service.Dial(g.hsAddress)
+	altsCenterConn, err := service.Dial(g.altsCenterAddress)
 	if err != nil {
+		log.Debug("连接认证服务器失败", zap.Error(err))
 		return nil, nil, err
 	}
-	// Do not close hsConn since it's shared with other handshakes.
+	// Do not close altsCenterConn since it's shared with other handshakes.
 	ctx, cancel := context.WithTimeout(context.Background(), defaultTimeout)
 	defer cancel()
-	opts := commons.DefaultServerHandshakerOptions(g.serviceName)
+	opts := commons.DefaultServerHandshakeOptions(g.serviceName)
 	opts.TargetServiceAccounts = g.accounts
 	opts.RPCVersions = &altsproto.RpcProtocolVersions{
 		MaxRpcVersion: maxRPCVersion,
 		MinRpcVersion: minRPCVersion,
 	}
-	shs, err := commons.NewServerHandshaker(ctx, hsConn, rawConn, opts)
+	shs, err := commons.NewServerHandshake(ctx, altsCenterConn, rawConn, opts)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -203,10 +200,10 @@ func (g *altsTC) Clone() credentials.TransportCredentials {
 		copy(accounts, g.accounts)
 	}
 	return &altsTC{
-		info:      &info,
-		side:      g.side,
-		hsAddress: g.hsAddress,
-		accounts:  accounts,
+		info:              &info,
+		side:              g.side,
+		altsCenterAddress: g.altsCenterAddress,
+		accounts:          accounts,
 	}
 }
 

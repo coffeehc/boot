@@ -1,8 +1,8 @@
 module github.com/coffeehc/boot
 
-go 1.22
+go 1.22.0
 
-toolchain go1.22.3
+toolchain go1.24.0
 
 require (
 	github.com/coffeehc/base v1.0.2-0.20240718065723-9351ae958f21
@@ -18,10 +18,10 @@ require (
 	github.com/spf13/viper v1.19.0
 	github.com/valyala/fasthttp v1.55.0
 	go.uber.org/zap v1.27.0
-	golang.org/x/net v0.27.0
-	google.golang.org/grpc v1.65.0
+	golang.org/x/net v0.34.0
+	google.golang.org/grpc v1.71.0
 	google.golang.org/grpc/examples v0.0.0-20240717174749-64adc816bf5a
-	google.golang.org/protobuf v1.34.2
+	google.golang.org/protobuf v1.36.4
 )
 
 require (
@@ -73,14 +73,14 @@ require (
 	github.com/valyala/tcplisten v1.0.0 // indirect
 	go.uber.org/mock v0.4.0 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
-	golang.org/x/crypto v0.25.0 // indirect
+	golang.org/x/crypto v0.32.0 // indirect
 	golang.org/x/exp v0.0.0-20240716175740-e3f259677ff7 // indirect
 	golang.org/x/mod v0.19.0 // indirect
-	golang.org/x/sync v0.7.0 // indirect
-	golang.org/x/sys v0.22.0 // indirect
-	golang.org/x/text v0.16.0 // indirect
+	golang.org/x/sync v0.10.0 // indirect
+	golang.org/x/sys v0.29.0 // indirect
+	golang.org/x/text v0.21.0 // indirect
 	golang.org/x/tools v0.23.0 // indirect
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20240711142825-46eb208f015d // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20250115164207-1a7da9e5054f // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect
 	gopkg.in/natefinch/lumberjack.v2 v2.2.1 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
