@@ -251,7 +251,14 @@ func (h *altsHandshake) doHandshake(req *altsproto.HandshakerReq) (net.Conn, *al
 	}
 	result, extra, err := h.processUntilDone(resp, extra)
 	if err != nil {
-		log.Error("", zap.Any("side", h.side), zap.Any("RemoteAddr", h.targetGRPConn.RemoteAddr()), zap.Error(err))
+		serviceName := ""
+		switch h.side {
+		case internal.ClientSide:
+			serviceName = h.clientHandshakeOptions.ServiceName
+		case internal.ServerSide:
+			serviceName = h.serverHandshakeOptions.ServiceName
+		}
+		log.Error("", zap.Any("side", h.side), zap.String("serviceName", serviceName), zap.Any("RemoteAddr", h.targetGRPConn.RemoteAddr()), zap.Error(err))
 		return nil, nil, err
 	}
 	// The handshaker returns a 128 bytes key. It should be truncated based
