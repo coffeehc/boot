@@ -6,10 +6,11 @@ toolchain go1.24.0
 
 require (
 	github.com/coffeehc/base v1.0.2-0.20240718065723-9351ae958f21
+	github.com/coffeehc/httpx v0.0.0-20240825061759-6b0659a5ce3c
+	github.com/go-viper/mapstructure/v2 v2.2.1
 	github.com/gofiber/fiber/v2 v2.52.5
 	github.com/gofiber/template/html/v2 v2.1.2
 	github.com/hashicorp/consul/api v1.29.2
-	github.com/mitchellh/mapstructure v1.5.0
 	github.com/piotrkowalczuk/promgrpc/v4 v4.1.3
 	github.com/prometheus/client_golang v1.19.1
 	github.com/quic-go/quic-go v0.45.1
@@ -19,6 +20,7 @@ require (
 	github.com/valyala/fasthttp v1.55.0
 	go.uber.org/zap v1.27.0
 	golang.org/x/net v0.34.0
+	golang.org/x/sync v0.10.0
 	google.golang.org/grpc v1.71.0
 	google.golang.org/grpc/examples v0.0.0-20240717174749-64adc816bf5a
 	google.golang.org/protobuf v1.36.4
@@ -31,12 +33,9 @@ require (
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
 	github.com/fatih/color v1.17.0 // indirect
 	github.com/fsnotify/fsnotify v1.7.0 // indirect
-	github.com/go-task/slim-sprig v0.0.0-20230315185526-52ccab3ef572 // indirect
 	github.com/go-task/slim-sprig/v3 v3.0.0 // indirect
 	github.com/gofiber/template v1.8.3 // indirect
 	github.com/gofiber/utils v1.1.0 // indirect
-	github.com/gogo/protobuf v1.3.3-0.20221024144010-f67b8970b736 // indirect
-	github.com/golang/protobuf v1.5.4 // indirect
 	github.com/google/pprof v0.0.0-20240711041743-f6c9dda6c6da // indirect
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/hashicorp/errwrap v1.1.0 // indirect
@@ -54,8 +53,8 @@ require (
 	github.com/mattn/go-colorable v0.1.13 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
 	github.com/mattn/go-runewidth v0.0.15 // indirect
-	github.com/matttproud/golang_protobuf_extensions/v2 v2.0.0 // indirect
 	github.com/mitchellh/go-homedir v1.1.0 // indirect
+	github.com/mitchellh/mapstructure v1.5.0 // indirect
 	github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 // indirect
 	github.com/onsi/ginkgo/v2 v2.19.0 // indirect
 	github.com/pelletier/go-toml/v2 v2.2.2 // indirect
@@ -76,7 +75,6 @@ require (
 	golang.org/x/crypto v0.32.0 // indirect
 	golang.org/x/exp v0.0.0-20240716175740-e3f259677ff7 // indirect
 	golang.org/x/mod v0.19.0 // indirect
-	golang.org/x/sync v0.10.0 // indirect
 	golang.org/x/sys v0.29.0 // indirect
 	golang.org/x/text v0.21.0 // indirect
 	golang.org/x/tools v0.23.0 // indirect

@@ -1,7 +1,7 @@
 package configuration
 
 import (
-	"github.com/mitchellh/mapstructure"
+	mapstructure "github.com/go-viper/mapstructure/v2"
 	"github.com/spf13/viper"
 )
 
