@@ -7,10 +7,10 @@ toolchain go1.24.0
 require (
 	github.com/coffeehc/base v1.0.2-0.20240718065723-9351ae958f21
 	github.com/coffeehc/httpx v0.0.0-20240825061759-6b0659a5ce3c
-	github.com/go-viper/mapstructure/v2 v2.2.1
 	github.com/gofiber/fiber/v2 v2.52.5
 	github.com/gofiber/template/html/v2 v2.1.2
 	github.com/hashicorp/consul/api v1.29.2
+	github.com/mitchellh/mapstructure v1.5.0
 	github.com/piotrkowalczuk/promgrpc/v4 v4.1.3
 	github.com/prometheus/client_golang v1.19.1
 	github.com/quic-go/quic-go v0.45.1
@@ -54,7 +54,6 @@ require (
 	github.com/mattn/go-isatty v0.0.20 // indirect
 	github.com/mattn/go-runewidth v0.0.15 // indirect
 	github.com/mitchellh/go-homedir v1.1.0 // indirect
-	github.com/mitchellh/mapstructure v1.5.0 // indirect
 	github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 // indirect
 	github.com/onsi/ginkgo/v2 v2.19.0 // indirect
 	github.com/pelletier/go-toml/v2 v2.2.2 // indirect
