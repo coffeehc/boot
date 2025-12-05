@@ -14,11 +14,11 @@ func buildAuthUnaryServerInterceptor(authService GRPCServerAuth) grpc.UnaryServe
 		if !ok {
 			return nil, errors.MessageError("没有认证信息")
 		}
-		_err := authService.Auth(ctx, md)
+		_ctx, _err := authService.Auth(ctx, md)
 		if _err != nil {
 			return nil, _err
 		}
-		return handler(ctx, req)
+		return handler(_ctx, req)
 	}
 }
 
@@ -28,15 +28,14 @@ func buildAuthStreamServerInterceptor(authService GRPCServerAuth) grpc.StreamSer
 		if !ok {
 			return errors.MessageError("没有认证信息")
 		}
-		_err := authService.Auth(ss.Context(), md)
+		_, _err := authService.Auth(ss.Context(), md)
 		if _err != nil {
 			return _err
 		}
-		ss.Context()
 		return handler(srv, ss)
 	}
 }
 
 type GRPCServerAuth interface {
-	Auth(ctx context.Context, md metadata.MD) error
+	Auth(ctx context.Context, md metadata.MD) (context.Context, error)
 }
