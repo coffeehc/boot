@@ -1,7 +1,7 @@
 package manage
 
 import (
-	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v3"
 	"runtime"
 	"time"
 
@@ -23,7 +23,7 @@ func RegisterServiceRuntimeInfoEndpoint(router *fiber.App) {
 	}
 	router.Get("/info", func(c *fiber.Ctx) error {
 		return c.Format(h)
-		//context.JSON(http.StatusOK, h)
+		// context.JSON(http.StatusOK, h)
 	})
 }
 

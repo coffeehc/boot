@@ -10,10 +10,10 @@ import (
 	"github.com/coffeehc/boot/configuration"
 	"github.com/coffeehc/boot/plugin"
 	"github.com/coffeehc/httpx"
-	"github.com/gofiber/fiber/v2"
-	"github.com/gofiber/fiber/v2/middleware/compress"
-	"github.com/gofiber/fiber/v2/middleware/monitor"
-	"github.com/gofiber/fiber/v2/middleware/pprof"
+	"github.com/gofiber/fiber/v3"
+	"github.com/gofiber/fiber/v3/middleware/compress"
+	// "github.com/gofiber/fiber/v3/middleware/monitor"
+	"github.com/gofiber/fiber/v3/middleware/pprof"
 	"github.com/gofiber/template/html/v2"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/spf13/viper"
@@ -34,7 +34,7 @@ var views embed.FS
 var _plugin *serviceImpl
 var mutex = new(sync.Mutex)
 
-//var WebEngine *gin.Engine
+// var WebEngine *gin.Engine
 
 type serviceImpl struct {
 	httpService httpx.Service
@@ -42,20 +42,20 @@ type serviceImpl struct {
 }
 
 func (impl *serviceImpl) Start(_ context.Context) error {
-	//_plugin.registerManager()
+	// _plugin.registerManager()
 	app := impl.httpService.GetEngine()
 	RegisterManager(app)
 	app.Get("/", func(c *fiber.Ctx) error {
 		routesInfos := app.GetRoutes()
-		//c := make([]string, 0)
-		//c = append(c, "<html><body>")
-		//for _, routeInfo := range routesInfos {
+		// c := make([]string, 0)
+		// c = append(c, "<html><body>")
+		// for _, routeInfo := range routesInfos {
 		//	c = append(c, fmt.Sprintf("<div><spen>%s</spen><a href='%s'>%s</a></div>", routeInfo.Method, routeInfo.Path, routeInfo.Path))
 		//	// c = append(c, fmt.Sprintf("%s %s\n", routeInfo.Method,routeInfo.Path))
-		//}
-		//c = append(c, "</body></html>")
-		//ctx.Set("Content-Type", "text/html")
-		//return ctx.SendString(strings.Join(c, ""))
+		// }
+		// c = append(c, "</body></html>")
+		// ctx.Set("Content-Type", "text/html")
+		// return ctx.SendString(strings.Join(c, ""))
 		data := &struct {
 			Routers     []fiber.Route
 			ServiceName string
@@ -156,7 +156,7 @@ func RegisterManager(app *fiber.App) {
 		pHanfler(c.Context())
 		return nil
 	})
-	app.Get("/monitor", monitor.New())
+	// app.Get("/monitor", monitor.New())
 	app.Get("/ping", func(ctx *fiber.Ctx) error {
 		return ctx.SendString("pong")
 	})
@@ -206,6 +206,6 @@ func RegisterManager(app *fiber.App) {
 			return err
 		}
 		return process.Kill()
-		//return syscall.Kill(os.Getpid(), syscall.SIGTERM)
+		// return syscall.Kill(os.Getpid(), syscall.SIGTERM)
 	})
 }
