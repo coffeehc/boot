@@ -15,11 +15,11 @@ import (
 var _ net.Conn = (*Conn)(nil)
 
 type Conn struct {
-	conn   quic.Connection
-	stream quic.Stream
+	conn   *quic.Conn
+	stream *quic.Stream
 }
 
-func NewConn(conn quic.Connection) (net.Conn, error) {
+func NewConn(conn *quic.Conn) (net.Conn, error) {
 	stream, err := conn.OpenStreamSync(context.Background())
 	if err != nil {
 		return nil, err
