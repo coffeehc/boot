@@ -76,10 +76,21 @@ func StartPlugins(ctx context.Context) {
 }
 
 func StopPlugins(ctx context.Context) {
-	for name, plugin := range plugins {
-		err := plugin.Stop(ctx)
+	mutex.RLock()
+	registeredPlugins := append([]Plugin(nil), sortPlugins...)
+	pluginNames := make(map[Plugin]string, len(_plugins))
+	for plugin, name := range _plugins {
+		pluginNames[plugin] = name
+	}
+	mutex.RUnlock()
+
+	// 依赖插件先注册并先启动，停止时必须逆序释放使用方和依赖方。
+	for index := len(registeredPlugins) - 1; index >= 0; index-- {
+		currentPlugin := registeredPlugins[index]
+		name := pluginNames[currentPlugin]
+		err := currentPlugin.Stop(ctx)
 		if err != nil {
-			log.Error("启动插件失败", zap.String("pluginName", name), zap.Error(err))
+			log.Error("关闭插件失败", zap.String("pluginName", name), zap.Error(err))
 			continue
 		}
 		log.Info("关闭插件", zap.String("pluginName", name))
