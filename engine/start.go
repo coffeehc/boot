@@ -2,6 +2,8 @@ package engine
 
 import (
 	"context"
+	"fmt"
+
 	"github.com/coffeehc/base/errors"
 	"github.com/coffeehc/base/log"
 	"github.com/coffeehc/boot/configuration"
@@ -84,11 +86,17 @@ func buildStartCmd(ctx context.Context, serviceInfo configuration.ServiceInfo, s
 		Use:   "start",
 		Short: "启动服务",
 		Long:  serviceInfo.Descriptor,
-		RunE: func(cmd *cobra.Command, args []string) error {
+		RunE: func(cmd *cobra.Command, args []string) (runErr error) {
 			defer func() {
 				if e := recover(); e != nil {
-					err := errors.ConverUnknowError(e)
-					log.DPanic("程序捕获不能处理的异常", err.GetFieldsWithCause()...)
+					converted := errors.ConverUnknowError(e)
+					if converted == nil {
+						runErr = fmt.Errorf("程序捕获不能处理的异常: %v", e)
+						log.Error("程序捕获不能处理的异常", zap.Error(runErr))
+					} else {
+						runErr = converted
+						log.Error("程序捕获不能处理的异常", converted.GetFieldsWithCause()...)
+					}
 					cancelFunc()
 				}
 			}()
@@ -134,7 +142,9 @@ func buildStartCmd(ctx context.Context, serviceInfo configuration.ServiceInfo, s
 				log.Error("启动服务失败", zap.Error(err))
 				return err
 			}
-			plugin.StartPlugins(ctx)
+			if err = plugin.StartPlugins(ctx); err != nil {
+				return err
+			}
 			log.Debug("插件全部启动完成")
 			WaitServiceStop(ctx, func() {
 				if closeCallback != nil {

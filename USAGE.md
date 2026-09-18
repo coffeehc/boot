@@ -175,6 +175,24 @@ type Plugin interface {
 
 或者通过 `plugin.RegisterPlugin()` 注册，框架会自动包装。
 
+#### 启动失败与资源回滚
+
+插件按注册顺序串行启动。`StartPlugins(ctx)` 返回首个启动错误后，不再启动后续插件；
+框架仅对 `Start` 已返回 nil 的实例执行逆序 `Stop`。全部插件启动后的
+`AfterPluginStartedHandler` 返回错误时，同样回滚成功集合。
+
+回滚和正常关闭复用内部停止流程：提取成功集合后立即清空，重复 `StopPlugins` 不会
+重复关闭同一批实例。任一 Stop 返回错误仍继续清理其余插件；回滚错误带插件名记录日志，
+并通过 `errors.Join` 附在原始启动错误后，两者均可通过 `errors.Is` 检查。
+
+回滚保留启动 context 的值，但通过 `context.WithoutCancel` 脱离其取消和截止时间，
+再设置整轮 30 秒清理预算。该预算需要插件 Stop 遵守 context，不强制中断插件。
+正常关闭沿用调用方 context 和原有逆序，`StopPlugins` 保持无返回值，关闭错误仍记录日志。
+
+启动错误由 Cobra 命令返回到 engine，再沿用 `os.Exit(-1)` 非零退出约定；公开
+`StartEngine` 签名不变。生命周期入口由 engine 串行调用，不支持重叠启动/停止。
+失败插件负责自己部分初始化的资源；本次不增加 panic 回滚，保留 engine 的 panic 转错误行为。
+
 ### 2. 服务发现
 
 框架提供三种服务发现方式：
