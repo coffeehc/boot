@@ -16,6 +16,7 @@ import (
 type ServiceStart func(ctx context.Context, cmd *cobra.Command, args []string) (ServiceCloseCallback, error)
 type ServiceCloseCallback func()
 
+// WaitServiceStop 等待信号或调用方取消，执行关闭回调后注销本次信号通知。
 func WaitServiceStop(ctx context.Context, closeCallback func()) {
 	ctx, cancelFunc := context.WithCancel(ctx)
 	var sigChan = make(chan os.Signal, 1)
@@ -23,13 +24,11 @@ func WaitServiceStop(ctx context.Context, closeCallback func()) {
 		<-ctx.Done()
 		sigChan <- syscall.SIGINT
 	}()
-	//if runtime.GOOS != "darwin" && runtime.GOOS != "ios" {
 	signal.Notify(sigChan,
 		syscall.SIGINT,
-		syscall.SIGKILL,
 		syscall.SIGTERM,
 	)
-	//}
+	defer signal.Stop(sigChan)
 	sig := <-sigChan
 	log.Debug("收到指令", zap.Any("signal", sig))
 	if ctx.Err() == nil && cancelFunc != nil {

@@ -4,11 +4,34 @@ import (
 	"context"
 	"io"
 	"strings"
+	"sync/atomic"
 	"testing"
+	"time"
 
 	"github.com/coffeehc/boot/configuration"
 	"github.com/spf13/cobra"
 )
+
+func TestWaitServiceStopContextCancellation(t *testing.T) {
+	for range 20 {
+		ctx, cancel := context.WithCancel(t.Context())
+		var calls atomic.Int64
+		done := make(chan struct{})
+		go func() {
+			WaitServiceStop(ctx, func() { calls.Add(1) })
+			close(done)
+		}()
+		cancel()
+		select {
+		case <-done:
+		case <-time.After(time.Second):
+			t.Fatal("调用方取消后信号等待未结束")
+		}
+		if calls.Load() != 1 {
+			t.Fatalf("关闭回调调用次数=%d，期望一次", calls.Load())
+		}
+	}
+}
 
 func TestBuildRootCommand_ExecuteExtraCommand(t *testing.T) {
 	serviceInfo := configuration.ServiceInfo{
