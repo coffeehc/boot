@@ -14,16 +14,17 @@ boot使用的是GRPC作为服务协议，当然，您也可以换别的协议，
 
 ######关于服务注册与发现
 
-在plugin的两个包里面可以看到有discovery和register两个包，分别是发现和注册的实现
+`plugin/discovery` 提供 gRPC resolver 适配，`plugin/register` 负责服务登记。
+普通域名、Kubernetes Service 和 Service Mesh 入口优先使用 gRPC 原生
+`dns:///host:port`；Headless Service 可返回 Pod 地址，供客户端负载均衡。
 
-第一版使用了Etcd来支撑服务注册和服务发现，
+额外提供三种能力：`ipsd` 静态多地址及动态更新，`kubernetes` 定期 DNS 刷新，
+`consul_dc` Consul 健康实例阻塞查询。Consul 客户端可用官方环境变量配置或原生客户端注入，
+新地址使用 `consul:///service-name`，历史 `console` scheme 继续支持。
+Kubernetes 适配器不订阅 API 或 EndpointSlice；etcd、Nacos 等可通过外部 resolver 接入。
 
-第二版改为consul作为服务中心，同时兼容etcd作为服务发现中心，其实里面问题挺多的，只是没时间去改，好比熔断等，直到最近整体要迁移到kubernetes中，所以做了第三版改进
-
-第三版为了适应k8s+service mash，所以回归了最原始的dns方式，由service Mash来控制服务的访问，熔断等，其实这一版我是最满意的一版，因为结构最简单了。
-（ps:在做架构的时候我习惯把流程设计得复杂一些，但是实现要求一定要简单，不要绕，毕竟开发人员在代码实现与沟通过程中还那么绕的话，代码就别想写好。）
-其实serviceMash就是要消灭代码中的服务发现与注册，从系统层面来保证服务的动态变更与调用，正好我也就顺其自然的没有使用服务注册，但是服务发现还有的，不过也只是对dns的简单封装，当然如果有谁有兴趣优化一下k8s的服务发现组件，欢迎提交rp
-
+每个连接拥有独立 resolver，连接关闭会取消并等待后台查询退出。Consul 注册中心在插件
+停止时注销登记实例。配置覆盖、初始化与连接所有权见 [USAGE.md](USAGE.md#2-服务发现)。
 
 ######关于插件化
 

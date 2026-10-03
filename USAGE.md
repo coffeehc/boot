@@ -14,12 +14,12 @@ Boot 是一个 Go 微服务核心启动框架，采用插件化架构设计。�
 
 ## 技术栈
 
-- Go 1.22+
-- gRPC 1.71.0
+- Go 1.26
+- gRPC 1.84.0
 - Consul（可选）
 - Prometheus（监控）
 - Zap（日志）
-- Fiber 2.52.5
+- Fiber 3.3.0
 
 ## 项目结构
 
@@ -50,9 +50,9 @@ boot/
 │   │   └── service.go  # 管理服务
 │   ├── rpc/            # RPC 插件
 │   ├── discovery/      # 服务发现
-│   │   ├── kubernetes/ # K8s 发现
+│   │   ├── kubernetes/ # K8s DNS 定期刷新
 │   │   ├── consul_dc/  # Consul 发现
-│   │   └── ipsd/       # IPSD 发现
+│   │   └── ipsd/       # 静态多地址与更新
 │   └── register/       # 服务注册
 │       └── consul_rc/  # Consul 注册
 └── testutils/         # 测试工具
@@ -223,37 +223,205 @@ context 取消。
 
 ### 2. 服务发现
 
-框架提供三种服务发现方式：
+优先按部署体系选择原生 gRPC target。普通 Kubernetes Service、域名、代理或
+Service Mesh 入口可使用 `dns:///host:port`。Boot 额外提供静态多地址、定期 DNS
+刷新和 Consul 健康实例发现；它们不负责流量治理或业务熔断。
 
-#### Kubernetes（推荐）
+所有连接仍需显式提供传输凭据，可通过 `grpcclient.SetClientCerds` 或原生
+`grpc.WithTransportCredentials` 设置。下列 resolver 配置在创建连接前设置，
+调用方在使用期间保持配置只读。连接是惰性创建的，成功不代表目标已连接；
+resolver 的 `Build` 校验会在连接退出 idle、首次 RPC 或显式 `Connect` 时执行。
+
+#### 原生 DNS
 
 ```go
 import (
-	"github.com/coffeehc/boot/plugin/discovery/kubernetes"
+    "github.com/coffeehc/boot/component/grpcx/grpcclient"
+    "google.golang.org/grpc"
+    "google.golang.org/grpc/credentials/insecure"
 )
 
-kubernetes.EnablePlugin(ctx)
+// 明文仅适用于明确允许的网络环境；TLS 环境传入相应 credentials。
+conn, err := grpcclient.NewClientConn(ctx,
+    "dns:///orders.default.svc.cluster.local:8888", "orders",
+    grpc.WithTransportCredentials(insecure.NewCredentials()))
+if err != nil {
+    return err
+}
+defer conn.Close()
 ```
+
+普通 Service 的 DNS 返回 ClusterIP；Headless Service 的 DNS 返回 Pod 地址集合，
+默认 `round_robin` 才能在客户端分配到不同 Pod。原生 DNS 的 30 秒是重新解析的
+最小间隔，正常成功状态等待 `ResolveNow`，不保证每 30 秒自动刷新或立即发现扩容。
+
+#### Kubernetes DNS 定期刷新
+
+`kubernetes` 适配器仍使用 DNS，不调用 Kubernetes API，也不订阅 EndpointSlice。
+默认每 30 秒刷新，单次查询超时 5 秒；`ResolveNow` 可提前刷新，最小间隔 1 秒。
+失败按指数退避重试，最大等待为定期刷新间隔，主动提示不会跳过退避。
+查询支持 IPv4/IPv6、地址去重、错误上报和关闭取消；临时查询错误保留上次成功地址。
+
+```go
+import (
+    "time"
+    "github.com/coffeehc/boot/configuration"
+    "github.com/coffeehc/boot/component/grpcx/grpcclient"
+    "github.com/coffeehc/boot/plugin/discovery/kubernetes"
+)
+
+kubernetes.EnablePlugin(ctx) // 在创建连接前，启动装配阶段串行调用。
+builder := kubernetes.GetService().GetResolverBuilder(ctx, &kubernetes.Config{
+    RefreshInterval:    10 * time.Second,
+    MinRefreshInterval: time.Second,
+    LookupTimeout:      3 * time.Second,
+    // Resolver: 自定义的 *net.Resolver，可配置 DNS 服务器。
+})
+// ctx 已设置本连接的传输凭据。
+conn, err := grpcclient.NewClientConnByResolverBuilder(ctx, configuration.ServiceInfo{
+    ServiceName: "orders",
+    TargetUrl:   "kubernetes:///orders.default.svc.cluster.local:8888",
+}, builder)
+if err != nil {
+    return err
+}
+defer conn.Close()
+```
+
+四个配置字段的零值使用默认值；负时长、重复配置及不合法的 target 会报错。
+`MinRefreshInterval` 不得大于 `RefreshInterval`。若需要端点变化的即时订阅、
+终止状态或拓扑信息，应接入 EndpointSlice Watch resolver 或部署体系的控制面。
 
 #### Consul
 
-```go
-import (
-	"github.com/coffeehc/boot/plugin/discovery/consul_dc"
-)
-
-consul_dc.EnablePlugin(ctx)
-```
-
-#### DNS（简单）
+`consul_dc.EnablePlugin(ctx)` 使用 `api.DefaultConfig()` 创建客户端，支持官方
+`CONSUL_HTTP_ADDR`、`CONSUL_HTTP_TOKEN`、TLS 等环境变量；也可以注入原生客户端。
+启用时注册 `consul` 和历史 `console` 两个 scheme，新配置使用 `consul:///service-name`。
+启用不访问网络，每个连接拥有独立阻塞查询，`Close` 取消请求并等待后台退出。
 
 ```go
 import (
-	"github.com/coffeehc/boot/plugin/discovery/ipsd"
+    "time"
+    "github.com/hashicorp/consul/api"
+    "github.com/coffeehc/boot/plugin/discovery/consul_dc"
 )
 
-ipsd.EnablePlugin(ctx)
+apiConfig := api.DefaultConfig()
+apiConfig.Address = "127.0.0.1:8500"
+// 在 apiConfig 中设置 ACL、TLS、HTTP 客户端、namespace、partition 等原生配置。
+consulClient, err := api.NewClient(apiConfig)
+if err != nil {
+    return err
+}
+consul_dc.EnablePlugin(ctx, consulClient)
+builder := consul_dc.GetService().GetResolverBuilder(ctx, &api.QueryOptions{
+    Datacenter: "dc1",
+    WaitTime:   time.Minute,
+    // Filter、Namespace、Partition、Peer、NodeMeta、AllowStale 等可按场景设置。
+})
+// 通过 NewClientConnByResolverBuilder 或 RPCServiceInitializationByResolverBuilder 使用 builder。
 ```
+
+默认仅选择 passing 实例，并按当前 `run_model` 标签过滤；`run_model` 为空时不限制标签。
+以下 target 参数覆盖 builder 查询配置：
+
+| 参数 | 含义 |
+| --- | --- |
+| `tag=prod&tag=grpc` | 同时要求这些标签，替换默认环境标签 |
+| `tag=` | 禁用标签过滤，适合接入其他系统登记的实例 |
+| `dc` / `ns` / `partition` / `peer` | 指定 datacenter、namespace、partition、peer；能力受 Consul 部署版本限制 |
+| `filter` / `near` | 原生实例过滤及节点接近度查询 |
+
+例如 `consul:///orders?tag=prod&dc=dc1`。不支持把 Consul HTTP 地址写入 target authority，
+该地址由原生客户端配置提供；未知 target 参数直接报错。查询 `WaitTime` 零值为 1 分钟，
+最大 10 分钟；`WaitIndex` 和请求 context 由 resolver 管理，不接受 `WaitHash`。
+每次 HTTP 查询还受 `WaitTime + WaitTime/16 + 15 秒` 的超时约束，关闭立即取消请求。
+索引回退会重置、零索引按 1 处理。快速响应用每秒一个令牌、突发两个令牌限流；
+请求错误指数退避至 30 秒并附加抖动。空结果撤下旧后端，网络错误保留最后成功地址。
+服务地址为空时使用 Node 地址，支持 IPv6。`ResolveNow` 无需打断持续阻塞查询。
+地址去重保留注册中心返回的顺序，避免破坏 `near` 和自定义负载均衡的选择顺序。
+
+##### Consul 注册与注销
+
+使用相同客户端启用注册中心，再启用 `register` 插件。默认发布实际 RPC 地址，
+通配监听 IP 转为本机地址；容器、NAT 或 IPv6 专用部署应显式设置可达地址。
+默认实例 ID 包含服务名和发布地址的端口，避免同机多个实例覆盖。
+
+```go
+import (
+    "time"
+    "github.com/coffeehc/boot/plugin/register"
+    "github.com/coffeehc/boot/plugin/register/consul_rc"
+)
+
+consul_rc.EnablePlugin(ctx, &consul_rc.Config{
+    Client:         consulClient,
+    ServiceAddress: "10.0.0.5:8888",
+    RequestTimeout: 5 * time.Second,
+    // ServiceID: 可指定稳定且唯一的实例 ID。
+    // Tags: nil 沿用 run_model；非 nil 空列表关闭标签。
+    // Check: 可提供完整的 *api.AgentServiceCheck 覆盖健康检查。
+})
+register.EnablePlugin(ctx)
+```
+
+默认 gRPC 健康检查每 10 秒执行，超时 2 秒，critical 持续 1 分钟后自动注销；
+旧 `register.deregisterCriticalServiceAfter` 配置仍生效。默认检查从启用插件的 context 识别明文/TLS，
+不自动跳过证书校验；Consul Agent 必须信任服务证书。ALTS 不适用于默认 gRPC 检查，
+mTLS 也需要按实际凭据和探测方式提供完整自定义 `Check`。
+`Check` 提供时整体替换默认检查，包括探测地址、间隔及 critical 注销配置。
+
+登记和注销绑定 context，并受 `RequestTimeout` 限制，停止时由注册中心插件注销
+本实例，保持 RPC 在注销期间可用。登记错误或结果未知的请求也记录 ID，以便回滚清理。
+登记不修改传入的 metadata。`CheckDeregister` 保留旧签名，使用有界请求并报告失败。
+
+已有 Consul 部署升级时，默认 ID 从“服务名 + IP”变为“服务名 + host:port”；
+需要清理旧 ID，或通过 `Config.ServiceID` 显式保持原有唯一 ID。
+
+#### 静态多地址
+
+`ipsd` 是静态地址列表，不需要 `EnablePlugin`，也不是 DNS 插件。
+builder 可由多个连接复用，每个连接独立接收更新；关闭一个连接不影响其他连接。
+地址必须为 `host:port`，IPv6 使用 `[::1]:8888`，端口范围 1..65535。
+
+```go
+import (
+    "github.com/coffeehc/boot/plugin/discovery"
+)
+
+// rpcService 实现 configuration.RPCService，ctx 已设置传输凭据。
+builder, err := discovery.RPCServiceInitializationByAddresses(ctx, rpcService,
+    "10.0.0.5:8888", "[2001:db8::5]:8888")
+if err != nil {
+    return err
+}
+if err := builder.UpdateAddress([]string{"10.0.0.6:8888"}); err != nil {
+    return err
+}
+// UpdateAddress(nil) 撤下全部后端；非法更新返回错误并保留原地址。
+```
+
+`UpdateAddress` 现在返回 `error`，原来作为语句调用的代码仍可编译，建议处理校验错误。
+`ipsd.ResolverBuilder` 同时提供 `resolver.Builder` 和地址更新能力；依赖旧接口的方法签名
+或自定义实现需要同步调整。`RPCServiceInitializationByAddresses` 不再要求预先设置
+`TargetUrl`：已有 `ip:` target 保留，其他 scheme 按服务名构造 `ip:///` target。
+若服务使用严格 TLS，逻辑 target 必须与证书身份一致，可通过原生 `WithAuthority` 设置。
+
+#### 外部 resolver 与连接所有权
+
+Nacos、etcd 等体系可使用 `grpcclient.NewClientConnByResolverBuilder` 或原生
+`grpc.WithResolvers` 接入独立实现。xDS 客户端按 gRPC 官方方式导入
+`google.golang.org/grpc/xds` 并配置 bootstrap 后，可使用 `xds:///` target；Boot 不自动
+启用 xDS，也不管理控制面配置。
+
+`discovery.RPCServiceInitialization*` 在初始化失败、取消或 panic 时关闭刚创建的连接；
+成功后由 `RPCService` 保存连接并在业务插件的 `Stop` 中 `Close`，生成的 RPC stub 本身
+不会关闭连接。初始化 context 不能保存作长期 RPC 调用 context。
+`RPCServiceInitializationByResolverBuilder` 在调用方没有 deadline 时仅对初始化回调
+添加 5 秒超时，有显式 deadline 时直接使用它；此超时不保证网络连接或健康检查成功。
+所有初始化入口继续支持 `grpcclient.SetDialOptions` 的原生连接配置覆盖。
+原有不传配置的调用继续可用；自行实现 Kubernetes/Consul `Service` 接口的代码需同步
+新增的可变配置参数。自定义 `resolver.Builder` 的接入方式不变。
 
 ### 3. RPC 服务
 
