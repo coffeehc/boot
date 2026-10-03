@@ -65,8 +65,22 @@ func RegisterPlugin(name string, service interface{}) {
 // StartPlugins 按注册顺序串行启动插件；失败时逆序回滚成功集合，保留启动和清理错误。
 // 调用方须先完成注册，且不得与其他启动或停止流程并发调用。
 func StartPlugins(ctx context.Context) (startErr error) {
+	return startPlugins(ctx, nil)
+}
+
+// StartPluginsWithCancel 在插件启动失败时先取消由调用方持有的运行根，再逆序回滚成功集合。
+// cancel 必须属于传入 ctx 对应运行根的 owner；nil 时行为与 StartPlugins 相同。
+func StartPluginsWithCancel(ctx context.Context, cancel context.CancelFunc) (startErr error) {
+	return startPlugins(ctx, cancel)
+}
+
+// startPlugins 驱动插件启动和失败回滚；需要先取消 owner 根的调用方通过 cancel 显式交付其取消权。
+func startPlugins(ctx context.Context, cancel context.CancelFunc) (startErr error) {
 	defer func() {
 		if startErr != nil {
+			if cancel != nil {
+				cancel()
+			}
 			// 启动取消或超时不能阻止资源清理，同时保留 context 中的链路信息。
 			cleanupCtx, cancel := context.WithTimeout(context.WithoutCancel(ctx), startupRollbackTimeout)
 			defer cancel()
@@ -76,6 +90,9 @@ func StartPlugins(ctx context.Context) (startErr error) {
 		}
 	}()
 	for _, plugin := range sortPlugins {
+		if err := ctx.Err(); err != nil {
+			return fmt.Errorf("插件启动已取消: %w", err)
+		}
 		name := _plugins[plugin]
 		log.Info("开始启动插件", zap.String("pluginName", name))
 		err := plugin.Start(ctx)
@@ -86,6 +103,9 @@ func StartPlugins(ctx context.Context) (startErr error) {
 		startedPlugins = append(startedPlugins, plugin)
 		mutex.Unlock()
 		log.Info("启动插件成功", zap.String("pluginName", name))
+		if err := ctx.Err(); err != nil {
+			return fmt.Errorf("插件启动已取消: %w", err)
+		}
 	}
 	if AfterPluginStartedHandler != nil {
 		err := AfterPluginStartedHandler()
@@ -96,10 +116,17 @@ func StartPlugins(ctx context.Context) (startErr error) {
 	return nil
 }
 
-// StopPlugins 逆序停止成功启动的插件，记录全部清理错误；重复调用不会再次停止同一批插件。
-// 保留既有无返回值接口及调用方传入的 shutdown context。
+// StopPlugins 逆序停止成功启动的插件并记录清理错误；重复调用不会再次停止同一批插件。
+// 该兼容接口不返回错误；需要将清理失败传回启动入口时使用 StopPluginsWithError。
 func StopPlugins(ctx context.Context) {
 	_ = stopStartedPlugins(ctx)
+}
+
+// StopPluginsWithError 逆序停止成功启动的插件并返回聚合清理错误。
+// ctx 是调用方提供的 shutdown context；停止过程遵守它的取消和 deadline，但不会强制中断忽略 context 的插件。
+// 插件停止失败不会阻止其余插件继续停止，重复调用返回 nil 且不会再次停止同一批插件。
+func StopPluginsWithError(ctx context.Context) error {
+	return stopStartedPlugins(ctx)
 }
 
 // stopStartedPlugins 统一正常关闭和启动回滚，先提取清理责任，再调用插件以避免重复 Stop。

@@ -173,6 +173,26 @@ type Plugin interface {
 }
 ```
 
+#### 运行根与停机
+
+每次执行内建 `start` 命令时，Boot 在调用 `ServiceStart` 和插件初始化前创建一个运行根
+context。`ServiceStart`、插件初始化调用方传递的 context，以及每个插件的 `Start` 都共享同一
+取消根。业务代码可调用 `engine.GetRootContext()` 获取当前根，并从它派生任务 context；不要
+取消根本身，取消权属于 Boot。该方法只在一次 `start` 执行期间有效，未初始化或命令退出后
+返回 nil；重叠的并发启动会返回错误，连续的独立启动会创建新的根。
+
+外部运行 context 的取消以及 SIGINT / SIGTERM 都会取消运行根。插件启动失败时，Boot 先取消
+运行根，再用保留 context 值、脱离取消的 30 秒回滚 context 逆序停止已启动插件。正常停机也先
+取消运行根，再创建同样独立的 30 秒 shutdown context。旧式无参数关闭回调仍先执行，无法接收或
+响应该 context，因此必须自行及时返回；之后插件以该 context 逆序停止。插件的 `Stop(ctx)` 应
+响应取消或 deadline；忽略 context 或卡在其他不可中断调用中的回调无法被 Boot 强行结束。
+
+已有 `engine.StartEngine`、`engine.ServiceStart`、`plugin.StartPlugins` 和无返回值的
+`plugin.StopPlugins(ctx)` 调用方式保持兼容。需要检查清理失败的直接调用方可改用
+`plugin.StopPluginsWithError(ctx)`；engine 会将其错误返回给命令并记录。若业务服务需要访问同一
+运行生命周期，可在启动期间使用 `engine.GetRootContext()`，并在服务自行启动的后台任务中遵守
+context 取消。
+
 或者通过 `plugin.RegisterPlugin()` 注册，框架会自动包装。
 
 #### 启动失败与资源回滚
@@ -187,7 +207,9 @@ type Plugin interface {
 
 回滚保留启动 context 的值，但通过 `context.WithoutCancel` 脱离其取消和截止时间，
 再设置整轮 30 秒清理预算。该预算需要插件 Stop 遵守 context，不强制中断插件。
-正常关闭沿用调用方 context 和原有逆序，`StopPlugins` 保持无返回值，关闭错误仍记录日志。
+正常关闭由 engine 使用独立 30 秒 shutdown context，并沿用原有逆序；`StopPlugins` 保持无返回值，
+新增 `StopPluginsWithError` 供需要返回错误的调用方使用。插件应遵守该 context；期限不能强制结束
+忽略 context 的 Stop。
 
 启动错误由 Cobra 命令返回到 engine，再沿用 `os.Exit(-1)` 非零退出约定；公开
 `StartEngine` 签名不变。生命周期入口由 engine 串行调用，不支持重叠启动/停止。

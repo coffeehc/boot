@@ -7,6 +7,7 @@ import (
 	"os"
 	"os/exec"
 	"strings"
+	"syscall"
 	"testing"
 	"time"
 
@@ -27,6 +28,27 @@ func TestStartCommandReturnsRecoveredPanic(t *testing.T) {
 	}
 }
 
+func TestStartCommandSkipsServiceStartWhenParentAlreadyCanceled(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+	started := false
+	command := buildStartCmd(ctx, configuration.ServiceInfo{ServiceName: "canceled-test"},
+		func(context.Context, *cobra.Command, []string) (ServiceCloseCallback, error) {
+			started = true
+			return nil, nil
+		})
+	err := command.RunE(command, nil)
+	if !errors.Is(err, context.Canceled) {
+		t.Fatalf("RunE error=%v, want context canceled", err)
+	}
+	if started {
+		t.Fatal("ServiceStart ran after parent context was already canceled")
+	}
+	if GetRootContext() != nil {
+		t.Fatal("runtime root remained registered after canceled startup")
+	}
+}
+
 // engineLifecyclePlugin 用于子进程验证真实命令入口，不依赖外部服务。
 type engineLifecyclePlugin struct {
 	// name 标记输出中的插件身份。
@@ -37,7 +59,12 @@ type engineLifecyclePlugin struct {
 	panicOnStart bool
 }
 
-func (p *engineLifecyclePlugin) Start(context.Context) error {
+type engineLifecycleContextKey struct{}
+
+func (p *engineLifecyclePlugin) Start(ctx context.Context) error {
+	if GetRootContext() != ctx {
+		return errors.New("plugin Start did not receive the registered root context")
+	}
 	fmt.Fprintf(os.Stdout, "lifecycle:start:%s\n", p.name)
 	if p.panicOnStart {
 		panic("plugin startup panic")
@@ -45,7 +72,21 @@ func (p *engineLifecyclePlugin) Start(context.Context) error {
 	return p.startError
 }
 
-func (p *engineLifecyclePlugin) Stop(context.Context) error {
+func (p *engineLifecyclePlugin) Stop(ctx context.Context) error {
+	root := GetRootContext()
+	if ctx == root || ctx.Err() != nil {
+		return errors.New("plugin Stop did not receive an independent active shutdown context")
+	}
+	deadline, ok := ctx.Deadline()
+	if !ok || time.Until(deadline) <= 0 || time.Until(deadline) > shutdownTimeout {
+		return errors.New("plugin Stop context has no deadline")
+	}
+	if root == nil || !errors.Is(root.Err(), context.Canceled) {
+		return errors.New("runtime root was not canceled before plugin Stop")
+	}
+	if ctx.Value(engineLifecycleContextKey{}) != "trace" {
+		return errors.New("shutdown context did not retain runtime context values")
+	}
 	fmt.Fprintf(os.Stdout, "lifecycle:stop:%s\n", p.name)
 	return nil
 }
@@ -60,6 +101,7 @@ func TestEngineLifecycleProcess(t *testing.T) {
 		{"startup-failure", true, []string{"start:A", "start:B", "start:C", "stop:B", "stop:A"}},
 		{"command-error", false, []string{"start:A", "start:B", "start:C", "stop:B", "stop:A"}},
 		{"normal-cancel", false, []string{"start:A", "start:B", "start:C", "close", "stop:C", "stop:B", "stop:A"}},
+		{"signal-term", false, []string{"start:A", "start:B", "start:C", "close", "stop:C", "stop:B", "stop:A"}},
 		{"plugin-panic", true, []string{"start:A", "start:B", "start:C"}},
 	} {
 		t.Run(test.mode, func(t *testing.T) {
@@ -103,11 +145,11 @@ func TestEngineLifecycleHelper(t *testing.T) {
 	configuration.SetRunModel(configuration.Model_test)
 	configuration.Version = "lifecycle-test"
 	os.Args = []string{os.Args[0], "start"}
-	ctx, cancel := context.WithCancel(context.Background())
+	ctx, cancel := context.WithCancel(context.WithValue(context.Background(), engineLifecycleContextKey{}, "trace"))
 	defer cancel()
 	expected := errors.New("plugin startup sentinel")
 	serviceInfo := configuration.ServiceInfo{ServiceName: "lifecycle-test"}
-	start := func(context.Context, *cobra.Command, []string) (ServiceCloseCallback, error) {
+	start := func(runCtx context.Context, _ *cobra.Command, _ []string) (ServiceCloseCallback, error) {
 		for _, name := range []string{"A", "B", "C"} {
 			instance := &engineLifecyclePlugin{name: name}
 			if name == "C" {
@@ -123,7 +165,18 @@ func TestEngineLifecycleHelper(t *testing.T) {
 		if mode == "normal-cancel" {
 			plugin.AfterPluginStartedHandler = func() error { cancel(); return nil }
 		}
-		return func() { fmt.Fprint(os.Stdout, "lifecycle:close\n") }, nil
+		if mode == "signal-term" {
+			plugin.AfterPluginStartedHandler = func() error { return syscall.Kill(os.Getpid(), syscall.SIGTERM) }
+		}
+		if GetRootContext() != runCtx {
+			return nil, errors.New("ServiceStart did not receive the registered root context")
+		}
+		return func() {
+			if root := GetRootContext(); root == nil || !errors.Is(root.Err(), context.Canceled) {
+				fmt.Fprint(os.Stdout, "lifecycle:root-not-canceled-at-close\n")
+			}
+			fmt.Fprint(os.Stdout, "lifecycle:close\n")
+		}, nil
 	}
 	if mode == "command-error" {
 		command, err := buildRootCommand(ctx, serviceInfo, start)
@@ -136,10 +189,13 @@ func TestEngineLifecycleHelper(t *testing.T) {
 		}
 	} else {
 		StartEngine(ctx, serviceInfo, start)
-		if mode != "normal-cancel" {
+		if mode != "normal-cancel" && mode != "signal-term" {
 			fmt.Fprint(os.Stdout, "lifecycle:unexpected-success\n")
 			t.Fatal("startup failure returned as success")
 		}
+	}
+	if GetRootContext() != nil {
+		t.Fatal("runtime root remained registered after start command returned")
 	}
 	plugin.StopPlugins(context.Background())
 	plugin.StopPlugins(context.Background())

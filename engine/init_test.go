@@ -2,6 +2,7 @@ package engine
 
 import (
 	"context"
+	"errors"
 	"io"
 	"strings"
 	"sync/atomic"
@@ -30,6 +31,38 @@ func TestWaitServiceStopContextCancellation(t *testing.T) {
 		if calls.Load() != 1 {
 			t.Fatalf("关闭回调调用次数=%d，期望一次", calls.Load())
 		}
+	}
+}
+
+func TestRootContextLifecycleAndRepeatedRuns(t *testing.T) {
+	if GetRootContext() != nil {
+		t.Fatal("root context should be unavailable before a run")
+	}
+	first, cancelFirst, releaseFirst, err := beginRunContext(context.Background())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if GetRootContext() != first {
+		t.Fatal("GetRootContext did not return the active run root")
+	}
+	if _, _, _, err := beginRunContext(context.Background()); err == nil {
+		t.Fatal("overlapping run was not rejected")
+	}
+	cancelFirst()
+	if !errors.Is(first.Err(), context.Canceled) {
+		t.Fatalf("root cancellation was not propagated: %v", first.Err())
+	}
+	releaseFirst()
+	if GetRootContext() != nil {
+		t.Fatal("root context remained available after run release")
+	}
+	second, _, releaseSecond, err := beginRunContext(context.Background())
+	if err != nil {
+		t.Fatalf("second independent run rejected: %v", err)
+	}
+	defer releaseSecond()
+	if second == first || GetRootContext() != second {
+		t.Fatal("second run did not receive a fresh root context")
 	}
 }
 

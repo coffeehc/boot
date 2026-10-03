@@ -17,6 +17,8 @@ type lifecycleTestPlugin struct {
 	stopOrder *[]string
 	// startError 是测试插件启动时返回的错误。
 	startError error
+	// startCallback 用于模拟启动进行中触发外部取消。
+	startCallback func(context.Context) error
 	// stopError 模拟清理失败。
 	stopError error
 	// calls 记录完整调用顺序；可为空。
@@ -30,10 +32,13 @@ type lifecycleTestPlugin struct {
 	stopContextError error
 }
 
-func (plugin *lifecycleTestPlugin) Start(context.Context) error {
+func (plugin *lifecycleTestPlugin) Start(ctx context.Context) error {
 	plugin.startCount++
 	if plugin.calls != nil {
 		*plugin.calls = append(*plugin.calls, "start "+plugin.name)
+	}
+	if plugin.startCallback != nil {
+		return plugin.startCallback(ctx)
 	}
 	return plugin.startError
 }
@@ -202,34 +207,29 @@ func TestStartPluginsHandlerFailureRollsBack(t *testing.T) {
 }
 
 func TestRollbackContextSurvivesStartupCancellation(t *testing.T) {
-	for _, expired := range []bool{false, true} {
-		t.Run(map[bool]string{false: "canceled", true: "deadline"}[expired], func(t *testing.T) {
-			isolatePluginLifecycle(t)
-			type contextKey struct{}
-			parent := context.WithValue(t.Context(), contextKey{}, "trace")
-			ctx, cancel := context.WithCancel(parent)
-			cancel()
-			if expired {
-				ctx, cancel = context.WithDeadline(parent, time.Now().Add(-time.Second))
-				defer cancel()
-			}
-			started := &lifecycleTestPlugin{}
-			RegisterPlugin("A", started)
-			RegisterPlugin("B", &lifecycleTestPlugin{startError: ctx.Err()})
-			if err := StartPlugins(ctx); !errors.Is(err, ctx.Err()) {
-				t.Fatal(err)
-			}
-			if started.stopCount != 1 || started.stopContextError != nil {
-				t.Fatalf("stops=%d context error=%v", started.stopCount, started.stopContextError)
-			}
-			if started.stopContext.Value(contextKey{}) != "trace" {
-				t.Fatal("lost context value")
-			}
-			deadline, ok := started.stopContext.Deadline()
-			if !ok || time.Until(deadline) <= 0 || time.Until(deadline) > startupRollbackTimeout {
-				t.Fatalf("unexpected cleanup deadline: %v", deadline)
-			}
-		})
+	isolatePluginLifecycle(t)
+	type contextKey struct{}
+	parent := context.WithValue(t.Context(), contextKey{}, "trace")
+	ctx, cancel := context.WithCancel(parent)
+	defer cancel()
+	started := &lifecycleTestPlugin{startCallback: func(context.Context) error {
+		cancel()
+		return nil
+	}}
+	RegisterPlugin("A", started)
+	RegisterPlugin("B", &lifecycleTestPlugin{startCallback: func(ctx context.Context) error { return ctx.Err() }})
+	if err := StartPlugins(ctx); !errors.Is(err, context.Canceled) {
+		t.Fatal(err)
+	}
+	if started.stopCount != 1 || started.stopContextError != nil {
+		t.Fatalf("stops=%d context error=%v", started.stopCount, started.stopContextError)
+	}
+	if started.stopContext.Value(contextKey{}) != "trace" {
+		t.Fatal("lost context value")
+	}
+	deadline, ok := started.stopContext.Deadline()
+	if !ok || time.Until(deadline) <= 0 || time.Until(deadline) > startupRollbackTimeout {
+		t.Fatalf("unexpected cleanup deadline: %v", deadline)
 	}
 }
 
@@ -251,7 +251,10 @@ func TestStopPluginsContinuesAfterCleanupError(t *testing.T) {
 	if err := StartPlugins(t.Context()); err != nil {
 		t.Fatal(err)
 	}
-	StopPlugins(t.Context())
+	cleanupErr := StopPluginsWithError(t.Context())
+	if cleanupErr == nil || !strings.Contains(cleanupErr.Error(), "关闭插件 B: cleanup failure") {
+		t.Fatalf("cleanup error not returned: %v", cleanupErr)
+	}
 	StopPlugins(t.Context())
 	if want := []string{"start A", "start B", "stop B", "stop A"}; !reflect.DeepEqual(calls, want) {
 		t.Fatalf("calls=%v want=%v", calls, want)

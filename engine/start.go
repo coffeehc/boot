@@ -81,12 +81,20 @@ func buildDaemonStartCmd(ctx context.Context, serviceInfo configuration.ServiceI
 }
 
 func buildStartCmd(ctx context.Context, serviceInfo configuration.ServiceInfo, start ServiceStart) *cobra.Command {
-	ctx, cancelFunc := context.WithCancel(ctx)
 	return &cobra.Command{
 		Use:   "start",
 		Short: "启动服务",
 		Long:  serviceInfo.Descriptor,
 		RunE: func(cmd *cobra.Command, args []string) (runErr error) {
+			parent := cmd.Context()
+			if parent == nil {
+				parent = ctx
+			}
+			runCtx, cancelRun, releaseRun, err := beginRunContext(parent)
+			if err != nil {
+				return err
+			}
+			defer releaseRun()
 			defer func() {
 				if e := recover(); e != nil {
 					converted := errors.ConverUnknowError(e)
@@ -97,9 +105,12 @@ func buildStartCmd(ctx context.Context, serviceInfo configuration.ServiceInfo, s
 						runErr = converted
 						log.Error("程序捕获不能处理的异常", converted.GetFieldsWithCause()...)
 					}
-					cancelFunc()
+					cancelRun()
 				}
 			}()
+			if err = runCtx.Err(); err != nil {
+				return err
+			}
 			if os.Getenv(Env_DaemonMode) == "true" {
 				log.Debug("守护进程模式运行", zap.String("ServiceName", serviceInfo.ServiceName))
 				pidFileLocker, err := OpenPidFileLocker(GetPidFilePath(serviceInfo.ServiceName), os.ModePerm)
@@ -136,22 +147,27 @@ func buildStartCmd(ctx context.Context, serviceInfo configuration.ServiceInfo, s
 				}
 				log.Debug("进程文件已经创建好了")
 			}
-			configuration.InitConfiguration(ctx, serviceInfo)
-			closeCallback, err := start(ctx, cmd, args)
+			configuration.InitConfiguration(runCtx, serviceInfo)
+			closeCallback, err := start(runCtx, cmd, args)
 			if err != nil {
+				cancelRun()
 				log.Error("启动服务失败", zap.Error(err))
 				return err
 			}
-			if err = plugin.StartPlugins(ctx); err != nil {
+			if err = plugin.StartPluginsWithCancel(runCtx, cancelRun); err != nil {
+				cancelRun()
 				return err
 			}
 			log.Debug("插件全部启动完成")
-			WaitServiceStop(ctx, func() {
-				if closeCallback != nil {
-					closeCallback()
-				}
-				plugin.StopPlugins(ctx)
-			})
+			<-runCtx.Done()
+			shutdownCtx, cancelShutdown := context.WithTimeout(context.WithoutCancel(runCtx), shutdownTimeout)
+			defer cancelShutdown()
+			if closeCallback != nil {
+				closeCallback()
+			}
+			if err = plugin.StopPluginsWithError(shutdownCtx); err != nil {
+				return err
+			}
 			return nil
 		},
 	}
