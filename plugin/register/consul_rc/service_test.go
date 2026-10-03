@@ -16,7 +16,6 @@ func TestService(t *testing.T) {
 	serviceInfo := configuration.ServiceInfo{
 		ServiceName: "test",
 		Version:     "0.0.1",
-		Scheme:      configuration.MicroServiceProtocolScheme,
 	}
 	configuration.InitConfiguration(ctx, serviceInfo)
 	EnablePlugin(ctx)

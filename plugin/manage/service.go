@@ -45,7 +45,7 @@ func (impl *serviceImpl) Start(_ context.Context) error {
 	// _plugin.registerManager()
 	app := impl.httpService.GetEngine()
 	RegisterManager(app)
-	app.Get("/", func(c *fiber.Ctx) error {
+	app.Get("/", func(c fiber.Ctx) error {
 		routesInfos := app.GetRoutes()
 		// c := make([]string, 0)
 		// c = append(c, "<html><body>")
@@ -152,24 +152,24 @@ func RegisterManager(app *fiber.App) {
 		Level: compress.LevelBestCompression,
 	}))
 	pHanfler := fasthttpadaptor.NewFastHTTPHandler(promhttp.Handler())
-	app.Get("/metrics", func(c *fiber.Ctx) error {
-		pHanfler(c.Context())
+	app.Get("/metrics", func(c fiber.Ctx) error {
+		pHanfler(c.RequestCtx())
 		return nil
 	})
 	// app.Get("/monitor", monitor.New())
-	app.Get("/ping", func(ctx *fiber.Ctx) error {
+	app.Get("/ping", func(ctx fiber.Ctx) error {
 		return ctx.SendString("pong")
 	})
 	RegisterServiceRuntimeInfoEndpoint(app)
-	app.Get("/health", func(c *fiber.Ctx) error {
-		return c.Format(map[string]interface{}{
+	app.Get("/health", func(c fiber.Ctx) error {
+		return c.AutoFormat(map[string]interface{}{
 			"service_name":    configuration.GetServiceInfo().ServiceName,
 			"version":         configuration.GetServiceInfo().Version,
 			"goroutine_count": runtime.NumGoroutine(),
 			"GOGC":            os.Getenv("GOGC"),
 		})
 	})
-	app.Get("/gc/stats", func(c *fiber.Ctx) error {
+	app.Get("/gc/stats", func(c fiber.Ctx) error {
 		stat := &debug.GCStats{}
 		debug.ReadGCStats(stat)
 		data := &struct {
@@ -183,21 +183,21 @@ func RegisterManager(app *fiber.App) {
 		}
 		return c.Render("gcStats", data)
 	})
-	app.Get("/gc/stats/setmemlimit", func(ctx *fiber.Ctx) error {
-		limit := ctx.QueryInt("limit", 0)
+	app.Get("/gc/stats/setmemlimit", func(ctx fiber.Ctx) error {
+		limit := fiber.Query[int](ctx, "limit", 0)
 		if limit != 0 {
 			debug.SetMemoryLimit(int64(limit))
 		}
 		return nil
 	})
-	app.Get("/gc/stats/setgogc", func(ctx *fiber.Ctx) error {
-		gogc := ctx.QueryInt("gogc", 0)
+	app.Get("/gc/stats/setgogc", func(ctx fiber.Ctx) error {
+		gogc := fiber.Query[int](ctx, "gogc", 0)
 		if gogc != 0 {
 			debug.SetGCPercent(gogc)
 		}
 		return nil
 	})
-	app.Get("/shutdown", func(c *fiber.Ctx) error {
+	app.Get("/shutdown", func(c fiber.Ctx) error {
 		if c.Query("key", "") != "coffee" {
 			return nil
 		}

@@ -21,8 +21,8 @@ func RegisterServiceRuntimeInfoEndpoint(router *fiber.App) {
 		StartTime:   time.Now(),
 		Model:       configuration.GetRunModel(),
 	}
-	router.Get("/info", func(c *fiber.Ctx) error {
-		return c.Format(h)
+	router.Get("/info", func(c fiber.Ctx) error {
+		return c.AutoFormat(h)
 		// context.JSON(http.StatusOK, h)
 	})
 }

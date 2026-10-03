@@ -42,7 +42,7 @@ func EnablePlugin(ctx context.Context) {
 	service = newService()
 	err := internal.GetService().SetRegisterCenter(service)
 	if err != nil {
-		log.Panic("添加注册中心失败", err.GetFieldsWithCause()...)
+		log.Panic("添加注册中心失败", zap.Error(err))
 	}
-	plugin.RegisterPluginByFast(name, nil, nil)
+	plugin.RegisterPlugin(name, service)
 }

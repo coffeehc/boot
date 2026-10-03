@@ -36,5 +36,5 @@ func EnablePlugin(ctx context.Context) {
 		return
 	}
 	service = &serviceImpl{}
-	plugin.RegisterPluginByFast(name, nil, nil)
+	plugin.RegisterPlugin(name, service)
 }

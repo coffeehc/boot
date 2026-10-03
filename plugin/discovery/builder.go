@@ -16,7 +16,8 @@ import (
 
 func RPCServiceInitializationByResolverBuilder(ctx context.Context, rpcService configuration.RPCService, resolverBuilder ...resolver.Builder) error {
 	opts := grpcclient.BuildDialOption(ctx, rpcService.GetRPCServiceInfo().ServiceName)
-	ctx, _ = context.WithTimeout(ctx, time.Second*5)
+	ctx, cancel := context.WithTimeout(ctx, time.Second*5)
+	defer cancel()
 	opts = append(opts, grpc.WithResolvers(resolverBuilder...))
 	clientConn, err := grpc.NewClient(rpcService.GetRPCServiceInfo().TargetUrl, opts...)
 	//clientConn, err := grpc.DialContext(ctx, rpcService.GetRPCServiceInfo().TargetUrl, opts...)

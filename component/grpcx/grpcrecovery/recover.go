@@ -53,7 +53,7 @@ func convertRPCError(err interface{}, recover bool, fields ...zap.Field) error {
 		}
 		errs = errors.SystemError("未知异常")
 	}
-	return status.Errorf(errCode, errs.FormatRPCError())
+	return status.Error(errCode, errs.FormatRPCError())
 }
 
 func parseRPCError(err interface{}, recover bool, fields ...zap.Field) error {
