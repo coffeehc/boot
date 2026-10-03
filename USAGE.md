@@ -280,8 +280,11 @@ pb.RegisterYourServiceServer(server, &yourServiceImpl{})
 ```yaml
 grpc:
   rpc_server_addr: "0.0.0.0:8888"
-  max_concurrent_streams: 100000
-  max_msg_size: 4194304
+  max_concurrent_streams: 100
+  max_msg_size: 8388608
+  max_connection_idle: 30m
+  disable_tcp_server: false
+  disable_quic_server: true
 ```
 
 ### 配置项说明
@@ -289,8 +292,66 @@ grpc:
 | 配置项 | 说明 | 默认值 |
 |--------|------|--------|
 | `grpc.rpc_server_addr` | RPC 服务地址 | `0.0.0.0:8888` |
-| `grpc.max_concurrent_streams` | 最大并发流 | `100000` |
-| `grpc.max_msg_size` | 最大消息大小（字节） | `4194304` (4MB) |
+| `grpc.max_concurrent_streams` | 每条 HTTP/2 连接的并发流上限 | `100` |
+| `grpc.max_msg_size` | 单条收发消息的最大编码字节数 | `8388608` (8 MiB) |
+| `grpc.max_connection_idle` | 没有活动 RPC 的连接保留时长；`0` 不限制 | `30m` |
+| `grpc.disable_tcp_server` | 关闭 TCP 监听；至少保留一种协议 | `false` |
+| `grpc.disable_quic_server` | 关闭 QUIC 监听 | `true` |
+
+### gRPC server/client 默认行为
+
+`component/grpcx` 是 Boot 自维护的 gRPC 封装，当前依赖 gRPC `v1.84.0` 和 Protobuf `v1.36.12`。`grpc/examples` 固定在 gRPC `v1.84.0` 的同一提交，只供原有示例测试使用。
+
+| 配置 | 默认行为 |
+|------|----------|
+| Client 负载均衡 | `round_robin`，显式注册策略，允许 resolver 提供服务配置 |
+| Client 业务重试 | 不提供全方法重试策略；保留 gRPC 自带透明重试，幂等方法可自行配置重试策略 |
+| Client 等待就绪 | 使用 gRPC 默认 fail-fast；需要等待时按调用传入 `grpc.WaitForReady(true)` |
+| Client 消息大小 | 收发均为 8 MiB，可通过 CallOption 覆盖 |
+| Unary deadline | 调用方未设置时默认一分钟；显式 deadline 原样保留 |
+| Streaming deadline | 由调用方设置或取消，不自动限制长连接时长 |
+| Client keepalive | 有活动 RPC 时每 60 秒检查，20 秒超时；无活动 RPC 不发送 PING |
+| Server keepalive | 保留 gRPC 的 2 小时检查、20 秒超时；允许的客户端最小 PING 间隔为一分钟，不允许空闲 PING |
+| 窗口、连接退避、读写 buffer、client idle、代理 | 使用 gRPC 默认值，启用动态流控；不强制静态大窗口或禁用代理 |
+| 压缩 | 注册 gzip 支持，默认不压缩；需要时按调用传入 `grpc.UseCompressor("gzip")` |
+| 连接凭据 | Client 必须显式配置 TLS、ALTS 或 `insecure.NewCredentials()`；Server 未设置凭据时使用明文 TCP |
+
+`grpcserver.NewServer(ctx, nil)` 读取 `grpc` 配置段；传入非 nil `GRPCServerConfig` 时使用显式配置，不修改该对象。`grpc.MaxConnectionIdle` 旧配置键仍支持，新的 `grpc.max_connection_idle` 优先。配置解析失败由 `NewServer` 返回错误。
+
+插件只在 `Start` 绑定端口，保留配置中的监听 IP；端口为 `0` 时，`Start` 成功后 `GetRPCServerAddr()` 返回实际端口。默认仅启动 TCP。正常 `Stop` 先结束健康报告并调用 `GracefulStop`；shutdown context 到期后调用 `Stop` 关闭连接并返回取消错误。业务 handler 仍需响应 RPC context 取消。
+
+### 客户端创建与定制
+
+```go
+ctx = grpcclient.SetClientCerds(ctx, credentials.NewTLS(&tls.Config{
+    MinVersion: tls.VersionTLS12,
+}))
+conn, err := grpcclient.NewClientConn(ctx, "dns:///api.example.com:443", "apiService")
+if err != nil {
+    return err
+}
+defer conn.Close()
+
+callCtx, cancel := context.WithTimeout(ctx, 10*time.Second)
+defer cancel()
+// 使用 callCtx 调用生成的 gRPC client。
+```
+
+构造连接使用 `grpc.NewClient`，成功仅表示目标和选项被接受，实际连接在第一次 RPC 时建立。构造时的 context 用于凭据装配，不负责连接生命周期；连接由调用方关闭，每次 RPC 使用自己的 context。
+
+需要调整 keepalive、消息上限或按方法配置重试时，可使用 `grpcclient.BuildDialOption(ctx, serviceName)`，追加原生 `grpc.DialOption` 后调用 `grpc.NewClient`。Server 同样可使用 `grpcserver.BuildGRPCServerOptions` 追加原生选项。并发流上限按连接计算；长流或高并发服务需要根据实际容量设置，不能替代整个进程的并发控制。
+
+### 升级影响
+
+- 默认并发流上限从 100000 收紧到每条连接 100；已有显式配置不变，长流较多的服务需配置适合自身容量的值。
+- RPC 插件默认消息上限从 4 MiB 调整为 8 MiB；client 发送上限从 2 MiB 调整为 8 MiB。
+- 旧 client 每 10 秒发送空闲 PING，新 server 会拒绝该模式；应先升级 client，再升级 server，或在迁移期间显式覆盖 server enforcement policy。
+- 默认取消全方法重试、等待就绪和强制 gzip；依赖这些行为的调用方需按具体方法显式配置。
+- 标准 gRPC 状态码、取消和 deadline 错误原样保留；Boot `base/errors` 仍使用已有的自定义状态码 18 编解码，stream 接收错误也会解码，正常 EOF 原样返回。
+- unary 和 streaming 都保留调用方的 outgoing metadata，并向 handler 传递追踪和鉴权 context。
+- 代理 codec 保持原有接口和协议名，解码后的 payload 拥有独立 buffer；同时支持新旧 protobuf 消息接口。
+- 自维护 ALTS 同步畸形短帧校验，Clone 保留服务身份；认证中心连接使用 gRPC 的默认连接管理。
+- 同一服务创建多个 client/server 时复用已注册的指标 collector，避免后续连接的指标不可见。
 
 ## 命令行使用
 

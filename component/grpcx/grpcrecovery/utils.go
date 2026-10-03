@@ -20,8 +20,13 @@ var (
 	MashTracingHeaders = []string{Header_XRequestId, Header_XB3Traceid, Header_XB3Spanid, Header_XB3Parentspanid, Header_XB3Sampled, Header_XB3Flags, Header_XotSpanContext}
 )
 
+// BuildMetadataFromContext 保留调用方的 outgoing metadata，并补齐 context 中的追踪字段。
 func BuildMetadataFromContext(ctx context.Context) metadata.MD {
-	md := metadata.New(make(map[string]string, 7))
+	md, _ := metadata.FromOutgoingContext(ctx)
+	md = md.Copy()
+	if md == nil {
+		md = make(metadata.MD, len(MashTracingHeaders))
+	}
 	for _, headerKey := range MashTracingHeaders {
 		v := ctx.Value(headerKey)
 		if vString, ok := v.(string); ok {
@@ -31,6 +36,7 @@ func BuildMetadataFromContext(ctx context.Context) metadata.MD {
 	return md
 }
 
+// ParseMetadataToContext 将 incoming metadata 中的追踪字段传递给当前 RPC 的处理链。
 func ParseMetadataToContext(ctx context.Context, md metadata.MD) context.Context {
 	for _, headerKey := range MashTracingHeaders {
 		v := md.Get(headerKey)

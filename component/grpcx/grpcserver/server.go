@@ -2,11 +2,12 @@ package grpcserver
 
 import (
 	"context"
+	"errors"
+	"fmt"
 	"github.com/coffeehc/boot/configuration"
 	"github.com/coffeehc/boot/plugin/manage/metrics"
 	"github.com/piotrkowalczuk/promgrpc/v4"
 	"github.com/prometheus/client_golang/prometheus"
-	"math"
 	"time"
 
 	"google.golang.org/grpc/keepalive"
@@ -21,21 +22,27 @@ import (
 
 var scope = zap.String("scope", "grpc.server")
 
+// NewServer 创建尚未监听端口的 gRPC server；显式配置优先，nil 时读取 grpc 配置段。
+// 配置解析和校验失败返回错误，调用方负责注册服务、Serve 和关闭 server。
 func NewServer(ctx context.Context, grpcConfig *GRPCServerConfig) (*grpc.Server, error) {
 	if grpcConfig == nil {
 		grpcConfig = &GRPCServerConfig{}
+		if err := viper.UnmarshalKey("grpc", grpcConfig); err != nil {
+			return nil, fmt.Errorf("解析 grpc 配置失败: %w", err)
+		}
 	}
-	if !viper.IsSet("grpc") {
-		log.Warn("没有配置GRPCConfig,使用默认配置", scope)
+	if grpcConfig.MaxMsgSize < 0 {
+		return nil, fmt.Errorf("grpc.max_msg_size 不能为负数")
 	}
-	err := viper.UnmarshalKey("grpc", grpcConfig)
-	if err != nil {
-		log.Panic("解析grpc配置失败", zap.Error(err), scope)
+	if GetMaxConnectionIdle() < 0 {
+		return nil, fmt.Errorf("grpc.max_connection_idle 不能为负数")
 	}
 	server := grpc.NewServer(BuildGRPCServerOptions(ctx, grpcConfig)...)
 	return server, nil
 }
 
+// BuildGRPCServerOptions 组装拦截器、消息限制、心跳和指标，不修改传入配置。
+// config 可为 nil；调用方可追加原生 ServerOption 覆盖默认值。
 func BuildGRPCServerOptions(ctx context.Context, config *GRPCServerConfig) []grpc.ServerOption {
 	chainUnaryServers := make([]grpc.UnaryServerInterceptor, 0)
 	if EnableAccessLog {
@@ -44,7 +51,6 @@ func BuildGRPCServerOptions(ctx context.Context, config *GRPCServerConfig) []grp
 	}
 	chainUnaryServers = append(chainUnaryServers, grpcrecovery.UnaryServerInterceptor())
 	chainStreamServers := []grpc.StreamServerInterceptor{
-		//grpc_prometheus.StreamServerInterceptor,
 		grpcrecovery.StreamServerInterceptor(),
 	}
 	grpcAuth := ctx.Value(serverGrpcAuthKey)
@@ -55,43 +61,48 @@ func BuildGRPCServerOptions(ctx context.Context, config *GRPCServerConfig) []grp
 			chainStreamServers = append(chainStreamServers, buildAuthStreamServerInterceptor(authService))
 		}
 	}
-	if config.MaxConcurrentStreams == 0 {
-		config.MaxConcurrentStreams = math.MaxUint32
+	maxMsgSize := 8 * 1024 * 1024
+	maxConcurrentStreams := uint32(100)
+	if config != nil {
+		if config.MaxMsgSize > 0 {
+			maxMsgSize = config.MaxMsgSize
+		}
+		if config.MaxConcurrentStreams > 0 {
+			maxConcurrentStreams = config.MaxConcurrentStreams
+		}
 	}
 	ssh := promgrpc.ServerStatsHandler(
 		promgrpc.CollectorWithNamespace("grpc"),
 		promgrpc.CollectorWithConstLabels(prometheus.Labels{"service": configuration.GetServiceInfo().ServiceName}),
 	)
-	metrics.RegisterMetrics(ssh)
+	if err := metrics.RegisterMetrics(ssh); err != nil {
+		var registered prometheus.AlreadyRegisteredError
+		if errors.As(err, &registered) {
+			if existing, ok := registered.ExistingCollector.(*promgrpc.StatsHandler); ok {
+				ssh = existing
+			}
+		} else {
+			log.Error("注册 gRPC 服务端指标失败", zap.Error(err), scope)
+		}
+	}
 	opts := []grpc.ServerOption{
 		grpc.StatsHandler(ssh),
-		grpc.Creds(GetServerCerts(ctx)),
-		grpc.InitialWindowSize(1024 * 1024 * 32),
-		grpc.InitialConnWindowSize(1024 * 1024 * 4),
-		grpc.ReadBufferSize(1024 * 128),
-		grpc.WriteBufferSize(1024 * 128),
-		grpc.MaxRecvMsgSize(1024 * 1024 * 8),
-		grpc.MaxSendMsgSize(1024 * 1024 * 8),
-		grpc.NumStreamWorkers(64),
-		grpc.MaxConcurrentStreams(config.MaxConcurrentStreams),
+		grpc.MaxRecvMsgSize(maxMsgSize),
+		grpc.MaxSendMsgSize(maxMsgSize),
+		grpc.MaxConcurrentStreams(maxConcurrentStreams),
 		grpc.ChainStreamInterceptor(chainStreamServers...),
 		grpc.ChainUnaryInterceptor(chainUnaryServers...),
 		grpc.KeepaliveParams(keepalive.ServerParameters{
-			MaxConnectionIdle: GetMaxConnectionIdle(), //time.Minute * 30,
-			Timeout:           60 * time.Second,       // 類似 ClientParameters.Time 不過默認爲 2小時
-			Time:              30 * time.Second,       // 類似 ClientParameters.Timeout 默認 20秒
+			MaxConnectionIdle: GetMaxConnectionIdle(),
 		}),
-		grpc.KeepaliveEnforcementPolicy(keepalive.EnforcementPolicy{ // 當服務器不允許ping 或 ping 太頻繁超過 MinTime 限制 服務器 會 返回ping失敗 此時 客戶端 不會認爲這個ping是 active RPCs
-			MinTime:             time.Second * 5,
-			PermitWithoutStream: true,
+		grpc.KeepaliveEnforcementPolicy(keepalive.EnforcementPolicy{
+			MinTime:             time.Minute,
+			PermitWithoutStream: false,
 		}),
 		grpc.SharedWriteBuffer(true),
 	}
-	if config.MaxMsgSize > 0 {
-		opts = append(opts, grpc.MaxRecvMsgSize(config.MaxMsgSize),
-			grpc.MaxSendMsgSize(config.MaxMsgSize))
+	if creds := GetServerCerts(ctx); creds != nil {
+		opts = append(opts, grpc.Creds(creds))
 	}
 	return opts
 }
-
-// //metadata.FromIncomingContext(ctx)

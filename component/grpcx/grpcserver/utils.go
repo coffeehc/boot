@@ -1,6 +1,7 @@
 package grpcserver
 
 import (
+	"context"
 	"crypto/rand"
 	"crypto/rsa"
 	"crypto/tls"
@@ -13,7 +14,6 @@ import (
 	"time"
 
 	"github.com/coffeehc/base/log"
-	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 )
@@ -22,21 +22,29 @@ func init() {
 	viper.SetDefault("grpc.MaxConnectionIdle", time.Minute*30)
 }
 
+// GetMaxConnectionIdle 返回无活动 RPC 的连接保留时长；零值表示不限制。
+// 优先读取 snake_case 配置，同时兼容已有 MaxConnectionIdle 配置键。
 func GetMaxConnectionIdle() time.Duration {
-	return viper.Get("grpc.MaxConnectionIdle").(time.Duration)
+	if viper.IsSet("grpc.max_connection_idle") {
+		return viper.GetDuration("grpc.max_connection_idle")
+	}
+	return viper.GetDuration("grpc.MaxConnectionIdle")
 }
 
+// SetMaxConnectionIdle 设置无活动 RPC 的连接保留时长，须在创建 server 前调用。
 func SetMaxConnectionIdle(idle time.Duration) {
-	viper.Set("grpc.MaxConnectionIdle", idle)
+	viper.Set("grpc.max_connection_idle", idle)
 }
 
+// EnableAccessLog 控制 unary 访问日志，须在创建 server 前设置。
 var EnableAccessLog bool = false
 
+// DebugLoggingInterceptor 在请求结束时记录方法、耗时和错误，不记录请求内容。
 func DebugLoggingInterceptor() grpc.UnaryServerInterceptor {
 	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp interface{}, err error) {
 		start := time.Now()
 		defer func() {
-			log.Debug(fmt.Sprintf("FullMethod %s, took=%s, err=%v", info.FullMethod, time.Since(start), err), scope)
+			log.Debug("gRPC 请求处理完成", zap.String("method", info.FullMethod), zap.Duration("duration", time.Since(start)), zap.Error(err), scope)
 		}()
 		resp, err = handler(ctx, req)
 		return resp, err
@@ -48,6 +56,7 @@ const (
 	contextKeyServerCerds = "_grpc.server.Credentials"
 )
 
+// SetServerCerds 设置非 nil 连接凭据，须在创建 server 前调用；同一 context 只设置一次。
 func SetServerCerds(ctx context.Context, creds credentials.TransportCredentials) context.Context {
 	if ctx.Value(contextKeyServerCerds) != nil {
 		log.DPanic("****已经设置了TransportCredentials,不能多次设置****")
@@ -55,6 +64,7 @@ func SetServerCerds(ctx context.Context, creds credentials.TransportCredentials)
 	return context.WithValue(ctx, contextKeyServerCerds, creds)
 }
 
+// GetServerCerts 返回连接凭据，未设置时 server 使用明文 TCP。
 func GetServerCerts(ctx context.Context) credentials.TransportCredentials {
 	v := ctx.Value(contextKeyServerCerds)
 	if v == nil {
@@ -66,15 +76,17 @@ func GetServerCerts(ctx context.Context) credentials.TransportCredentials {
 	return nil
 }
 
+// SetGrpcAuth 设置并发安全的请求鉴权器，须在创建 server 前调用。
 func SetGrpcAuth(ctx context.Context, auth GRPCServerAuth) context.Context {
 	return context.WithValue(ctx, serverGrpcAuthKey, auth)
 }
 
+// SetSelfSignedCerds 为临时环境创建自签名证书，生成失败会 panic，避免降级为明文。
+// 证书没有主机名 SAN，客户端需要显式固定证书校验；生产应使用受信任的服务证书。
 func SetSelfSignedCerds(ctx context.Context) context.Context {
-	cret, pk, err := generateSelfSignedCertKey(1024)
+	cret, pk, err := generateSelfSignedCertKey(2048)
 	if err != nil {
-		log.Error("创建自签名证书失败", zap.Error(err))
-		return ctx
+		log.Panic("创建自签名证书失败", zap.Error(err))
 	}
 	tlsCrt := &tls.Certificate{
 		Certificate: [][]byte{cret.Raw},
@@ -92,7 +104,9 @@ func generateSelfSignedCertKey(keySize int) (*x509.Certificate, *rsa.PrivateKey,
 	}
 	// 2.创建证书模板
 	serialNumberByte := make([]byte, 16)
-	rand.Read(serialNumberByte)
+	if _, err := rand.Read(serialNumberByte); err != nil {
+		return nil, nil, err
+	}
 	template := x509.Certificate{
 		SerialNumber: big.NewInt(0).SetBytes(serialNumberByte), // 该号码表示CA颁发的唯一序列号，在此使用一个数来代表
 		Issuer:       pkix.Name{},

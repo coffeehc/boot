@@ -151,6 +151,10 @@ func (p *conn) Read(b []byte) (n int, err error) {
 		}
 		// Now we have a complete frame, decrypted it.
 		msg := framedMsg[MsgLenFieldSize:]
+		// 同步上游对畸形 ALTS 帧的校验，避免短帧在读取消息类型时触发 panic。
+		if len(msg) <= msgTypeFieldSize {
+			return 0, fmt.Errorf("received ALTS frame without message type or encrypted payload")
+		}
 		msgType := binary.LittleEndian.Uint32(msg[:msgTypeFieldSize])
 		if msgType&0xff != altsRecordMsgType {
 			return 0, fmt.Errorf("received frame with incorrect message type %v, expected lower byte %v",

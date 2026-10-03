@@ -3,7 +3,7 @@ package grpcclient
 import (
 	"context"
 	"crypto/tls"
-	"fmt"
+	stderrors "errors"
 	"github.com/coffeehc/boot/component/grpcx/grpcquic"
 	"github.com/coffeehc/boot/plugin/manage/metrics"
 	"github.com/piotrkowalczuk/promgrpc/v4"
@@ -19,8 +19,7 @@ import (
 
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/backoff"
-	"google.golang.org/grpc/credentials"
+	_ "google.golang.org/grpc/balancer/roundrobin"
 	_ "google.golang.org/grpc/encoding/gzip"
 	_ "google.golang.org/grpc/health"
 	"google.golang.org/grpc/keepalive"
@@ -40,20 +39,23 @@ func getEnableQuic(ctx context.Context) bool {
 
 var scope = zap.String("scope", "grpc.client")
 
+// NewClientConnByServiceInfo 创建惰性连接；ctx 用于凭据装配，RPC 使用各自的调用 context。
+// 调用方拥有返回连接，须在不再使用时 Close；返回错误表示目标或配置无效。
 func NewClientConnByServiceInfo(ctx context.Context, serviceInfo configuration.ServiceInfo) (*grpc.ClientConn, error) {
-	opts := BuildDialOption(ctx, serviceInfo.ServiceName)
 	if serviceInfo.TargetUrl == "" {
-		log.Panic("没有指定需要链接的ServiceInfo的RPC协议，无法创建链接")
+		return nil, errors.MessageError("没有设置TargetUrl")
 	}
+	opts := BuildDialOption(ctx, serviceInfo.ServiceName)
 	log.Debug("需要获取的客户端地址", zap.String("target", serviceInfo.TargetUrl))
 	clientConn, err := grpc.NewClient(serviceInfo.TargetUrl, opts...)
 	if err != nil {
 		log.Error("创建服务端链接失败", zap.Error(err))
-		return nil, errors.SystemError("创建grpc客户端")
+		return nil, errors.WrappedSystemError(err)
 	}
 	return clientConn, nil
 }
 
+// NewClientConnByResolverBuilder 使用连接级 resolver 创建惰性连接，调用方负责 Close。
 func NewClientConnByResolverBuilder(ctx context.Context, serviceInfo configuration.ServiceInfo, resolverBuilders ...resolver.Builder) (*grpc.ClientConn, error) {
 	if serviceInfo.TargetUrl == "" {
 		return nil, errors.MessageError("没有设置TargetUrl")
@@ -69,10 +71,14 @@ func NewClientConnByResolverBuilder(ctx context.Context, serviceInfo configurati
 	return clientConn, nil
 }
 
+// NewClientConn 创建惰性连接，成功不表示服务已连接；RPC 使用各自的调用 context。
+// serverAddr 必须非空，serverServiceName 用作指标标签；调用方负责 Close。
 func NewClientConn(ctx context.Context, serverAddr string, serverServiceName string) (*grpc.ClientConn, error) {
+	if serverAddr == "" {
+		return nil, errors.MessageError("没有设置 gRPC 服务地址")
+	}
 	opts := BuildDialOption(ctx, serverServiceName)
 	clientConn, err := grpc.NewClient(serverAddr, opts...)
-	// log.Debug("需要链接的服务端地址", zap.String("target", serverAddr))
 	if err != nil {
 		log.Error("创建客户端链接失败", zap.Error(err))
 		return nil, errors.WrappedSystemError(err)
@@ -80,6 +86,8 @@ func NewClientConn(ctx context.Context, serverAddr string, serverServiceName str
 	return clientConn, nil
 }
 
+// BuildDialOption 组装 gRPC 客户端的默认选项，凭据须由调用方显式设置。
+// 默认不配置业务重试、等待就绪或压缩；调用方可追加原生 DialOption 或 CallOption。
 func BuildDialOption(ctx context.Context, serverServiceName string) []grpc.DialOption {
 	chainUnaryClient := []grpc.UnaryClientInterceptor{
 		grpcrecovery.UnaryClientInterceptor(),
@@ -87,93 +95,42 @@ func BuildDialOption(ctx context.Context, serverServiceName string) []grpc.DialO
 	chainStreamClient := []grpc.StreamClientInterceptor{
 		grpcrecovery.StreamClientInterceptor(),
 	}
-	defaultServiceConfig := `{
-	   "LoadBalancingPolicy": "round_robin",
-		"HealthCheckConfig":{
-			"ServiceName":"%s"
-		},
-		"methodConfig": [{
-		  "name": [{}],
-		  "retryPolicy": {
-			  "MaxAttempts": 4,
-			  "InitialBackoff": ".01s",
-			  "MaxBackoff": ".01s",
-			  "BackoffMultiplier": 1.0,
-			  "RetryableStatusCodes": [ "UNAVAILABLE","UNKNOWN","ABORTED" ]
-		  }
-		}]}`
-	defaultServiceConfig = fmt.Sprintf(defaultServiceConfig, serverServiceName)
-	defaultServiceConfig = `{
-	   "LoadBalancingPolicy": "round_robin",
-		"methodConfig": [{
-		  "name": [{}],
-		  "retryPolicy": {
-			  "MaxAttempts": 4,
-			  "InitialBackoff": ".01s",
-			  "MaxBackoff": ".01s",
-			  "BackoffMultiplier": 1.0,
-			  "RetryableStatusCodes": [ "UNAVAILABLE","UNKNOWN","ABORTED" ]
-		  }
-		}]}`
-	//defaultServiceConfig = `{"LoadBalancingPolicy": "round_robin"}`
+	// 全局重试无法确认写操作是否幂等，重试策略应由具体服务按方法配置。
+	defaultServiceConfig := `{"loadBalancingConfig":[{"round_robin":{}}]}`
 	csh := promgrpc.ClientStatsHandler(
 		promgrpc.CollectorWithNamespace("grpc"),
 		promgrpc.CollectorWithConstLabels(prometheus.Labels{"service": serverServiceName}),
 	)
-	metrics.RegisterMetrics(csh)
+	if err := metrics.RegisterMetrics(csh); err != nil {
+		var registered prometheus.AlreadyRegisteredError
+		if stderrors.As(err, &registered) {
+			if existing, ok := registered.ExistingCollector.(*promgrpc.StatsHandler); ok {
+				csh = existing
+			}
+		} else {
+			log.Error("注册 gRPC 客户端指标失败", zap.Error(err), scope)
+		}
+	}
 	opts := []grpc.DialOption{
-		grpc.WithConnectParams(grpc.ConnectParams{
-			Backoff: backoff.Config{
-				BaseDelay:  time.Millisecond * 300, // 第一次失败重试前后需等待多久
-				Multiplier: 1.2,                    // 在失败的重试后乘以的倍数
-				Jitter:     0.2,                    // 随机抖动因子
-				MaxDelay:   time.Second * 2,        // backoff上限
-			},
-			MinConnectTimeout: time.Second * 3,
-		}),
-		grpc.WithAuthority(configuration.GetRunModel()),
 		grpc.WithDefaultCallOptions(
-			grpc.UseCompressor("gzip"),
-			grpc.WaitForReady(true),
 			grpc.MaxCallRecvMsgSize(1024*1024*8),
-			grpc.MaxCallSendMsgSize(1024*1024*2),
+			grpc.MaxCallSendMsgSize(1024*1024*8),
 		),
-		//grpc.WithReturnConnectionError(),
-		grpc.WithIdleTimeout(0),
-		//grpc.WithDisableRetry(),
 		grpc.WithKeepaliveParams(keepalive.ClientParameters{
-			Time:                time.Second * 10,
-			Timeout:             time.Second * 5,
-			PermitWithoutStream: true,
+			Time:                time.Minute,
+			Timeout:             20 * time.Second,
+			PermitWithoutStream: false,
 		}),
 		grpc.WithDefaultServiceConfig(defaultServiceConfig),
 		grpc.WithUserAgent("coffee's client"),
 		grpc.WithChainStreamInterceptor(chainStreamClient...),
 		grpc.WithChainUnaryInterceptor(chainUnaryClient...),
-		grpc.WithInitialConnWindowSize(1024 * 1024 * 8),
-		grpc.WithInitialWindowSize(1024 * 1024 * 16),
-		//grpc.WithChannelzParentID(&channelz.Identifier{}),
-		//grpc.FailOnNonTempDialError(true),
-		grpc.WithNoProxy(),
-		grpc.WithReadBufferSize(1024 * 128),
-		grpc.WithWriteBufferSize(1024 * 128),
 	}
-	//考虑把这里升级成必须的
-	perRPCCredentials := GetPerRPCCredentials(ctx) //ctx.Value(perRPCCredentialsKey)
-	if perRPCCredentials != nil {
-		if prc, ok := perRPCCredentials.(credentials.PerRPCCredentials); ok {
-			opts = append(opts, grpc.WithPerRPCCredentials(prc))
-		}
+	if perRPCCredentials := GetPerRPCCredentials(ctx); perRPCCredentials != nil {
+		opts = append(opts, grpc.WithPerRPCCredentials(perRPCCredentials))
 	}
 	creds := GetClientCerts(ctx)
 	if creds != nil {
-		//return nil
-		//tlsConfig := &tls.Config{
-		//	NextProtos:         []string{"http/1.1", http2.NextProtoTLS, "coffee"},
-		//	InsecureSkipVerify: true,
-		//}
-		//creds = credentials.NewTLS(tlsConfig)
-		//creds = insecure.NewCredentials()
 		opts = append(opts, grpc.WithTransportCredentials(creds))
 	}
 	enableQUiC := getEnableQuic(ctx)

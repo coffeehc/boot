@@ -204,6 +204,7 @@ func (g *altsTC) Clone() credentials.TransportCredentials {
 		side:              g.side,
 		altsCenterAddress: g.altsCenterAddress,
 		accounts:          accounts,
+		serviceName:       g.serviceName,
 	}
 }
 

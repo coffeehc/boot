@@ -4,8 +4,9 @@
 package grpcrecovery
 
 import (
+	"context"
+
 	"go.uber.org/zap"
-	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
 )
@@ -36,6 +37,24 @@ func StreamServerInterceptor() grpc.StreamServerInterceptor {
 				err = convertRPCError(r, true, zap.String("rpcMethod", info.FullMethod))
 			}
 		}()
+		ctx := stream.Context()
+		if md, ok := metadata.FromIncomingContext(ctx); ok {
+			ctx = ParseMetadataToContext(ctx, md)
+			stream = &tracedServerStream{ServerStream: stream, traceCtx: ctx}
+		}
 		return convertRPCError(handler(srv, stream), false, zap.String("rpcMethod", info.FullMethod))
 	}
+}
+
+// tracedServerStream 将 unary 已支持的追踪 context 传递给流式处理链。
+type tracedServerStream struct {
+	// ServerStream 承载实际的流收发。
+	grpc.ServerStream
+	// traceCtx 仅在当前流式 RPC 中使用，继承底层流的取消和 deadline。
+	traceCtx context.Context
+}
+
+// Context 返回继承流取消和 deadline 的追踪 context。
+func (s *tracedServerStream) Context() context.Context {
+	return s.traceCtx
 }
