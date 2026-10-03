@@ -5,6 +5,7 @@ import (
 	"crypto/tls"
 	"github.com/coffeehc/base/log"
 	"golang.org/x/net/http2"
+	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 )
 
@@ -12,6 +13,20 @@ const (
 	perRPCCredentialsKey  = "_grpc._PerRPCCredentialsKey"
 	contextKeyClientCerds = "_grpc.client.Credentials"
 )
+
+// dialOptionsContextKey 将连接装配选项与 context 中的其他值隔离。
+type dialOptionsContextKey struct{}
+
+// SetDialOptions 在派生 context 中追加原生连接选项，供所有 grpcclient 和 discovery 构造入口使用。
+// 父 context 的选项先应用，本次选项后应用；不修改父 context 或调用方的选项切片。
+// 选项仅在创建连接时读取，须在构造前设置；覆盖或叠加行为遵循对应 gRPC DialOption。
+func SetDialOptions(ctx context.Context, dialOptions ...grpc.DialOption) context.Context {
+	parentOptions, _ := ctx.Value(dialOptionsContextKey{}).([]grpc.DialOption)
+	options := make([]grpc.DialOption, 0, len(parentOptions)+len(dialOptions))
+	options = append(options, parentOptions...)
+	options = append(options, dialOptions...)
+	return context.WithValue(ctx, dialOptionsContextKey{}, options)
+}
 
 // SetPerRPCCredentials 设置每次 RPC 的凭据，prc 必须非 nil 且支持并发调用。
 func SetPerRPCCredentials(ctx context.Context, prc credentials.PerRPCCredentials) context.Context {
@@ -47,7 +62,8 @@ func SetClientCerds(ctx context.Context, creds credentials.TransportCredentials)
 	return context.WithValue(ctx, contextKeyClientCerds, creds)
 }
 
-// GetClientCerts 返回连接凭据，未设置时为 nil，构造客户端时会由 gRPC 拒绝。
+// GetClientCerts 返回 context 中的连接凭据，未设置时为 nil。
+// 也可由额外 DialOption 提供凭据；两处均未提供时由 gRPC 拒绝创建连接。
 func GetClientCerts(ctx context.Context) credentials.TransportCredentials {
 	v := ctx.Value(contextKeyClientCerds)
 	if v == nil {

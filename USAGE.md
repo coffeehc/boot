@@ -314,7 +314,7 @@ grpc:
 | Server keepalive | 保留 gRPC 的 2 小时检查、20 秒超时；允许的客户端最小 PING 间隔为一分钟，不允许空闲 PING |
 | 窗口、连接退避、读写 buffer、client idle、代理 | 使用 gRPC 默认值，启用动态流控；不强制静态大窗口或禁用代理 |
 | 压缩 | 注册 gzip 支持，默认不压缩；需要时按调用传入 `grpc.UseCompressor("gzip")` |
-| 连接凭据 | Client 必须显式配置 TLS、ALTS 或 `insecure.NewCredentials()`；Server 未设置凭据时使用明文 TCP |
+| 连接凭据 | Client 必须通过 context 或额外 DialOption 显式配置 TLS、ALTS 或 `insecure.NewCredentials()`；Server 未设置凭据时使用明文 TCP |
 
 `grpcserver.NewServer(ctx, nil)` 读取 `grpc` 配置段；传入非 nil `GRPCServerConfig` 时使用显式配置，不修改该对象。`grpc.MaxConnectionIdle` 旧配置键仍支持，新的 `grpc.max_connection_idle` 优先。配置解析失败由 `NewServer` 返回错误。
 
@@ -339,7 +339,38 @@ defer cancel()
 
 构造连接使用 `grpc.NewClient`，成功仅表示目标和选项被接受，实际连接在第一次 RPC 时建立。构造时的 context 用于凭据装配，不负责连接生命周期；连接由调用方关闭，每次 RPC 使用自己的 context。
 
-需要调整 keepalive、消息上限或按方法配置重试时，可使用 `grpcclient.BuildDialOption(ctx, serviceName)`，追加原生 `grpc.DialOption` 后调用 `grpc.NewClient`。Server 同样可使用 `grpcserver.BuildGRPCServerOptions` 追加原生选项。并发流上限按连接计算；长流或高并发服务需要根据实际容量设置，不能替代整个进程的并发控制。
+`NewClientConn` 和 `NewClientConnByServiceInfo` 可直接追加原生 `grpc.DialOption`，未传额外选项的旧调用方式保持可用：
+
+```go
+conn, err := grpcclient.NewClientConn(ctx, serverAddr, "apiService",
+    grpc.WithKeepaliveParams(keepalive.ClientParameters{
+        Time:    2 * time.Minute,
+        Timeout: 20 * time.Second,
+    }),
+    grpc.WithDefaultCallOptions(
+        grpc.MaxCallRecvMsgSize(32<<20),
+        grpc.MaxCallSendMsgSize(32<<20),
+    ),
+)
+```
+
+`NewClientConnByResolverBuilder` 保留原有的可变 builder 参数，连接选项通过 `SetDialOptions` 传入。这一入口也适用于 discovery 的初始化函数：
+
+```go
+clientCtx := grpcclient.SetDialOptions(ctx,
+    grpc.WithDefaultCallOptions(grpc.MaxCallRecvMsgSize(32<<20)),
+)
+conn, err := grpcclient.NewClientConnByResolverBuilder(clientCtx, serviceInfo, builders...)
+// 或 discovery.RPCServiceInitialization(clientCtx, rpcService)。
+```
+
+连接选项的应用顺序为：Boot 默认选项 → `SetDialOptions` 中继承和追加的选项 → 构造函数显式选项。心跳、消息上限等同名设置以后者为准；链式拦截器、stats handler、per-RPC credentials 等遵循 gRPC 的叠加语义。resolver 入口最后追加显式传入的 builders，按 gRPC 规则注册连接级 resolver。修改 context 中的选项只影响之后创建的连接。
+
+`grpcclient.BuildDialOption(ctx, serviceName, dialOptions...)` 使用相同顺序，也可以把结果用于原生 `grpc.NewClient`。按方法配置重试可传入 `grpc.WithDefaultServiceConfig`；这是完整替换默认 service config，若需保留 `round_robin`，应同时包含相应的 `loadBalancingConfig`。resolver 下发的有效 service config 优先于 default service config。
+
+单次调用的消息上限、等待就绪和压缩仍通过 `grpc.CallOption` 设置；显式 context deadline 覆盖 Boot 的 unary 默认一分钟超时。连接选项不会移除 Boot 的恢复拦截器或关闭其默认超时。消息上限和心跳策略需同时满足 server 的限制。
+
+Server 可使用 `grpcserver.BuildGRPCServerOptions` 追加原生选项。并发流上限按连接计算；长流或高并发服务需要根据实际容量设置，不能替代整个进程的并发控制。
 
 ### 升级影响
 
