@@ -15,7 +15,13 @@ import (
 	"go.uber.org/zap"
 )
 
+// ServiceStart 装配业务资源并注册插件；ctx 为 Boot 持有的运行根。
+// 返回非 nil 关闭回调即交付一次清理责任，即使同时返回错误也会执行该回调。
 type ServiceStart func(ctx context.Context, cmd *cobra.Command, args []string) (ServiceCloseCallback, error)
+
+// ServiceCloseCallback 在运行根取消后释放业务资源；panic 被转换为错误，插件清理仍会继续。
+// 正常关闭在插件停止前调用，插件启动失败则在已启动插件回滚后调用；不能假定所有插件仍可用。
+// 该兼容回调无法接收 shutdown context，必须自行及时返回。
 type ServiceCloseCallback func()
 
 // shutdownTimeout 是正常停机清理的协作式期限；不响应 context 的回调无法被强制中断。

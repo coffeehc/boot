@@ -183,8 +183,8 @@ context。`ServiceStart`、插件初始化调用方传递的 context，以及每
 
 外部运行 context 的取消以及 SIGINT / SIGTERM 都会取消运行根。插件启动失败时，Boot 先取消
 运行根，再用保留 context 值、脱离取消的 30 秒回滚 context 逆序停止已启动插件。正常停机也先
-取消运行根，再创建同样独立的 30 秒 shutdown context。旧式无参数关闭回调仍先执行，无法接收或
-响应该 context，因此必须自行及时返回；之后插件以该 context 逆序停止。插件的 `Stop(ctx)` 应
+取消运行根，再创建同样独立的 30 秒 shutdown context。正常停机时，无参数业务关闭回调先执行，
+之后插件以该 context 逆序停止；业务回调无法接收 shutdown context，因此必须自行及时返回。插件的 `Stop(ctx)` 应
 响应取消或 deadline；忽略 context 或卡在其他不可中断调用中的回调无法被 Boot 强行结束。
 
 已有 `engine.StartEngine`、`engine.ServiceStart`、`plugin.StartPlugins` 和无返回值的
@@ -193,16 +193,22 @@ context。`ServiceStart`、插件初始化调用方传递的 context，以及每
 运行生命周期，可在启动期间使用 `engine.GetRootContext()`，并在服务自行启动的后台任务中遵守
 context 取消。
 
+`ServiceStart` 返回非 nil 关闭回调即交付一次业务清理责任，即使同时返回错误也会执行该回调。
+插件启动返回错误、取消或 panic 时，先完成插件回滚，再执行业务关闭回调；该回调不能假定全部插件
+仍然可用。业务关闭回调的 panic 会被转换为命令错误，并继续插件清理，原始启动和清理错误都保留。
+
 或者通过 `plugin.RegisterPlugin()` 注册，框架会自动包装。
 
 #### 启动失败与资源回滚
 
 插件按注册顺序串行启动。`StartPlugins(ctx)` 返回首个启动错误后，不再启动后续插件；
 框架仅对 `Start` 已返回 nil 的实例执行逆序 `Stop`。全部插件启动后的
-`AfterPluginStartedHandler` 返回错误时，同样回滚成功集合。
+`AfterPluginStartedHandler` 返回错误时也回滚成功集合。插件 `Start` 或该回调 panic 时，转换为包含
+阶段信息的错误，插件 Start 的异常同时携带插件名称；panic 值为 error 时，其原始原因可通过
+`errors.Is` 检查。
 
 回滚和正常关闭复用内部停止流程：提取成功集合后立即清空，重复 `StopPlugins` 不会
-重复关闭同一批实例。任一 Stop 返回错误仍继续清理其余插件；回滚错误带插件名记录日志，
+重复关闭同一批实例。任一 Stop 返回错误或 panic 仍继续清理其余插件；回滚错误带插件名记录日志，
 并通过 `errors.Join` 附在原始启动错误后，两者均可通过 `errors.Is` 检查。
 
 回滚保留启动 context 的值，但通过 `context.WithoutCancel` 脱离其取消和截止时间，
@@ -213,7 +219,7 @@ context 取消。
 
 启动错误由 Cobra 命令返回到 engine，再沿用 `os.Exit(-1)` 非零退出约定；公开
 `StartEngine` 签名不变。生命周期入口由 engine 串行调用，不支持重叠启动/停止。
-失败插件负责自己部分初始化的资源；本次不增加 panic 回滚，保留 engine 的 panic 转错误行为。
+返回错误或 panic 的失败插件仍负责自己部分初始化的资源，Boot 仅回滚已经成功启动的实例。
 
 ### 2. 服务发现
 

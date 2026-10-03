@@ -19,6 +19,9 @@ type lifecycleTestPlugin struct {
 	startError error
 	// startCallback 用于模拟启动进行中触发外部取消。
 	startCallback func(context.Context) error
+	// startPanic 和 stopPanic 是生命周期回调抛出的 panic；nil 表示不抛出。
+	startPanic any
+	stopPanic  any
 	// stopError 模拟清理失败。
 	stopError error
 	// calls 记录完整调用顺序；可为空。
@@ -39,6 +42,9 @@ func (plugin *lifecycleTestPlugin) Start(ctx context.Context) error {
 	}
 	if plugin.startCallback != nil {
 		return plugin.startCallback(ctx)
+	}
+	if plugin.startPanic != nil {
+		panic(plugin.startPanic)
 	}
 	return plugin.startError
 }
@@ -62,6 +68,9 @@ func (plugin *lifecycleTestPlugin) Stop(ctx context.Context) error {
 	}
 	if plugin.calls != nil {
 		*plugin.calls = append(*plugin.calls, "stop "+plugin.name)
+	}
+	if plugin.stopPanic != nil {
+		panic(plugin.stopPanic)
 	}
 	return plugin.stopError
 }
@@ -257,6 +266,67 @@ func TestStopPluginsContinuesAfterCleanupError(t *testing.T) {
 	}
 	StopPlugins(t.Context())
 	if want := []string{"start A", "start B", "stop B", "stop A"}; !reflect.DeepEqual(calls, want) {
+		t.Fatalf("calls=%v want=%v", calls, want)
+	}
+}
+
+func TestStartupPanicRollsBackAndPreservesCleanupErrors(t *testing.T) {
+	for _, fromHandler := range []bool{false, true} {
+		t.Run(map[bool]string{false: "plugin", true: "after-start handler"}[fromHandler], func(t *testing.T) {
+			isolatePluginLifecycle(t)
+			startupCause := errors.New("startup panic sentinel")
+			cleanupCause := errors.New("cleanup panic sentinel")
+			ctx, cancel := context.WithCancel(t.Context())
+			defer cancel()
+			var calls []string
+			a := &lifecycleTestPlugin{name: "A", calls: &calls}
+			b := &lifecycleTestPlugin{name: "B", calls: &calls, stopPanic: cleanupCause}
+			c := &lifecycleTestPlugin{name: "C", calls: &calls}
+			if fromHandler {
+				AfterPluginStartedHandler = func() error { panic(startupCause) }
+			} else {
+				c.startPanic = startupCause
+			}
+			RegisterPlugin("A", a)
+			RegisterPlugin("B", b)
+			RegisterPlugin("C", c)
+			err := StartPluginsWithCancel(ctx, cancel)
+			if !errors.Is(err, startupCause) || !errors.Is(err, cleanupCause) {
+				t.Fatalf("lost startup or cleanup panic cause: %v", err)
+			}
+			if !errors.Is(ctx.Err(), context.Canceled) || a.stopContextError != nil || b.stopContextError != nil {
+				t.Fatalf("runtime cancellation or independent cleanup context failed: root=%v A=%v B=%v", ctx.Err(), a.stopContextError, b.stopContextError)
+			}
+			want := []string{"start A", "start B", "start C"}
+			if fromHandler {
+				want = append(want, "stop C")
+			}
+			want = append(want, "stop B", "stop A")
+			if !reflect.DeepEqual(calls, want) {
+				t.Fatalf("calls=%v want=%v", calls, want)
+			}
+			if err := StopPluginsWithError(t.Context()); err != nil || !reflect.DeepEqual(calls, want) {
+				t.Fatalf("repeated cleanup changed calls or returned error: %v calls=%v", err, calls)
+			}
+		})
+	}
+}
+
+func TestStopPluginsContinuesAfterPanic(t *testing.T) {
+	isolatePluginLifecycle(t)
+	cleanupCause := errors.New("stop panic sentinel")
+	var calls []string
+	RegisterPlugin("A", &lifecycleTestPlugin{name: "A", calls: &calls})
+	RegisterPlugin("B", &lifecycleTestPlugin{name: "B", calls: &calls, stopPanic: cleanupCause})
+	if err := StartPlugins(t.Context()); err != nil {
+		t.Fatal(err)
+	}
+	if err := StopPluginsWithError(t.Context()); !errors.Is(err, cleanupCause) {
+		t.Fatalf("lost stop panic cause: %v", err)
+	}
+	want := []string{"start A", "start B", "stop B", "stop A"}
+	StopPlugins(t.Context())
+	if !reflect.DeepEqual(calls, want) {
 		t.Fatalf("calls=%v want=%v", calls, want)
 	}
 }

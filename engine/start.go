@@ -2,6 +2,7 @@ package engine
 
 import (
 	"context"
+	stderrors "errors"
 	"fmt"
 
 	"github.com/coffeehc/base/errors"
@@ -99,10 +100,10 @@ func buildStartCmd(ctx context.Context, serviceInfo configuration.ServiceInfo, s
 				if e := recover(); e != nil {
 					converted := errors.ConverUnknowError(e)
 					if converted == nil {
-						runErr = fmt.Errorf("程序捕获不能处理的异常: %v", e)
+						runErr = stderrors.Join(runErr, fmt.Errorf("程序捕获不能处理的异常: %v", e))
 						log.Error("程序捕获不能处理的异常", zap.Error(runErr))
 					} else {
-						runErr = converted
+						runErr = stderrors.Join(runErr, converted)
 						log.Error("程序捕获不能处理的异常", converted.GetFieldsWithCause()...)
 					}
 					cancelRun()
@@ -147,28 +148,45 @@ func buildStartCmd(ctx context.Context, serviceInfo configuration.ServiceInfo, s
 				}
 				log.Debug("进程文件已经创建好了")
 			}
-			configuration.InitConfiguration(runCtx, serviceInfo)
-			closeCallback, err := start(runCtx, cmd, args)
-			if err != nil {
+			var closeCallback ServiceCloseCallback
+			// 在 PID 文件清理之后登记 defer，保证业务和插件停止完成后才释放守护进程身份。
+			defer func() {
 				cancelRun()
+				shutdownCtx, cancelShutdown := context.WithTimeout(context.WithoutCancel(runCtx), shutdownTimeout)
+				defer cancelShutdown()
+				if closeCallback != nil {
+					runErr = stderrors.Join(runErr, closeService(closeCallback))
+				}
+				runErr = stderrors.Join(runErr, plugin.StopPluginsWithError(shutdownCtx))
+			}()
+			configuration.InitConfiguration(runCtx, serviceInfo)
+			closeCallback, err = start(runCtx, cmd, args)
+			if err != nil {
 				log.Error("启动服务失败", zap.Error(err))
 				return err
 			}
 			if err = plugin.StartPluginsWithCancel(runCtx, cancelRun); err != nil {
-				cancelRun()
 				return err
 			}
 			log.Debug("插件全部启动完成")
 			<-runCtx.Done()
-			shutdownCtx, cancelShutdown := context.WithTimeout(context.WithoutCancel(runCtx), shutdownTimeout)
-			defer cancelShutdown()
-			if closeCallback != nil {
-				closeCallback()
-			}
-			if err = plugin.StopPluginsWithError(shutdownCtx); err != nil {
-				return err
-			}
 			return nil
 		},
 	}
+}
+
+// closeService 隔离业务关闭回调的 panic，使插件清理继续执行并向命令保留关闭失败。
+func closeService(callback ServiceCloseCallback) (closeErr error) {
+	defer func() {
+		if recovered := recover(); recovered != nil {
+			if cause, ok := recovered.(error); ok {
+				closeErr = fmt.Errorf("业务关闭回调 panic: %w", cause)
+			} else {
+				closeErr = fmt.Errorf("业务关闭回调 panic: %v", recovered)
+			}
+			log.Error("业务关闭回调失败", zap.Error(closeErr))
+		}
+	}()
+	callback()
+	return nil
 }

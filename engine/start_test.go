@@ -57,6 +57,10 @@ type engineLifecyclePlugin struct {
 	startError error
 	// panicOnStart 验证 engine 既有的 panic 转错误行为。
 	panicOnStart bool
+	// cancelOnStart 模拟启动阶段的外部取消；可为空。
+	cancelOnStart context.CancelFunc
+	// panicOnStop 模拟停止异常，验证其余插件仍被清理。
+	panicOnStop bool
 }
 
 type engineLifecycleContextKey struct{}
@@ -68,6 +72,9 @@ func (p *engineLifecyclePlugin) Start(ctx context.Context) error {
 	fmt.Fprintf(os.Stdout, "lifecycle:start:%s\n", p.name)
 	if p.panicOnStart {
 		panic("plugin startup panic")
+	}
+	if p.cancelOnStart != nil {
+		p.cancelOnStart()
 	}
 	return p.startError
 }
@@ -88,6 +95,9 @@ func (p *engineLifecyclePlugin) Stop(ctx context.Context) error {
 		return errors.New("shutdown context did not retain runtime context values")
 	}
 	fmt.Fprintf(os.Stdout, "lifecycle:stop:%s\n", p.name)
+	if p.panicOnStop {
+		panic("plugin shutdown panic")
+	}
 	return nil
 }
 
@@ -98,11 +108,18 @@ func TestEngineLifecycleProcess(t *testing.T) {
 		wantFailure bool
 		want        []string
 	}{
-		{"startup-failure", true, []string{"start:A", "start:B", "start:C", "stop:B", "stop:A"}},
-		{"command-error", false, []string{"start:A", "start:B", "start:C", "stop:B", "stop:A"}},
+		{"startup-failure", true, []string{"start:A", "start:B", "start:C", "stop:B", "stop:A", "close"}},
+		{"command-error", false, []string{"start:A", "start:B", "start:C", "stop:B", "stop:A", "close"}},
+		{"command-cleanup-error", false, []string{"start:A", "start:B", "start:C", "stop:B", "stop:A", "close"}},
+		{"service-error", true, []string{"close"}},
+		{"startup-cancel", true, []string{"start:A", "start:B", "stop:B", "stop:A", "close"}},
 		{"normal-cancel", false, []string{"start:A", "start:B", "start:C", "close", "stop:C", "stop:B", "stop:A"}},
 		{"signal-term", false, []string{"start:A", "start:B", "start:C", "close", "stop:C", "stop:B", "stop:A"}},
-		{"plugin-panic", true, []string{"start:A", "start:B", "start:C"}},
+		{"signal-int", false, []string{"start:A", "start:B", "start:C", "close", "stop:C", "stop:B", "stop:A"}},
+		{"plugin-panic", true, []string{"start:A", "start:B", "start:C", "stop:B", "stop:A", "close"}},
+		{"handler-panic", true, []string{"start:A", "start:B", "start:C", "stop:C", "stop:B", "stop:A", "close"}},
+		{"close-panic", true, []string{"start:A", "start:B", "start:C", "close", "stop:C", "stop:B", "stop:A"}},
+		{"stop-panic", true, []string{"start:A", "start:B", "start:C", "close", "stop:C", "stop:B", "stop:A"}},
 	} {
 		t.Run(test.mode, func(t *testing.T) {
 			ctx, cancel := context.WithTimeout(t.Context(), 10*time.Second)
@@ -148,48 +165,72 @@ func TestEngineLifecycleHelper(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.WithValue(context.Background(), engineLifecycleContextKey{}, "trace"))
 	defer cancel()
 	expected := errors.New("plugin startup sentinel")
+	closeExpected := errors.New("business cleanup sentinel")
 	serviceInfo := configuration.ServiceInfo{ServiceName: "lifecycle-test"}
 	start := func(runCtx context.Context, _ *cobra.Command, _ []string) (ServiceCloseCallback, error) {
 		for _, name := range []string{"A", "B", "C"} {
 			instance := &engineLifecyclePlugin{name: name}
 			if name == "C" {
 				switch mode {
-				case "startup-failure", "command-error":
+				case "startup-failure", "command-error", "command-cleanup-error":
 					instance.startError = expected
 				case "plugin-panic":
 					instance.panicOnStart = true
 				}
 			}
+			if name == "B" {
+				if mode == "startup-cancel" {
+					instance.cancelOnStart = cancel
+				}
+				instance.panicOnStop = mode == "stop-panic"
+			}
 			plugin.RegisterPlugin(name, instance)
 		}
-		if mode == "normal-cancel" {
+		if mode == "normal-cancel" || mode == "close-panic" || mode == "stop-panic" {
 			plugin.AfterPluginStartedHandler = func() error { cancel(); return nil }
 		}
 		if mode == "signal-term" {
 			plugin.AfterPluginStartedHandler = func() error { return syscall.Kill(os.Getpid(), syscall.SIGTERM) }
 		}
+		if mode == "signal-int" {
+			plugin.AfterPluginStartedHandler = func() error { return syscall.Kill(os.Getpid(), syscall.SIGINT) }
+		}
+		if mode == "handler-panic" {
+			plugin.AfterPluginStartedHandler = func() error { panic(expected) }
+		}
 		if GetRootContext() != runCtx {
 			return nil, errors.New("ServiceStart did not receive the registered root context")
 		}
-		return func() {
+		closeCallback := func() {
 			if root := GetRootContext(); root == nil || !errors.Is(root.Err(), context.Canceled) {
 				fmt.Fprint(os.Stdout, "lifecycle:root-not-canceled-at-close\n")
 			}
 			fmt.Fprint(os.Stdout, "lifecycle:close\n")
-		}, nil
+			if mode == "close-panic" || mode == "command-cleanup-error" {
+				panic(closeExpected)
+			}
+		}
+		if mode == "service-error" {
+			return closeCallback, expected
+		}
+		return closeCallback, nil
 	}
-	if mode == "command-error" {
+	if mode == "command-error" || mode == "command-cleanup-error" {
 		command, err := buildRootCommand(ctx, serviceInfo, start)
 		if err != nil {
 			t.Fatal(err)
 		}
 		command.SetArgs([]string{"start"})
-		if err := command.ExecuteContext(ctx); !errors.Is(err, expected) {
+		err = command.ExecuteContext(ctx)
+		if !errors.Is(err, expected) {
 			t.Fatalf("command lost startup error: %v", err)
+		}
+		if mode == "command-cleanup-error" && !errors.Is(err, closeExpected) {
+			t.Fatalf("command lost cleanup panic cause: %v", err)
 		}
 	} else {
 		StartEngine(ctx, serviceInfo, start)
-		if mode != "normal-cancel" && mode != "signal-term" {
+		if mode != "normal-cancel" && mode != "signal-term" && mode != "signal-int" {
 			fmt.Fprint(os.Stdout, "lifecycle:unexpected-success\n")
 			t.Fatal("startup failure returned as success")
 		}

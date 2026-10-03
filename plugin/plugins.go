@@ -27,11 +27,11 @@ var startedPlugins []Plugin
 // startupRollbackTimeout 是整轮回滚的协作式超时，不中断忽略 context 的 Stop。
 const startupRollbackTimeout = 30 * time.Second
 
-// Plugin 定义由 engine 串行调用的生命周期；Start 失败的实例自行清理部分初始化资源。
+// Plugin 定义由 engine 串行调用的生命周期；Start 返回错误或 panic 的实例自行清理部分初始化资源。
 type Plugin interface {
-	// Start 返回 nil 后，框架才接管该实例的 Stop 责任。
+	// Start 返回 nil 后，框架才接管该实例的 Stop 责任；panic 被转换为启动错误。
 	Start(ctx context.Context) error
-	// Stop 释放成功启动的资源；返回错误不会阻止其他插件继续停止。
+	// Stop 释放成功启动的资源；返回错误或 panic 均不会阻止其他插件继续停止。
 	Stop(ctx context.Context) error
 }
 
@@ -76,7 +76,11 @@ func StartPluginsWithCancel(ctx context.Context, cancel context.CancelFunc) (sta
 
 // startPlugins 驱动插件启动和失败回滚；需要先取消 owner 根的调用方通过 cancel 显式交付其取消权。
 func startPlugins(ctx context.Context, cancel context.CancelFunc) (startErr error) {
+	phase := "插件启动"
 	defer func() {
+		if recovered := recover(); recovered != nil {
+			startErr = lifecyclePanicError(phase, recovered)
+		}
 		if startErr != nil {
 			if cancel != nil {
 				cancel()
@@ -94,6 +98,7 @@ func startPlugins(ctx context.Context, cancel context.CancelFunc) (startErr erro
 			return fmt.Errorf("插件启动已取消: %w", err)
 		}
 		name := _plugins[plugin]
+		phase = "启动插件 " + name
 		log.Info("开始启动插件", zap.String("pluginName", name))
 		err := plugin.Start(ctx)
 		if err != nil {
@@ -108,12 +113,21 @@ func startPlugins(ctx context.Context, cancel context.CancelFunc) (startErr erro
 		}
 	}
 	if AfterPluginStartedHandler != nil {
+		phase = "业务启动回调"
 		err := AfterPluginStartedHandler()
 		if err != nil {
 			return fmt.Errorf("业务启动回调: %w", err)
 		}
 	}
 	return nil
+}
+
+// lifecyclePanicError 将生命周期回调 panic 转为错误，并保留 error 类型的原始原因供 errors.Is 检查。
+func lifecyclePanicError(phase string, recovered any) error {
+	if cause, ok := recovered.(error); ok {
+		return fmt.Errorf("%s panic: %w", phase, cause)
+	}
+	return fmt.Errorf("%s panic: %v", phase, recovered)
 }
 
 // StopPlugins 逆序停止成功启动的插件并记录清理错误；重复调用不会再次停止同一批插件。
@@ -123,7 +137,7 @@ func StopPlugins(ctx context.Context) {
 }
 
 // StopPluginsWithError 逆序停止成功启动的插件并返回聚合清理错误。
-// ctx 是调用方提供的 shutdown context；停止过程遵守它的取消和 deadline，但不会强制中断忽略 context 的插件。
+// ctx 是调用方提供的 shutdown context，原样传给每个插件；取消和 deadline 需要各插件主动响应。
 // 插件停止失败不会阻止其余插件继续停止，重复调用返回 nil 且不会再次停止同一批插件。
 func StopPluginsWithError(ctx context.Context) error {
 	return stopStartedPlugins(ctx)
@@ -145,7 +159,7 @@ func stopStartedPlugins(ctx context.Context) error {
 	for index := len(stoppingPlugins) - 1; index >= 0; index-- {
 		currentPlugin := stoppingPlugins[index]
 		name := pluginNames[currentPlugin]
-		err := currentPlugin.Stop(ctx)
+		err := stopPlugin(ctx, currentPlugin)
 		if err != nil {
 			log.Error("关闭插件失败", zap.String("pluginName", name), zap.Error(err))
 			cleanupErr = errors.Join(cleanupErr, fmt.Errorf("关闭插件 %s: %w", name, err))
@@ -154,6 +168,16 @@ func stopStartedPlugins(ctx context.Context) error {
 		log.Info("关闭插件", zap.String("pluginName", name))
 	}
 	return cleanupErr
+}
+
+// stopPlugin 隔离单个插件的停止 panic，防止它中断其余依赖的逆序清理。
+func stopPlugin(ctx context.Context, currentPlugin Plugin) (stopErr error) {
+	defer func() {
+		if recovered := recover(); recovered != nil {
+			stopErr = lifecyclePanicError("插件停止", recovered)
+		}
+	}()
+	return currentPlugin.Stop(ctx)
 }
 
 type pluginImpl struct {
