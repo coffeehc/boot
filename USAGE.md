@@ -12,6 +12,14 @@ Boot 是一个 Go 微服务核心启动框架，采用插件化架构设计。�
 - **进程管理**：支持守护进程模式，自动 PID 管理
 - **配置管理**：基于 Viper 的配置系统
 
+默认配置初始化继续允许 `ENV_` 环境变量覆盖。应用要求所有资源值来自配置文件时，使用
+`engine.StartEngineWithOptions(ctx, info, start, engine.WithFileOnlyConfiguration())`；直接初始化可调用
+`configuration.InitConfiguration(ctx, info, configuration.WithFileOnly())`。`--config` / `-c` 仍只选择配置文件。
+文件模式每次初始化都重建全局 Viper，排除之前的环境绑定、文件残值与程序覆盖值；Boot 的
+`SetRunModel` 默认值会恢复，插件在初始化后注册的默认值保持可用。需要应用默认值时，应在
+初始化后注册；不要依赖之前一次初始化的 `viper.Set` 或 `BindEnv`。此选项只约束当次初始化，
+后续未带选项的应用仍使用默认环境覆盖行为。初始化与插件装配必须串行完成。
+
 ## 技术栈
 
 - Go 1.26

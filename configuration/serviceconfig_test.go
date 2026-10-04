@@ -1,33 +1,69 @@
 package configuration
 
 import (
+	"context"
 	"os"
+	"path/filepath"
 	"testing"
 
-	"github.com/coffeehc/base/log"
 	"github.com/spf13/viper"
-	"go.uber.org/zap"
 )
 
-func TestConfig(t *testing.T) {
-	viper.SetEnvPrefix("ENV")
-	viper.AutomaticEnv()
-	// os.Setenv("ENV_RUN_MODEL","dev")
-	runModel, ok := os.LookupEnv("ENV_RUN_MODEL")
-	log.Info("ENV运行模式", zap.String("run_model", runModel), zap.Bool("ok", ok))
-	runModel = viper.GetString("run_model")
-	log.Info("运行模式", zap.String("run_model", runModel))
-	// os.Setenv("ENV_REMOTE_CONFIG.ENABLE","true")
-	// os.Setenv("ENV_REMOTE_CONFIG.CONSUL_ADDR","127.0.0.1:8500")
-	// os.Setenv("ENV_CONSUL.TOKEN", "2e9c367d-b9d8-0e75-26d0-5fde5e7dfac7")
-	// EnableRemoteConfig()
-	// fmt.Print(viper.GetString("consul_config.consul_addr"))
-	// SetRunModel("dev")
-	// // viper.SetDefault("ServiceName","r")
-	// ctx, _ := context.WithTimeout(context.TODO(), time.Second*3)
-	// InitConfiguration(ctx, ServiceInfo{
-	// 	ServiceName: "test",
-	// })
-	// t.Logf("%s:%s", _run_model, GetRunModel())
-	// t.Logf("serviceName:%s", GetServiceName())
+func TestFileOnlyConfigurationExcludesEnvironmentAndPreviousInitialization(t *testing.T) {
+	previousPath, previousDefault := *configFile, defaultRunModel
+	t.Cleanup(func() {
+		*configFile, defaultRunModel = previousPath, previousDefault
+		viper.Reset()
+	})
+	root := t.TempDir()
+	first := filepath.Join(root, "first.yml")
+	second := filepath.Join(root, "second.yml")
+	if err := os.WriteFile(first, []byte("run_model: test\nresource:\n  limit: 8\nold_file: true\n"), 0600); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(second, []byte("resource:\n  limit: 12\n"), 0600); err != nil {
+		t.Fatal(err)
+	}
+	t.Setenv("ENV_RUN_MODEL", "prod")
+	t.Setenv("ENV_RESOURCE_LIMIT", "99")
+	t.Setenv("BOOT_BOUND_RESOURCE", "88")
+	SetRunModel(Model_dev)
+	*configFile = first
+	InitConfiguration(context.Background(), ServiceInfo{ServiceName: "file-only-test"})
+	if GetRunModel() != Model_product || viper.GetInt("resource.limit") != 99 {
+		t.Fatal("default configuration no longer applies ENV_ overrides")
+	}
+	if err := viper.BindEnv("bound_resource", "BOOT_BOUND_RESOURCE"); err != nil {
+		t.Fatal(err)
+	}
+	viper.Set("previous_override", true)
+	InitConfiguration(context.Background(), ServiceInfo{ServiceName: "file-only-test"}, WithFileOnly())
+	if GetRunModel() != Model_test || viper.GetInt("resource.limit") != 8 ||
+		viper.IsSet("bound_resource") || viper.IsSet("previous_override") {
+		t.Fatalf("file-only configuration inherited environment or program values: %v", viper.AllSettings())
+	}
+	*configFile = second
+	InitConfiguration(context.Background(), ServiceInfo{ServiceName: "file-only-test"}, WithFileOnly())
+	if GetRunModel() != Model_dev || viper.GetInt("resource.limit") != 12 || viper.IsSet("old_file") {
+		t.Fatalf("next file-only initialization inherited previous file or lost Boot defaults: %v", viper.AllSettings())
+	}
+	InitConfiguration(context.Background(), ServiceInfo{ServiceName: "file-only-test"})
+	if GetRunModel() != Model_product || viper.GetInt("resource.limit") != 99 {
+		t.Fatal("file-only option leaked into a later default initialization")
+	}
+}
+
+func TestFileOnlyConfigurationDoesNotReadUnregisteredEnvironmentKeys(t *testing.T) {
+	previousPath, previousDefault := *configFile, defaultRunModel
+	t.Cleanup(func() {
+		*configFile, defaultRunModel = previousPath, previousDefault
+		viper.Reset()
+	})
+	*configFile = filepath.Join(t.TempDir(), "absent.yml")
+	SetRunModel(Model_test)
+	t.Setenv("ENV_UNDECLARED_RESOURCE", "value")
+	InitConfiguration(context.Background(), ServiceInfo{ServiceName: "file-only-test"}, WithFileOnly())
+	if GetRunModel() != Model_test || viper.GetString("undeclared_resource") != "" {
+		t.Fatal("file-only configuration queried environment for an absent file key")
+	}
 }

@@ -81,7 +81,7 @@ func buildDaemonStartCmd(ctx context.Context, serviceInfo configuration.ServiceI
 	}
 }
 
-func buildStartCmd(ctx context.Context, serviceInfo configuration.ServiceInfo, start ServiceStart) *cobra.Command {
+func buildStartCmd(ctx context.Context, serviceInfo configuration.ServiceInfo, start ServiceStart, configurationOptions ...configuration.Option) *cobra.Command {
 	return &cobra.Command{
 		Use:   "start",
 		Short: "启动服务",
@@ -159,7 +159,7 @@ func buildStartCmd(ctx context.Context, serviceInfo configuration.ServiceInfo, s
 				}
 				runErr = stderrors.Join(runErr, plugin.StopPluginsWithError(shutdownCtx))
 			}()
-			configuration.InitConfiguration(runCtx, serviceInfo)
+			configuration.InitConfiguration(runCtx, serviceInfo, configurationOptions...)
 			closeCallback, err = start(runCtx, cmd, args)
 			if err != nil {
 				log.Error("启动服务失败", zap.Error(err))

@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"strings"
 	"syscall"
 	"testing"
@@ -14,7 +15,53 @@ import (
 	"github.com/coffeehc/boot/configuration"
 	"github.com/coffeehc/boot/plugin"
 	"github.com/spf13/cobra"
+	"github.com/spf13/pflag"
+	"github.com/spf13/viper"
 )
+
+func TestEngineFileOnlyConfigurationAppliesToEachStart(t *testing.T) {
+	configFlag := pflag.Lookup("config")
+	previousPath := configFlag.Value.String()
+	t.Cleanup(func() {
+		_ = configFlag.Value.Set(previousPath)
+		viper.Reset()
+	})
+	path := filepath.Join(t.TempDir(), "config.yml")
+	if err := os.WriteFile(path, []byte("run_model: test\nresource:\n  limit: 7\n"), 0600); err != nil {
+		t.Fatal(err)
+	}
+	if err := configFlag.Value.Set(path); err != nil {
+		t.Fatal(err)
+	}
+	t.Setenv("ENV_RESOURCE_LIMIT", "99")
+	configuration.SetRunModel(configuration.Model_test)
+	stop := errors.New("configuration inspected")
+	observed := 0
+	start := func(context.Context, *cobra.Command, []string) (ServiceCloseCallback, error) {
+		observed = viper.GetInt("resource.limit")
+		return nil, stop
+	}
+	serviceInfo := configuration.ServiceInfo{ServiceName: "file-only-engine-test"}
+	fileOnly, err := buildRootCommand(t.Context(), serviceInfo, start, WithFileOnlyConfiguration())
+	if err != nil {
+		t.Fatal(err)
+	}
+	for range 2 {
+		viper.AutomaticEnv()
+		fileOnly.SetArgs([]string{"start"})
+		if err = fileOnly.ExecuteContext(t.Context()); !errors.Is(err, stop) || observed != 7 {
+			t.Fatalf("file-only engine start lost its configuration option: value=%d err=%v", observed, err)
+		}
+	}
+	defaultEngine, err := buildRootCommand(t.Context(), serviceInfo, start)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defaultEngine.SetArgs([]string{"start"})
+	if err = defaultEngine.ExecuteContext(t.Context()); !errors.Is(err, stop) || observed != 99 {
+		t.Fatalf("default engine no longer applies ENV_ configuration: value=%d err=%v", observed, err)
+	}
+}
 
 func TestStartCommandReturnsRecoveredPanic(t *testing.T) {
 	configuration.SetRunModel(configuration.Model_test)

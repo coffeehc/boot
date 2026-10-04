@@ -18,7 +18,9 @@ func RegisterOnConfigChange(onConfigChange func()) {
 	onConfigChanges = append(onConfigChanges, onConfigChange)
 }
 
-func InitConfiguration(ctx context.Context, serviceInfo ServiceInfo) {
+// InitConfiguration 串行初始化服务配置和身份；默认允许 ENV_ 环境覆盖。
+// WithFileOnly 将本轮限制为文件和 Boot 默认值，不继承之前初始化的配置来源。
+func InitConfiguration(ctx context.Context, serviceInfo ServiceInfo, opts ...Option) {
 	if serviceInfo.Metadata == nil {
 		serviceInfo.Metadata = map[string]string{
 			"git_rev": GitRev,
@@ -28,10 +30,13 @@ func InitConfiguration(ctx context.Context, serviceInfo ServiceInfo) {
 			"version":    Version,
 		}
 	}
-	viper.SetConfigType("yaml")
-	// 默认开启远程配置
-	// viper.SetDefault(enableRemoteConfigKey, false)
-	loadConfig()
+	options := configurationOptions{}
+	for _, option := range opts {
+		if option != nil {
+			option(&options)
+		}
+	}
+	loadConfig(options)
 	initServiceInfo(ctx, serviceInfo)
 	// loadRemoteConfig(ctx, serviceInfo)
 	log.InitLogger(true)
@@ -63,6 +68,8 @@ func GetServiceInfo() ServiceInfo {
 	return currentServiceInfo
 }
 
-func SetRunModel(runModel string) {
-	viper.SetDefault(_run_model, runModel)
+// SetRunModel 注册 Boot 运行模式默认值；每次文件配置初始化均恢复此默认值。
+func SetRunModel(model string) {
+	defaultRunModel = model
+	viper.SetDefault(_run_model, model)
 }

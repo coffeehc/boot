@@ -130,7 +130,7 @@ func buildRootCommand(ctx context.Context, serviceInfo configuration.ServiceInfo
 	builtinCommands := []*cobra.Command{
 		buildVersionCmd(),
 		buildReStartCmd(ctx, serviceInfo, start),
-		buildStartCmd(ctx, serviceInfo, start),
+		buildStartCmd(ctx, serviceInfo, start, engineOpts.configurationOptions...),
 		buildDaemonStartCmd(ctx, serviceInfo, start),
 		buildStopCmd(ctx, serviceInfo),
 		buildSetupCmd(serviceInfo),

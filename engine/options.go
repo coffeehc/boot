@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/coffeehc/boot/configuration"
 	"github.com/spf13/cobra"
 )
 
@@ -22,10 +23,22 @@ func WithExtraCommands(extraCommands ...*cobra.Command) EngineOption {
 	}
 }
 
+// WithFileOnlyConfiguration 要求每轮 start 初始化仅从配置文件读取资源值。
+// 配置文件仍由 config CLI 参数选择；未启用此选项的应用保留 ENV_ 覆盖行为。
+func WithFileOnlyConfiguration() EngineOption {
+	return func(options *engineOptions) error {
+		options.configurationOptions = append(options.configurationOptions, configuration.WithFileOnly())
+		return nil
+	}
+}
+
 // engineOptions 保存 StartEngineWithOptions 的内部配置结果。
-// 当前仅承载扩展命令列表，后续可继续承载其他可选能力。
+// 选项绑定到本次命令装配，避免文件模式影响后续默认 engine。
 type engineOptions struct {
+	// extraCommands 是应用显式挂载的额外根命令。
 	extraCommands []*cobra.Command
+	// configurationOptions 是每轮 start 交给配置 owner 的初始化策略。
+	configurationOptions []configuration.Option
 }
 
 // collectEngineOptions 按顺序执行所有 EngineOption，并聚合最终配置。
