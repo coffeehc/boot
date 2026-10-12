@@ -3,6 +3,7 @@ package engine
 import (
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/coffeehc/boot/configuration"
 	"github.com/spf13/cobra"
@@ -28,6 +29,18 @@ func WithExtraCommands(extraCommands ...*cobra.Command) EngineOption {
 func WithFileOnlyConfiguration() EngineOption {
 	return func(options *engineOptions) error {
 		options.configurationOptions = append(options.configurationOptions, configuration.WithFileOnly())
+		return nil
+	}
+}
+
+// WithConfigReloadDebounce 设置 configuration 的文件尾沿防抖窗口。
+// 默认 5 秒；例如传入 10*time.Second。不会延迟服务 Start 中的首次绑定。
+func WithConfigReloadDebounce(delay time.Duration) EngineOption {
+	return func(options *engineOptions) error {
+		if delay <= 0 {
+			return fmt.Errorf("配置防抖窗口必须大于零")
+		}
+		options.configurationOptions = append(options.configurationOptions, configuration.WithReloadDebounce(delay))
 		return nil
 	}
 }

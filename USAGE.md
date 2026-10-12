@@ -20,6 +20,77 @@ Boot 是一个 Go 微服务核心启动框架，采用插件化架构设计。�
 初始化后注册；不要依赖之前一次初始化的 `viper.Set` 或 `BindEnv`。此选项只约束当次初始化，
 后续未带选项的应用仍使用默认环境覆盖行为。初始化与插件装配必须串行完成。
 
+### 配置绑定与变更候选
+
+`newService(ctx) Service` 只创建实例并通过 Enable 建立依赖顺序。服务在 `Start(ctx)` 开头调用
+`configuration.BindConfig(key string, config any, onChange configuration.ChangeNotify) error`，
+然后才初始化数据库、worker 等业务资源。首次绑定同步完成，不等待防抖；目标必须是非 nil
+结构体指针。临时对象按现有 Viper/mapstructure 规则解码，实现 `Validate() error` 时一定先调用
+校验。没有 Validate 方法则仅做类型解码，Boot 不猜测业务合法性。默认值应在 Viper 中注册。
+失败不会半覆盖目标，也不会建立订阅。
+
+```go
+type serviceConfig struct {
+    Limit int `mapstructure:"limit"`
+}
+
+func (c *serviceConfig) Validate() error {
+    if c.Limit <= 0 { return fmt.Errorf("limit 必须大于零") }
+    return nil
+}
+
+func (s *serviceImpl) Start(ctx context.Context) error {
+    if err := configuration.BindConfig("my_service", &s.config,
+        func(candidate any, err error) {
+            if err != nil {
+                // 只报告节点/阶段；不要输出配置候选或秘密。
+                return
+            }
+            next := candidate.(*serviceConfig) // 独立对象，包括 map/slice
+            select {
+            case s.candidates <- next:
+            case <-ctx.Done():
+            }
+            // 接受、忽略、延迟应用及安全资源切换由 service 决定。
+        }); err != nil {
+        return err
+    }
+    // 此处才按首次 s.config 初始化业务资源；后续由服务自己的流程应用候选。
+    return nil
+}
+```
+
+nil 回调只加载首次值。订阅之后，configuration 永远不直接修改服务持有的原对象。
+`ChangeNotify` 为 `func(candidate any, err error)`：成功是同类型新指针/nil，失败是 nil/error；
+回调没有返回值，完成不表示配置已被服务应用。同一轮初始化内同一对象指针不能重复绑定，
+不同对象可以绑定同一个 key。
+
+文件通过单一 fsnotify 目录监听观察 write/create/rename/remove/chmod，原子替换与删除恢复不会
+终止监听。每次相关事件重置尾沿窗口，默认 5 秒，可用
+`engine.WithConfigReloadDebounce(10*time.Second)` 或直接初始化的
+`configuration.WithReloadDebounce(10*time.Second)` 调整。防抖之后核对文件身份/大小/时间，
+再由初始化使用的唯一 Viper 解析；不会在 Viper 的原生 WatchConfig 回调中 sleep，也没有第二
+Viper、DI 或额外配置解析器。Boot 不再用 `base/log.InitLogger(true)` 重建日志器以偷偷开启另一
+条原生监听；只同步加载已有日志器的首次值，本轮不实现日志器的自动资源重建。
+
+按每个 key 解码后的有效值比较，包含等价类型转换；同值不通知。某个 key 的解码/Validate
+失败只通知对应订阅，完整文件读取/解析失败通知全部订阅；错误文本不包含底层 YAML 值或
+业务校验原文。失败后有效值恢复，即使与上次成功值相同也会通知恢复。读取/解析失败不替换
+Viper 的上次有效文件 map，首次绑定的对象也不会被后续失败污染。
+
+回调在所有全局/owner/绑定锁外执行，每个绑定独立串行，慢回调不阻塞其他绑定或全局文件读取。
+已稳定的通知按顺序排队；回调应快速移交服务自己的更新流程，避免长期积压。根 context
+取消时停止监听和待通知队列；已开始的 Go 回调无法强制中断，应使用服务的 ctx 及时返回。
+不要在回调里重新初始化 configuration 或强制服务重建资源。
+
+启用运行期订阅后，配置访问必须通过这些绑定，服务使用自己拥有的值。直接并发调用全局
+`viper.Get/Set/Unmarshal/Reset/WatchConfig` 不受本包锁保护，Viper 本身不支持这种并发使用。
+初始化、默认值注册和旧式直接 Viper 读取应在订阅启动前串行完成；业务后续迁移不属于本轮。
+
+`InitConfiguration` 现在返回 error，engine 在业务/插件 Start 之前检查并沿用既有取消及逆序清理。
+显式指定的缺失/坏文件会失败；默认 `./config.yml` 不存在时仍可用合法 Boot/Viper 默认值启动。
+现有直接调用方也应检查返回错误，而不是把失败当成初始化成功。
+
 ## 技术栈
 
 - Go 1.26

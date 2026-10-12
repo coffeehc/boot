@@ -1,14 +1,17 @@
 package configuration
 
 import (
+	"bytes"
+	"errors"
 	"flag"
+	"fmt"
 	"os"
+	"path/filepath"
 	"strings"
+	"time"
 
-	"github.com/coffeehc/base/log"
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
-	"go.uber.org/zap"
 )
 
 const (
@@ -18,6 +21,8 @@ const (
 )
 
 var configFile = pflag.StringP("config", "c", "./config.yml", "配置文件路径")
+
+const defaultConfigPath = "./config.yml"
 
 var runModel = ""
 
@@ -31,6 +36,13 @@ type Option func(*configurationOptions)
 type configurationOptions struct {
 	// fileOnly 排除环境绑定、上一轮文件值和程序覆盖值，仅保留 Boot 默认值和本次文件。
 	fileOnly bool
+	debounce time.Duration
+}
+
+// WithReloadDebounce 设置文件变更的尾沿静默窗口；默认 5 秒，可设为 10 秒。
+// 必须大于零，只影响本轮初始化，不延迟首次 BindConfig。
+func WithReloadDebounce(delay time.Duration) Option {
+	return func(options *configurationOptions) { options.debounce = delay }
 }
 
 // WithFileOnly 要求本次初始化只读取配置文件和 Boot 默认值。
@@ -42,11 +54,13 @@ func WithFileOnly() Option {
 
 // GetRunModel 返回当前初始化已经固定的运行模式，不重新读取配置来源。
 func GetRunModel() string {
+	configurationState.RLock()
+	defer configurationState.RUnlock()
 	return runModel
 }
 
 // loadConfig 按本轮来源策略装配配置；文件模式必须清除上轮开启的环境自动读取。
-func loadConfig(options configurationOptions) {
+func loadConfig(options configurationOptions) (string, error) {
 	if options.fileOnly {
 		// Viper 没有关闭 AutomaticEnv 或清除 BindEnv 的公开 API；重建防止跨轮残留。
 		viper.Reset()
@@ -65,16 +79,27 @@ func loadConfig(options configurationOptions) {
 		viper.SetEnvPrefix("ENV")
 		viper.AutomaticEnv()
 	}
-	_, err := os.ReadFile(*configFile)
-	if err == nil {
-		viper.SetConfigFile(*configFile)
-		if err := viper.MergeInConfig(); err != nil {
-			log.Warn("加载日志文件失败:", zap.Error(err))
+	path, err := filepath.Abs(*configFile)
+	if err != nil {
+		return "", fmt.Errorf("配置文件路径无效")
+	}
+	viper.SetConfigFile(path)
+	data, err := stableConfigRead(path)
+	explicit := *configFile != defaultConfigPath || pflag.Lookup("config").Changed
+	if err != nil {
+		if !explicit && errors.Is(err, os.ErrNotExist) {
+			data = nil // 默认文件不存在时，仍允许本轮合法的 Viper/Boot 默认值。
+		} else {
+			return "", fmt.Errorf("配置文件读取失败")
 		}
 	}
+	// 复用已装配的唯一 Viper；ReadConfig 成功才替换文件 map，移除的节点不会残留。
+	if err := viper.ReadConfig(bytes.NewReader(data)); err != nil {
+		return "", fmt.Errorf("配置文件解析失败")
+	}
 	if viper.GetString(_run_model) == "" {
-		log.Panic("没有指定run model")
+		return "", fmt.Errorf("没有指定 run model")
 	}
 	runModel = viper.GetString(_run_model)
-	log.Info("加载配置", zap.String("run model", viper.GetString(_run_model)))
+	return path, nil
 }

@@ -159,7 +159,9 @@ func buildStartCmd(ctx context.Context, serviceInfo configuration.ServiceInfo, s
 				}
 				runErr = stderrors.Join(runErr, plugin.StopPluginsWithError(shutdownCtx))
 			}()
-			configuration.InitConfiguration(runCtx, serviceInfo, configurationOptions...)
+			if err = configuration.InitConfiguration(runCtx, serviceInfo, configurationOptions...); err != nil {
+				return err
+			}
 			closeCallback, err = start(runCtx, cmd, args)
 			if err != nil {
 				log.Error("启动服务失败", zap.Error(err))
