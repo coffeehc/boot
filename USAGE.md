@@ -66,7 +66,9 @@ nil 回调只加载首次值。订阅之后，configuration 永远不直接修�
 不同对象可以绑定同一个 key。
 
 文件通过单一 fsnotify 目录监听观察 write/create/rename/remove/chmod，原子替换与删除恢复不会
-终止监听。每次相关事件重置尾沿窗口，默认 5 秒，可用
+终止监听。首次建立监听后也会核对一次来源，避免遗漏初始化至首次订阅之间的变更；默认文件
+原本缺失时仍保留合法默认值，文件出现后再删除则正常报告读取失败。每次相关事件重置尾沿
+窗口，默认 5 秒，可用
 `engine.WithConfigReloadDebounce(10*time.Second)` 或直接初始化的
 `configuration.WithReloadDebounce(10*time.Second)` 调整。防抖之后核对文件身份/大小/时间，
 再由初始化使用的唯一 Viper 解析；不会在 Viper 的原生 WatchConfig 回调中 sleep，也没有第二

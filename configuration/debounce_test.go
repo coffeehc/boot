@@ -72,6 +72,7 @@ func TestDebounceUsesControlledTrailingClockAndLatestSnapshot(t *testing.T) {
 			t.Fatal("event not consumed")
 		}
 	}
+	waitReset() // Consume the initial reconciliation timer before delivering file events.
 	rewrite(t, path, "resource: {limit: 2}\n")
 	events <- fsnotify.Event{Name: path, Op: fsnotify.Write}
 	waitReset()

@@ -61,7 +61,7 @@ func InitConfiguration(ctx context.Context, serviceInfo ServiceInfo, opts ...Opt
 	if options.debounce <= 0 {
 		return fmt.Errorf("配置防抖窗口必须大于零")
 	}
-	path, err := loadConfig(options)
+	path, missing, err := loadConfig(options)
 	if err != nil {
 		return err
 	}
@@ -76,6 +76,7 @@ func InitConfiguration(ctx context.Context, serviceInfo ServiceInfo, opts ...Opt
 		return nodeError("logger", "日志级别无效")
 	}
 	configurationState.owner = newConfigOwner(ctx, viper.GetViper(), path, options.debounce)
+	configurationState.owner.allowMissing = missing
 	initServiceInfo(ctx, serviceInfo)
 	// loadRemoteConfig(ctx, serviceInfo)
 	// base/log 已在其包初始化中建立 logger；InitLogger(true) 会另开 Viper

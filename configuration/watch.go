@@ -80,6 +80,8 @@ type configOwner struct {
 	watcher  *fsnotify.Watcher
 	done     chan struct{}
 	newTimer func(time.Duration) configTimer
+	// allowMissing 保留初始化时默认文件不存在的合法基线，观察到来源后不再允许缺失。
+	allowMissing bool
 }
 
 func newConfigOwner(ctx context.Context, vp *viper.Viper, path string, delay time.Duration) *configOwner {
@@ -138,6 +140,9 @@ func (o *configOwner) watch(events <-chan fsnotify.Event, failures <-chan error)
 		}
 		tick = timer.channel()
 	}
+	// 初始化读文件至首次订阅之间可能发生变更；监听建立后核对一次以关闭观察间隙。
+	// 后续事件仍重置同一个尾沿窗口，不增加另一条监听或周期轮询。
+	schedule()
 	for {
 		select {
 		case <-o.ctx.Done():
@@ -216,9 +221,14 @@ func (o *configOwner) reload() error {
 		return err
 	}
 	if err != nil {
+		if o.allowMissing && errors.Is(err, os.ErrNotExist) {
+			return nil
+		}
+		o.allowMissing = false
 		o.failAll("读取配置源失败", nil)
 		return nil
 	}
+	o.allowMissing = false
 	// Viper 1.21 ReadConfig 先解析临时 map，成功才替换文件 map；没有第二 Viper/解析器。
 	if err := o.vp.ReadConfig(bytes.NewReader(data)); err != nil {
 		o.failAll("解析配置源失败", data)

@@ -202,6 +202,68 @@ func TestBindConfigAtomicRenameDeletionAndRecovery(t *testing.T) {
 	}
 }
 
+func TestBindConfigObservesChangeBeforeFirstSubscription(t *testing.T) {
+	path, _, o := configTest(t, "resource: {limit: 1}\n")
+	// InitConfiguration has loaded the startup snapshot, but no watcher exists yet.
+	// This write cannot generate an event for the later subscription.
+	rewrite(t, path, "resource: {limit: 2}\n")
+	if o.watcher != nil {
+		t.Fatal("watcher started before a subscription")
+	}
+	notices := make(chan configNotice, 1)
+	c := &boundConfig{}
+	if err := BindConfig("resource", c, func(v any, e error) { notices <- configNotice{v, e} }); err != nil {
+		t.Fatal(err)
+	}
+	n := waitNotice(t, notices)
+	if n.err != nil || n.candidate.(*boundConfig).Limit != 2 {
+		t.Fatal("change before subscription was not observed", n)
+	}
+	if c.Limit != 1 {
+		t.Fatal("startup reconciliation applied a candidate to the service object")
+	}
+}
+
+func TestBindConfigReconciliationPreservesMissingDefaultSource(t *testing.T) {
+	t.Chdir(t.TempDir())
+	configTest(t, "resource: {limit: 1}\n")
+	*configFile = defaultConfigPath
+	if err := InitConfiguration(t.Context(), ServiceInfo{ServiceName: "missing-default-binding-test"}, WithFileOnly(), WithReloadDebounce(15*time.Millisecond)); err != nil {
+		t.Fatal(err)
+	}
+	viper.SetDefault("resource.limit", 1)
+	o := configurationState.owner
+	notices := make(chan configNotice, 10)
+	c := &boundConfig{}
+	if err := BindConfig("resource", c, func(v any, e error) { notices <- configNotice{v, e} }); err != nil {
+		t.Fatal(err)
+	}
+	if err := o.reload(); err != nil {
+		t.Fatal(err)
+	}
+	o.mu.Lock()
+	failed := o.bindings[c].failed
+	o.mu.Unlock()
+	if failed {
+		t.Fatal("reconciliation rejected a legal missing default file")
+	}
+	rewrite(t, defaultConfigPath, "resource: {limit: 2}\n")
+	n := waitNotice(t, notices)
+	if n.err != nil || n.candidate.(*boundConfig).Limit != 2 {
+		t.Fatal("first file appearance was not observed", n)
+	}
+	if err := os.Remove(defaultConfigPath); err != nil {
+		t.Fatal(err)
+	}
+	n = waitNotice(t, notices)
+	if n.err == nil || n.candidate != nil {
+		t.Fatal("deletion after first file appearance was ignored", n)
+	}
+	if c.Limit != 1 {
+		t.Fatal("reconciliation modified the initial default configuration")
+	}
+}
+
 func TestBindConfigSlowCallbackOrderedIndependentAndShutdown(t *testing.T) {
 	path, cancel, o := configTest(t, "slow: {limit: 1}\nfast: {limit: 1}\nother: {limit: 1}\n")
 	start, release := make(chan struct{}), make(chan struct{})
