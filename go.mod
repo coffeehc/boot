@@ -5,6 +5,7 @@ go 1.26
 require (
 	github.com/coffeehc/base v1.0.2-0.20260217181348-2bad5c0d46f9
 	github.com/coffeehc/httpx v0.0.0-20260304091833-71f05d5b6356
+	github.com/fsnotify/fsnotify v1.10.1
 	github.com/gofiber/fiber/v3 v3.3.0
 	github.com/gofiber/template/html/v2 v2.1.3
 	github.com/hashicorp/consul/api v1.34.3
@@ -29,7 +30,6 @@ require (
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
 	github.com/fatih/color v1.19.0 // indirect
-	github.com/fsnotify/fsnotify v1.10.1 // indirect
 	github.com/go-viper/mapstructure/v2 v2.5.0 // indirect
 	github.com/gofiber/schema v1.7.1 // indirect
 	github.com/gofiber/template v1.8.3 // indirect
