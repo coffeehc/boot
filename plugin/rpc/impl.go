@@ -73,6 +73,14 @@ type serviceImpl struct {
 	healthServer *health.Server
 	// serveWorkers 只等待监听 goroutine，不等待忽略取消的业务 handler。
 	serveWorkers sync.WaitGroup
+	// shutdownOnce 确保重复停止只启动一轮优雅关闭。
+	shutdownOnce sync.Once
+	// shutdownDone 只在在途请求与监听 goroutine 真正排空后关闭。
+	shutdownDone chan struct{}
+	// forceStopOnce 确保超时调用不会累积阻塞在 gRPC 内部锁上的强制关闭请求。
+	forceStopOnce sync.Once
+	// forceStopDone 只表示强制关闭调用已返回，不表示业务 handler 已退出。
+	forceStopDone chan struct{}
 }
 
 // GetRPCServerAddr 返回监听地址；端口为 0 时，Start 成功后才能取得实际端口。
@@ -153,27 +161,45 @@ func (impl *serviceImpl) serve(listener net.Listener) {
 	}
 }
 
-// Stop 先停止健康报告并等待在途 RPC；shutdown context 到期后关闭连接并返回取消原因。
+// Stop 先停止健康报告并等待在途 RPC 和监听协程；所有等待均受 shutdown context 限制。
+// 到期后仅请求后台强制关闭，返回未排空错误；不能强行终止忽略取消的业务 handler。
 func (impl *serviceImpl) Stop(ctx context.Context) error {
-	impl.healthServer.Shutdown()
-	done := make(chan struct{})
-	go impl.gracefulStop(done)
+	impl.shutdownOnce.Do(func() {
+		impl.shutdownDone = make(chan struct{})
+		go impl.gracefulStop()
+	})
 	select {
-	case <-done:
-		impl.serveWorkers.Wait()
-		log.Info("RPC 服务已关闭")
+	case <-impl.shutdownDone:
 		return nil
 	case <-ctx.Done():
-		impl.server.Stop()
-		impl.serveWorkers.Wait()
-		return fmt.Errorf("RPC 服务等待在途请求结束超时或取消: %w", ctx.Err())
+		// 已排空时优先报告实际完成，避免同时就绪的取消分支误报失败。
+		select {
+		case <-impl.shutdownDone:
+			return nil
+		default:
+		}
+		impl.forceStopOnce.Do(func() {
+			impl.forceStopDone = make(chan struct{})
+			go impl.forceStop()
+		})
+		return fmt.Errorf("RPC 服务在途请求或监听协程未排空；已请求强制关闭，后台清理可能仍在运行: %w", ctx.Err())
 	}
 }
 
-// gracefulStop 与 Stop 的超时分支并发；业务 handler 仍需响应连接取消。
-func (impl *serviceImpl) gracefulStop(done chan<- struct{}) {
+// gracefulStop 仅在全部等待实际完成后发布排空状态，超时返回不会关闭该信号。
+func (impl *serviceImpl) gracefulStop() {
+	impl.healthServer.Shutdown()
 	impl.server.GracefulStop()
-	close(done)
+	impl.serveWorkers.Wait()
+	log.Info("RPC 服务在途请求及监听协程已排空")
+	close(impl.shutdownDone)
+}
+
+// forceStop 必须在后台运行：gRPC 的 Stop 也可能等待 GracefulStop 持有的内部锁。
+// 该调用返回不等于在途请求已退出，最终排空以 shutdownDone 为准。
+func (impl *serviceImpl) forceStop() {
+	impl.server.Stop()
+	close(impl.forceStopDone)
 }
 
 // GetRegisterServiceId 以服务名和监听 IP 构造注册标识。

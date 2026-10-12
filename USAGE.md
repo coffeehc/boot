@@ -567,7 +567,7 @@ grpc:
 
 `grpcserver.NewServer(ctx, nil)` 读取 `grpc` 配置段；传入非 nil `GRPCServerConfig` 时使用显式配置，不修改该对象。`grpc.MaxConnectionIdle` 旧配置键仍支持，新的 `grpc.max_connection_idle` 优先。配置解析失败由 `NewServer` 返回错误。
 
-插件只在 `Start` 绑定端口，保留配置中的监听 IP；端口为 `0` 时，`Start` 成功后 `GetRPCServerAddr()` 返回实际端口。默认仅启动 TCP。正常 `Stop` 先结束健康报告并调用 `GracefulStop`；shutdown context 到期后调用 `Stop` 关闭连接并返回取消错误。业务 handler 仍需响应 RPC context 取消。
+插件只在 `Start` 绑定端口，保留配置中的监听 IP；端口为 `0` 时，`Start` 成功后 `GetRPCServerAddr()` 返回实际端口。默认仅启动 TCP。正常 `Stop` 先结束健康报告，再等待 `GracefulStop` 和监听协程真正排空。shutdown context 到期后，插件只发起一次后台强制关闭请求，并返回可通过 `errors.Is` 判断取消原因的“未排空”错误；不会继续同步等待 gRPC 内部锁或监听协程。此错误不代表 handler 或后台关闭已终止，业务 handler 仍须响应 RPC context 取消，无法中断的 I/O 仍可能继续。只有实际排空后才记录排空日志；重复 `Stop` 可继续等待同一轮关闭。详见 [gRPC 停机预算问题记录](docs/problems/grpc-shutdown-budget.md)。
 
 ### 客户端创建与定制
 
