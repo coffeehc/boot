@@ -528,6 +528,13 @@ server := rpcService.GetGRPCServer()
 pb.RegisterYourServiceServer(server, &yourServiceImpl{})
 ```
 
+业务就绪检查可调用 `rpcService.Ready(ctx)`，直接读取同一个 gRPC health 服务的状态，
+不创建连接、不启动或停止插件。未启动、绑定失败、任一 `Serve` 退出以及开始停止后均返回错误；
+只有全部启用的监听绑定成功且健康状态仍为 `SERVING` 时返回 nil。传入的 context 已取消或
+到期时，分别返回 `context.Canceled` 或 `context.DeadlineExceeded`。这是本实例的监听
+就绪状态，业务依赖仍须由业务自己的就绪检查覆盖。复现与修复边界见
+[gRPC 就绪状态问题记录](docs/problems/grpc-readiness-state.md)。
+
 ## 配置
 
 配置使用 YAML 格式（默认）：

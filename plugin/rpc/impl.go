@@ -95,6 +95,22 @@ func (impl *serviceImpl) GetGRPCServer() *grpc.Server {
 	return impl.server
 }
 
+// Ready 复用注册健康服务的状态，只有全部监听绑定成功且尚未停止时才就绪。
+// 这里只读取状态，不等待启动，不建立额外连接，也不接管插件生命周期。
+func (impl *serviceImpl) Ready(ctx context.Context) error {
+	if err := ctx.Err(); err != nil {
+		return err
+	}
+	response, err := impl.healthServer.Check(ctx, &grpc_health_v1.HealthCheckRequest{})
+	if err != nil {
+		return fmt.Errorf("读取 RPC 服务健康状态失败: %w", err)
+	}
+	if response.Status != grpc_health_v1.HealthCheckResponse_SERVING {
+		return fmt.Errorf("RPC 服务未就绪: %s", response.Status)
+	}
+	return nil
+}
+
 // Start 同步绑定全部启用的端口，成功后交由 Serve goroutine 接收 RPC。
 // 绑定失败由本实例释放已打开的监听器，再将错误交给 plugin 启动流程。
 func (impl *serviceImpl) Start(ctx context.Context) (startErr error) {
@@ -154,9 +170,11 @@ func (impl *serviceImpl) Start(ctx context.Context) (startErr error) {
 // serve 记录监听异常并停止整个 RPC server，使健康状态和监听状态一致。
 func (impl *serviceImpl) serve(listener net.Listener) {
 	defer impl.serveWorkers.Done()
-	if err := impl.server.Serve(listener); err != nil && !errors.Is(err, grpc.ErrServerStopped) {
+	err := impl.server.Serve(listener)
+	// Serve 返回 nil 或 ErrServerStopped 也表示监听已停止，不能残留 SERVING。
+	impl.healthServer.Shutdown()
+	if err != nil && !errors.Is(err, grpc.ErrServerStopped) {
 		log.Error("RPC 服务监听异常结束", zap.String("address", listener.Addr().String()), zap.Error(err))
-		impl.healthServer.Shutdown()
 		impl.server.Stop()
 	}
 }
@@ -165,6 +183,8 @@ func (impl *serviceImpl) serve(listener net.Listener) {
 // 到期后仅请求后台强制关闭，返回未排空错误；不能强行终止忽略取消的业务 handler。
 func (impl *serviceImpl) Stop(ctx context.Context) error {
 	impl.shutdownOnce.Do(func() {
+		// 同步撤销就绪，避免已取消的 Stop 先返回、后台关闭尚未执行的窗口。
+		impl.healthServer.Shutdown()
 		impl.shutdownDone = make(chan struct{})
 		go impl.gracefulStop()
 	})
@@ -188,7 +208,6 @@ func (impl *serviceImpl) Stop(ctx context.Context) error {
 
 // gracefulStop 仅在全部等待实际完成后发布排空状态，超时返回不会关闭该信号。
 func (impl *serviceImpl) gracefulStop() {
-	impl.healthServer.Shutdown()
 	impl.server.GracefulStop()
 	impl.serveWorkers.Wait()
 	log.Info("RPC 服务在途请求及监听协程已排空")
